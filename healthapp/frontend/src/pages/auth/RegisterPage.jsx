@@ -46,11 +46,10 @@ const RegisterPage = () => {
       }
     } catch (err) {
       console.error('Registration error detail:', err);
-      // HARD DEBUG: Alert the exact URL being hit to catch Vercel config errors
-      const apiURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-      if (err.message === 'Network Error') {
-        alert(`NETWORK ERROR: The app tried to connect to: "${apiURL}". \n\nIf this URL is empty, "http", or missing "/api", please fix it in Vercel Settings.`);
-      }
+      
+      // EXTREME DIAGNOSTIC: This alert will pop up every time a failure happens
+      const apiURL = import.meta.env.VITE_API_URL || 'NOT SET (LOCALHOST FALLBACK)';
+      alert(`DIAGNOSTIC:\nURL: ${apiURL}\nError: ${err.message}\nStatus: ${err.response?.status || 'No Response'}`);
       
       const backendMessage = err.response?.data?.message;
       const errorMessage = backendMessage || err.message || 'Registration failed. Please try again.';
