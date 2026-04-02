@@ -22,14 +22,14 @@ coverage/
 # Project Specific (Large/Generated/Internal)
 data_raw/
 data_processed/
-models/*.joblib
-models/*.h5
-models/*.pkl
-web/
-hooks/
-info/
-objects/
-refs/
-config
-description
-HEAD
+/models/*.joblib
+/models/*.h5
+/models/*.pkl
+/web/
+/hooks/
+/info/
+/objects/
+/refs/
+/config
+/description
+/HEAD
