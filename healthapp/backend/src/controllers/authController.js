@@ -26,9 +26,9 @@ exports.registerUser = async (req, res, next) => {
     const hash = await bcrypt.hash(password, salt);
 
     const [result] = await pool.query(
-      `INSERT INTO users (full_name, email, password_hash, role, age, gender, phone, specialization, hospital)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [full_name, email, hash, assignedRole, age || null, gender || null, phone || '', specialization || '', hospital || '']
+      `INSERT INTO users (full_name, email, password_hash, role, age, gender, phone, specialization, hospital, is_approved)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [full_name, email, hash, assignedRole, age || null, gender || null, phone || '', specialization || '', hospital || '', assignedRole === 'doctor' ? 1 : 0]
     );
 
     const token = generateToken({ id: result.insertId, role: assignedRole });
@@ -39,6 +39,18 @@ exports.registerUser = async (req, res, next) => {
       'Account created successfully',
       201
     );
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── GET SPECIALISTS (Public/Patient Discovery) ──────────────────────────
+exports.getDoctors = async (req, res, next) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, full_name, specialization, hospital FROM users WHERE role = 'doctor' AND is_approved = 1 AND is_active = 1"
+    );
+    return sendSuccess(res, rows);
   } catch (err) {
     next(err);
   }

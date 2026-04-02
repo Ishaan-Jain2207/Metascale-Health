@@ -38,10 +38,10 @@ const PatientAppointments = () => {
     try {
       const [apptRes, doctorRes] = await Promise.all([
         api.get('/appointments/patient'),
-        api.get('/admin/doctors') // Admin/Doctor discovery for patients
+        api.get('/auth/doctors') // Public Specialist discovery
       ]);
       setAppointments(apptRes.data.data);
-      setDoctors(doctorRes.data.data.filter(d => d.is_approved));
+      setDoctors(doctorRes.data.data);
     } catch (err) {
       setError('Failed to load clinical data.');
     } finally {

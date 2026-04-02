@@ -17,6 +17,9 @@ router.post('/login', [
   body('password').notEmpty().withMessage('Password is required')
 ], authController.login);
 
+// Public Doctor Discovery
+router.get('/doctors', protect, authController.getDoctors);
+
 // Get Me
 router.get('/me', protect, authController.getMe);
 
