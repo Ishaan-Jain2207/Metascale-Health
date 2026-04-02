@@ -13,6 +13,9 @@ const appointmentRoutes = require('./routes/appointmentRoutes');
 
 const app = express();
 
+// Required for express-rate-limit to work behind Railway's proxy
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(helmet());
 
