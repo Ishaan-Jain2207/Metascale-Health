@@ -1,0 +1,41 @@
+{
+    "diabetes": {
+        "RISK_THRESHOLD_LOW": 0.33,
+        "RISK_THRESHOLD_HIGH": 0.66,
+        "medians": {
+            "Age": 0,
+            "Gender": 1,
+            "Family_Diabetes": 0,
+            "highBP": 0,
+            "PhysicallyActive": 1,
+            "BMI": 23.0,
+            "Smoking": 0,
+            "Alcohol": 0,
+            "Sleep": 7.0,
+            "SoundSleep": 6.0,
+            "RegularMedicine": 0,
+            "JunkFood": 1,
+            "Stress": 1,
+            "BPLevel": 1,
+            "Pregnancies": 0,
+            "Pdiabetes": 0,
+            "UriationFreq": 0
+        }
+    },
+    "liver": {
+        "RISK_THRESHOLD_LOW": 0.33,
+        "RISK_THRESHOLD_HIGH": 0.66,
+        "medians": {
+            "age": 42.0,
+            "gender": 1,
+            "total_bilirubin": 1.0,
+            "direct_bilirubin": 0.3,
+            "alkaline_phosphotase": 180.0,
+            "alt": 35.0,
+            "ast": 30.0,
+            "total_proteins": 6.5,
+            "albumin": 3.2,
+            "albumin_globulin_ratio": 0.9
+        }
+    }
+}
