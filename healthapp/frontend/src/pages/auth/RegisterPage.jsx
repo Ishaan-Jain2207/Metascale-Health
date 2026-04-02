@@ -45,7 +45,11 @@ const RegisterPage = () => {
         setError(res.message);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      console.error('Registration error detail:', err);
+      // Surface actual backend message if possible
+      const backendMessage = err.response?.data?.message;
+      const errorMessage = backendMessage || err.message || 'Registration failed. Please try again.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

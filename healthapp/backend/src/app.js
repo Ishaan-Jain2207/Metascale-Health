@@ -15,7 +15,27 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
+
+// Hardened CORS for Production
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.CLIENT_URL?.replace(/\/$/, ""), // Allow without trailing slash
+  'http://localhost:5173'
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      console.log(`CORS Blocked: Origin ${origin} not in allowed list:`, allowedOrigins);
+      return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(morgan('dev'));
 
