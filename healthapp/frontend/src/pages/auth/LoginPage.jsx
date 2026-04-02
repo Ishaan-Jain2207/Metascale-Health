@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 
 const LoginPage = () => {
+  const location = useLocation();
+  const isDoctorMode = location.state?.role === 'doctor';
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -45,8 +48,14 @@ const LoginPage = () => {
                 <div className="text-[10px] text-saffron-deep/80 font-bold uppercase tracking-tight">Clinical Portal</div>
             </div>
           </Link>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">Welcome Back</h1>
-          <p className="text-slate-600">Access your personalized health dashboard and history.</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">
+            {isDoctorMode ? 'Doctor Login' : 'Welcome Back'}
+          </h1>
+          <p className="text-slate-600">
+            {isDoctorMode 
+              ? 'Access clinical patient records and health screenings.' 
+              : 'Access your personalized health dashboard and history.'}
+          </p>
         </div>
 
         <div className="card shadow-xl border-white ring-1 ring-slate-200">

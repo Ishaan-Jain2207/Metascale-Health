@@ -53,10 +53,10 @@ const LandingPage = () => {
            </p>
            
            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <Link to="/register" className="btn-primary min-w-[240px]">
+              <Link to="/register" state={{ role: "patient" }} className="btn-primary min-w-[240px]">
                  Start free screening <ArrowRight className="ml-2" size={20} />
               </Link>
-              <Link to="/login" className="btn-secondary min-w-[240px]">
+              <Link to="/login" state={{ role: "doctor" }} className="btn-secondary min-w-[240px]">
                  Doctor Portal Entry
               </Link>
            </div>
@@ -129,9 +129,9 @@ const LandingPage = () => {
             <div>
                <h4 className="font-bold text-sm uppercase tracking-widest text-slate-300 mb-6">Portal Access</h4>
                <ul className="space-y-4 text-slate-400 font-medium text-sm">
-                  <li><Link to="/login" className="hover:text-saffron transition-colors">Doctor Login</Link></li>
-                  <li><Link to="/login" className="hover:text-saffron transition-colors">Admin Dashboard</Link></li>
-                  <li><Link to="/register" className="hover:text-saffron transition-colors">Patient Screening</Link></li>
+                  <li><Link to="/login" state={{ role: 'doctor' }} className="hover:text-saffron transition-colors">Doctor Login</Link></li>
+                  <li><Link to="/login" state={{ role: 'admin' }} className="hover:text-saffron transition-colors">Admin Dashboard</Link></li>
+                  <li><Link to="/register" state={{ role: 'patient' }} className="hover:text-saffron transition-colors">Patient Screening</Link></li>
                </ul>
             </div>
           </div>

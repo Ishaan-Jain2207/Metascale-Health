@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, User, ArrowRight, AlertCircle, Loader2, Calendar } from 'lucide-react';
 
 const RegisterPage = () => {
+  const location = useLocation();
+  const initialRole = location.state?.role || 'patient';
+
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
     password: '',
     confirmPassword: '',
     age: '',
-    gender: ''
+    gender: '',
+    role: initialRole
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,6 +24,10 @@ const RegisterPage = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const setRole = (selectedRole) => {
+    setFormData({ ...formData, role: selectedRole });
   };
 
   const handleSubmit = async (e) => {
@@ -37,16 +45,21 @@ const RegisterPage = () => {
         email: formData.email,
         password: formData.password,
         age: formData.age,
-        gender: formData.gender
+        gender: formData.gender,
+        role: formData.role
       });
       if (res.success) {
-        navigate('/patient/dashboard');
+        // Redirection based on role
+        if (formData.role === 'doctor') {
+          navigate('/doctor/dashboard');
+        } else {
+          navigate('/patient/dashboard');
+        }
       } else {
         setError(res.message);
       }
     } catch (err) {
       console.error('Registration error detail:', err);
-      
       const backendMessage = err.response?.data?.message;
       const errorMessage = backendMessage || err.message || 'Registration failed. Please try again.';
       setError(errorMessage);
@@ -63,11 +76,26 @@ const RegisterPage = () => {
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-white via-saffron-light to-saffron-deep shadow-lg ring-2 ring-white/60 flex-shrink-0"></div>
             <div>
                 <div className="font-bold text-[13px] uppercase tracking-[0.1em] text-slate-900 leading-none mb-1 font-mono">Metascale Health</div>
-                <div className="text-[10px] text-saffron-deep/80 font-bold uppercase tracking-tight">User Registration</div>
+                <div className="text-[10px] text-saffron-deep/80 font-bold uppercase tracking-tight">Access Portal</div>
             </div>
           </Link>
           <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">Create Account</h1>
-          <p className="text-slate-600 font-medium">Join thousands of others taking control of their health.</p>
+          
+          {/* Role Toggle */}
+          <div className="flex bg-slate-200/50 p-1 rounded-2xl mb-8 max-w-[280px] mx-auto ring-1 ring-slate-200">
+             <button 
+                onClick={() => setRole('patient')}
+                className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${formData.role === 'patient' ? 'bg-white shadow-sm text-saffron-deep' : 'text-slate-400'}`}
+             >
+                Patient
+             </button>
+             <button 
+                onClick={() => setRole('doctor')}
+                className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${formData.role === 'doctor' ? 'bg-white shadow-sm text-saffron-deep' : 'text-slate-400'}`}
+             >
+                Doctor
+             </button>
+          </div>
         </div>
 
         <div className="card shadow-xl border-white ring-1 ring-slate-200">
@@ -143,6 +171,35 @@ const RegisterPage = () => {
                 </select>
               </div>
             </div>
+
+            {formData.role === 'doctor' && (
+              <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Specialization</label>
+                  <input 
+                    type="text" 
+                    name="specialization"
+                    value={formData.specialization || ''}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron transition-all outline-none" 
+                    placeholder="e.g. Hepatologist"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Hospital/Clinic</label>
+                  <input 
+                    type="text" 
+                    name="hospital"
+                    value={formData.hospital || ''}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron transition-all outline-none" 
+                    placeholder="e.g. City Health"
+                    required
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>

@@ -4,15 +4,19 @@ const { pool } = require('../config/db');
 const generateToken = require('../utils/generateToken');
 const { sendSuccess, sendError } = require('../utils/apiResponse');
 
-// ─── PATIENT REGISTER ──────────────────────────────────────────────────────
-exports.registerPatient = async (req, res, next) => {
+// ─── USER REGISTER (Patient / Doctor) ──────────────────────────────────────
+exports.registerUser = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return sendError(res, 'Validation failed', 422, errors.array());
     }
 
-    const { full_name, email, password, age, gender, phone } = req.body;
+    const { full_name, email, password, age, gender, phone, role, specialization, hospital } = req.body;
+    
+    // Validate role (whitelist only patient and doctor for public registration)
+    const validRoles = ['patient', 'doctor'];
+    const assignedRole = validRoles.includes(role) ? role : 'patient';
 
     // Check duplicate
     const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
@@ -22,16 +26,16 @@ exports.registerPatient = async (req, res, next) => {
     const hash = await bcrypt.hash(password, salt);
 
     const [result] = await pool.query(
-      `INSERT INTO users (full_name, email, password_hash, role, age, gender, phone)
-       VALUES (?, ?, ?, 'patient', ?, ?, ?)`,
-      [full_name, email, hash, age || null, gender || null, phone || '']
+      `INSERT INTO users (full_name, email, password_hash, role, age, gender, phone, specialization, hospital)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [full_name, email, hash, assignedRole, age || null, gender || null, phone || '', specialization || '', hospital || '']
     );
 
-    const token = generateToken({ id: result.insertId, role: 'patient' });
+    const token = generateToken({ id: result.insertId, role: assignedRole });
 
     return sendSuccess(
       res,
-      { token, user: { id: result.insertId, full_name, email, role: 'patient', age, gender } },
+      { token, user: { id: result.insertId, full_name, email, role: assignedRole, age, gender } },
       'Account created successfully',
       201
     );
