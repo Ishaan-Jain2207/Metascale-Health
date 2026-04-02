@@ -47,10 +47,6 @@ const RegisterPage = () => {
     } catch (err) {
       console.error('Registration error detail:', err);
       
-      // EXTREME DIAGNOSTIC: This alert will pop up every time a failure happens
-      const apiURL = import.meta.env.VITE_API_URL || 'NOT SET (LOCALHOST FALLBACK)';
-      alert(`DIAGNOSTIC:\nURL: ${apiURL}\nError: ${err.message}\nStatus: ${err.response?.status || 'No Response'}`);
-      
       const backendMessage = err.response?.data?.message;
       const errorMessage = backendMessage || err.message || 'Registration failed. Please try again.';
       setError(errorMessage);
