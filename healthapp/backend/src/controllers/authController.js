@@ -128,6 +128,8 @@ exports.updateProfile = async (req, res, next) => {
       full_name, age, gender, phone, blood_group, address,
       has_hypertension, has_diabetes, has_liver_condition,
       family_history_diabetes, current_medications,
+      specialization, hospital, license_number, medical_council,
+      years_of_experience, qualification
     } = req.body;
 
     await pool.query(
@@ -142,7 +144,13 @@ exports.updateProfile = async (req, res, next) => {
         has_diabetes = COALESCE(?, has_diabetes),
         has_liver_condition = COALESCE(?, has_liver_condition),
         family_history_diabetes = COALESCE(?, family_history_diabetes),
-        current_medications = COALESCE(?, current_medications)
+        current_medications = COALESCE(?, current_medications),
+        specialization = COALESCE(?, specialization),
+        hospital = COALESCE(?, hospital),
+        license_number = COALESCE(?, license_number),
+        medical_council = COALESCE(?, medical_council),
+        years_of_experience = COALESCE(?, years_of_experience),
+        qualification = COALESCE(?, qualification)
        WHERE id = ?`,
       [
         full_name, age, gender, phone, blood_group, address,
@@ -151,6 +159,12 @@ exports.updateProfile = async (req, res, next) => {
         has_liver_condition != null ? (has_liver_condition ? 1 : 0) : null,
         family_history_diabetes != null ? (family_history_diabetes ? 1 : 0) : null,
         current_medications,
+        specialization,
+        hospital,
+        license_number,
+        medical_council,
+        years_of_experience,
+        qualification,
         req.user.id,
       ]
     );

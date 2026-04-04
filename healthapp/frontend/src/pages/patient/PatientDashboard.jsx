@@ -51,6 +51,15 @@ const PatientDashboard = () => {
     }
   };
 
+  const healthTips = [
+    "Monitoring your water intake and ensuring 7-8 hours of sound sleep are critical for metabolic health.",
+    "A 30-minute brisk walk daily can significantly reduce your diabetes risk markers.",
+    "Reducing processed sugar is the fastest way to improve your liver's detoxification efficiency.",
+    "Regular protein intake helps maintain lean muscle mass, which improves insulin sensitivity.",
+    "Green leafy vegetables are rich in antioxidants that protect liver cells from oxidative stress."
+  ];
+  const [dailyTip] = useState(healthTips[Math.floor(Math.random() * healthTips.length)]);
+
   if (loading) {
     return <div className="animate-pulse space-y-8">
       <div className="h-32 bg-slate-200 rounded-2xl w-full"></div>
@@ -213,8 +222,13 @@ const PatientDashboard = () => {
                         <span className="capitalize">{stats.upcomingAppt.status}</span>
                      </div>
                   </div>
-                  <button className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-bold transition-colors">Reschedule</button>
-               </div>
+                   <button 
+                     onClick={() => navigate('/patient/appointments')}
+                     className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-bold transition-colors"
+                   >
+                     Reschedule
+                   </button>
+                </div>
             ) : (
                <div className="card bg-slate-100 border-dashed border-2 border-slate-300 flex flex-col items-center justify-center py-12 text-center">
                   <div className="w-12 h-12 bg-slate-200 text-slate-400 rounded-full flex items-center justify-center mb-4"><Calendar /></div>
@@ -227,9 +241,9 @@ const PatientDashboard = () => {
                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
                   <Activity size={60} />
                </div>
-               <h3 className="font-bold text-ink flex items-center gap-2 mb-2"><CheckCircle2 size={18} className="text-saffron" /> Daily Health Tip</h3>
-               <p className="text-sm text-ink-mid leading-relaxed font-medium relative z-10">Monitoring your water intake and ensuring 7-8 hours of sound sleep are critical for both metabolic and liver health.</p>
-            </div>
+                <h3 className="font-bold text-ink flex items-center gap-2 mb-2"><CheckCircle2 size={18} className="text-saffron" /> Daily Health Tip</h3>
+                <p className="text-sm text-ink-mid leading-relaxed font-medium relative z-10">{dailyTip}</p>
+             </div>
          </div>
       </div>
     </div>

@@ -10,7 +10,7 @@ import {
   HeartPulse,
   Radar
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
 
 // Angular-inspired Imports
 import { useRipple } from '../hooks/useRipple';
@@ -33,8 +33,43 @@ const LandingPage = () => {
   const loading = streamData?.loading || false;
   const history = streamData?.history || [];
 
+  // Mouse Tracking for 3D Orb & Grid
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const springX = useSpring(mouseX, { stiffness: 100, damping: 30 });
+  const springY = useSpring(mouseY, { stiffness: 100, damping: 30 });
+
+  const orbRotateX = useTransform(springY, [-300, 300], [15, -15]);
+  const orbRotateY = useTransform(springX, [-300, 300], [-15, 15]);
+  const gridRotateX = useTransform(springY, [-300, 300], [60, 50]);
+  const gridTranslateZ = useTransform(springY, [-300, 300], [0, 50]);
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    mouseX.set(x);
+    mouseY.set(y);
+  };
+
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div 
+      onMouseMove={handleMouseMove}
+      className="min-h-screen relative overflow-hidden bg-white/50"
+    >
+      {/* 3D Grid Floor Background */}
+      <div className="absolute inset-0 pointer-events-none z-0 perspective-[1000px]">
+        <motion.div 
+          style={{ 
+            rotateX: gridRotateX,
+            translateZ: gridTranslateZ,
+            backgroundImage: `linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px)`,
+            backgroundSize: '60px 60px'
+          }}
+          className="absolute inset-0 origin-center w-[200%] h-[200%] -left-1/2 -top-1/2"
+        ></motion.div>
+        <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white"></div>
+      </div>
       {/* Navbar - Matching Prototype */}
       <header className="fixed top-0 w-full z-50 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -109,7 +144,7 @@ const LandingPage = () => {
              initial={{ opacity: 0, y: 30 }}
              animate={{ opacity: 1, y: 0 }}
              transition={{ delay: 0.4, duration: 0.6, type: "spring", stiffness: 100 }}
-             className="flex flex-col items-center justify-center gap-6"
+             className="flex flex-col items-center justify-center gap-6 relative z-10"
            >
               <div className="relative inline-block group">
                 <Link 
@@ -128,6 +163,47 @@ const LandingPage = () => {
                 </div>
               </div>
            </motion.div>
+
+           {/* 3D Hero Orb */}
+           <div className="mt-20 flex justify-center perspective-[1000px]">
+              <motion.div 
+                style={{ rotateX: orbRotateX, rotateY: orbRotateY }}
+                className="w-64 h-64 relative group cursor-crosshair"
+              >
+                 <div className="absolute inset-0 bg-gradient-to-br from-saffron via-saffron-deep to-ink rounded-full blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                 <div className="absolute inset-0 bg-white/10 backdrop-blur-3xl rounded-full border border-white/40 shadow-2xl overflow-hidden ring-1 ring-white/20">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent)]"></div>
+                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent rotate-45 transform -translate-x-full animate-[shimmer_5s_infinite]"></div>
+                    <motion.div 
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                      className="absolute inset-[-50%] border-2 border-white/5 rounded-full"
+                    ></motion.div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                       <div className="w-32 h-32 bg-white/5 rounded-full flex items-center justify-center border border-white/20 shadow-inner">
+                          <Activity className="text-white/60" size={48} />
+                       </div>
+                    </div>
+                 </div>
+                 {/* Floating Nodes Around Orb */}
+                 {[0, 120, 240].map((deg, i) => (
+                    <motion.div 
+                      key={i}
+                      animate={{ 
+                        y: [0, -10, 0],
+                        scale: [1, 1.1, 1]
+                      }}
+                      transition={{ duration: 3 + i, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute w-4 h-4 bg-saffron rounded-full shadow-[0_0_15px_rgba(247,147,30,0.6)]"
+                      style={{ 
+                        left: `${50 + 40 * Math.cos(deg * Math.PI / 180)}%`,
+                        top: `${50 + 40 * Math.sin(deg * Math.PI / 180)}%`,
+                        translateZ: '100px'
+                      }}
+                    ></motion.div>
+                 ))}
+              </motion.div>
+           </div>
         </div>
 
         {/* 3D Decorative Elements */}
@@ -178,18 +254,10 @@ const LandingPage = () => {
                 accent: 'bg-slate-900'
               }
             ].map((feature, i) => (
-              <motion.div 
+              <PerspectiveCard 
                 key={i} 
-                whileHover={{ y: -10, rotateY: 5, perspective: 1000 }}
-                className="card hover:shadow-3xl transition-all duration-500 group border-white/40 backdrop-blur-sm bg-white/60 text-left"
-              >
-                 <div className={`w-14 h-14 ${feature.accent} text-white rounded-2xl flex items-center justify-center mb-8 shadow-xl group-hover:scale-110 transition-transform group-hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)]`}>
-                    <feature.icon size={28} />
-                 </div>
-                 <h3 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">{feature.title}</h3>
-                 <p className="text-slate-500 font-medium leading-relaxed mb-6">{feature.desc}</p>
-                 <Link to="/register" className="text-saffron-deep font-bold text-sm tracking-widest uppercase flex items-center gap-2 hover:gap-3 transition-all">Explore <ArrowRight size={14} /></Link>
-              </motion.div>
+                feature={feature}
+              />
             ))}
           </div>
         </div>
@@ -234,6 +302,33 @@ const LandingPage = () => {
         </div>
       </footer>
     </div>
+  );
+};
+
+const PerspectiveCard = ({ feature }) => {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useTransform(y, [-100, 100], [10, -10]);
+  const rotateY = useTransform(x, [-100, 100], [-10, 10]);
+
+  return (
+    <motion.div 
+      style={{ rotateX, rotateY, perspective: 1000 }}
+      onMouseMove={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        x.set(e.clientX - rect.left - rect.width / 2);
+        y.set(e.clientY - rect.top - rect.height / 2);
+      }}
+      onMouseLeave={() => { x.set(0); y.set(0); }}
+      className="card hover:shadow-3xl transition-all duration-500 group border-white/40 backdrop-blur-sm bg-white/60 text-left relative overflow-hidden"
+    >
+       <div className={`w-14 h-14 ${feature.accent} text-white rounded-2xl flex items-center justify-center mb-8 shadow-xl group-hover:scale-110 transition-transform group-hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)]`}>
+          <feature.icon size={28} />
+       </div>
+       <h3 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">{feature.title}</h3>
+       <p className="text-slate-500 font-medium leading-relaxed mb-6">{feature.desc}</p>
+       <Link to="/register" className="text-saffron-deep font-bold text-sm tracking-widest uppercase flex items-center gap-2 hover:gap-3 transition-all">Explore <ArrowRight size={14} /></Link>
+    </motion.div>
   );
 };
 

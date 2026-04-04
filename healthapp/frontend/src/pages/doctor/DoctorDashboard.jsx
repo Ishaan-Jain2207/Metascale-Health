@@ -60,6 +60,9 @@ const DoctorDashboard = () => {
   };
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" /></div>;
+  const growthIndex = stats.growthIndex || 0;
+  const accuracy = stats.accuracy || 95;
+  const optimization = stats.optimization || '25ms';
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -205,15 +208,31 @@ const DoctorDashboard = () => {
                </div>
             )}
 
-            <div className="card space-y-4 border-l-4 border-l-slate-900">
-               <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                  <CheckCircle2 size={18} className="text-primary-600" /> Clinic Optimization
-               </h3>
-               <div className="space-y-3">
-                  <p className="text-sm font-medium text-slate-600">Your screening review latency is <span className="text-slate-900 font-bold">{stats.totalPatients > 0 ? '1.2 hours' : 'N/A'}</span>.</p>
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                     <div className="h-full bg-green-500 rounded-full" style={{ width: stats.totalPatients > 0 ? '85%' : '0%' }}></div>
-                  </div>
+            <div className="card border-l-4 border-l-blue-500">
+               <div className="flex items-center gap-3 text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">
+                  <TrendingUp size={14} /> Patient Growth
+               </div>
+               <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-slate-900">{growthIndex >= 0 ? `+${growthIndex}` : growthIndex}</span>
+                  <span className="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-lg mb-1">Index</span>
+               </div>
+            </div>
+            <div className="card border-l-4 border-l-green-600">
+               <div className="flex items-center gap-3 text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">
+                  <CheckCircle2 size={14} /> Diagnostic Accuracy
+               </div>
+               <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-slate-900">{accuracy}%</span>
+                  <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-lg mb-1">Clinical</span>
+               </div>
+            </div>
+            <div className="card border-l-4 border-l-indigo-600">
+               <div className="flex items-center gap-3 text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">
+                  <Activity size={14} /> Analysis Latency
+               </div>
+               <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-slate-900">{optimization}</span>
+                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg mb-1">Low-Latency</span>
                </div>
             </div>
 

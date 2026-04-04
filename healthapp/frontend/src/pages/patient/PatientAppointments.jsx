@@ -78,6 +78,16 @@ const PatientAppointments = () => {
     }
   };
 
+  const handleCancel = async (id) => {
+    if (!window.confirm('Are you sure you want to cancel this consultation?')) return;
+    try {
+      await api.put(`/appointments/${id}/status`, { status: 'cancelled' });
+      fetchData();
+    } catch (err) {
+      setError('Failed to cancel appointment.');
+    }
+  };
+
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" /></div>;
 
   return (
@@ -214,6 +224,15 @@ const PatientAppointments = () => {
                               }`}>
                                  {appt.status}
                               </div>
+                              {(appt.status === 'pending' || appt.status === 'confirmed') && (
+                                <button 
+                                  onClick={() => handleCancel(appt.id)}
+                                  className="p-1.5 hover:bg-red-50 text-slate-300 hover:text-red-600 rounded-lg transition-colors"
+                                  title="Cancel Request"
+                                >
+                                   <XCircle size={18} />
+                                </button>
+                              )}
                            </div>
                         </div>
                         {appt.doctor_notes && (
