@@ -21,10 +21,10 @@
   body {
     @apply font-sans text-ink min-h-screen;
     background: 
-      radial-gradient(circle at top center, #ffd3a1 0%, transparent 85%),
-      linear-gradient(180deg, #fff7ec 0%, #ffdfba 100%);
+      radial-gradient(circle at top center, #ffd3a1 0, transparent 55%),
+      linear-gradient(180deg, #ffb472 0%, #f7f2ff 42%, #ffffff 100%);
     background-attachment: fixed;
-    background-color: #fff7ec;
+    background-color: #ffffff;
   }
   
   h1, h2, h3, h4 {
