@@ -19,11 +19,12 @@
 
 @layer base {
   body {
-    @apply font-sans text-ink bg-saffron-light/20 min-h-screen;
+    @apply font-sans text-ink min-h-screen;
     background: 
-      radial-gradient(circle at top center, #ffd3a1 0, transparent 70%),
-      linear-gradient(135deg, #ffb472 0%, #f7931e 30%, #ffd3a1 100%);
+      radial-gradient(circle at top center, #fff4e6 0%, transparent 80%),
+      linear-gradient(180deg, #fff9f2 0%, #ffffff 100%);
     background-attachment: fixed;
+    background-color: #fff9f2; /* Persistent lite orange base */
   }
   
   h1, h2, h3, h4 {
