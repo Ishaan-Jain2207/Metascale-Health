@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { 
   Calendar, 
   Clock, 
@@ -15,6 +16,7 @@ import {
 import api from '../../services/api';
 
 const PatientAppointments = () => {
+  const location = useLocation();
   const [appointments, setAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,8 +33,18 @@ const PatientAppointments = () => {
   });
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData().then(() => {
+       // Handle pre-fills from screening results
+       if (location.state?.prefill) {
+          const { type, risk } = location.state.prefill;
+          setShowBooking(true);
+          setNewAppt(prev => ({
+             ...prev,
+             reason: `Clinical review for ${type.toUpperCase()} screening result: ${risk} Risk`
+          }));
+       }
+    });
+  }, [location]);
 
   const fetchData = async () => {
     try {

@@ -36,11 +36,13 @@
   .glass {
     @apply bg-white/90 backdrop-blur-xl border border-white/80 shadow-2xl;
     -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
   }
 
   .card {
     @apply bg-white/95 backdrop-blur-xl border border-slate-200/60 shadow-xl rounded-3xl p-8;
     -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
   }
 
@@ -48,6 +50,7 @@
   .card-accent {
     @apply bg-white/95 backdrop-blur-xl border border-slate-200/60 shadow-xl rounded-3xl p-8 border-t-4 border-t-saffron;
     -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
   }
 
@@ -121,5 +124,61 @@
   .btn-primary {
     position: relative;
     overflow: hidden;
+  }
+}
+
+/* 🖨️ Clinical Report Print Styles */
+@media print {
+  body {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: black !important;
+  }
+
+  /* Hide navigation, sidebars, and action buttons during print */
+  nav, 
+  aside, 
+  .print\:hidden,
+  button,
+  .btn-primary,
+  .btn-secondary,
+  footer {
+    display: none !important;
+  }
+
+  /* Ensure the main content takes full width */
+  main, .max-w-4xl {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 2cm !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .card, .bg-white {
+    box-shadow: none !important;
+    border: 1px solid #eee !important;
+    background: white !important;
+  }
+
+  /* Keep brand colors if possible but optimize for ink */
+  .text-saffron-deep, .text-saffron {
+    color: #e06823 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .bg-slate-900 {
+    background: #141414 !important;
+    color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Force page breaks if needed */
+  .page-break {
+    page-break-before: always;
   }
 }

@@ -16,7 +16,7 @@ const DiabetesScreening = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    ageGroup: '',
+    age: '',
     gender: '',
     familyDiabetes: false,
     highBP: false,
@@ -45,11 +45,19 @@ const DiabetesScreening = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    // Map exact age to categories expected by the prediction service
+    const ageGroup = 
+      formData.age < 40 ? 'below 40' :
+      formData.age <= 49 ? '40-49' :
+      formData.age <= 59 ? '50-59' : '60 or above';
+
+    const submissionData = {
+      ...formData,
+      ageGroup
+    };
 
     try {
-      const res = await api.post('/predict/diabetes', formData);
+      const res = await api.post('/predict/diabetes', submissionData);
       if (res.data.success) {
         navigate('/patient/screening/result', { state: { result: res.data.data, type: 'diabetes' } });
       } else {
@@ -93,16 +101,18 @@ const DiabetesScreening = () => {
                 <CheckCircle2 size={14} className="text-saffron" /> Demographics & Physiological
              </h3>
              <div className="grid md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                   <label className="text-sm font-bold text-slate-700 uppercase">Age Group</label>
-                   <select name="ageGroup" value={formData.ageGroup} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron outline-none">
-                      <option value="">Select</option>
-                      <option value="below 40">Below 40</option>
-                      <option value="40-49">40-49</option>
-                      <option value="50-59">50-59</option>
-                      <option value="60 or above">60 or above</option>
-                   </select>
-                </div>
+                 <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 uppercase">Age (Years)</label>
+                    <input 
+                      type="number" 
+                      name="age" 
+                      value={formData.age} 
+                      onChange={handleChange} 
+                      required 
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron outline-none" 
+                      placeholder="e.g. 45" 
+                    />
+                 </div>
                 <div className="space-y-2">
                    <label className="text-sm font-bold text-slate-700 uppercase">Gender</label>
                    <select name="gender" value={formData.gender} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none">

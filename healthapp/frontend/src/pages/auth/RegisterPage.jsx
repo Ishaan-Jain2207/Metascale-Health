@@ -14,7 +14,13 @@ const RegisterPage = () => {
     confirmPassword: '',
     age: '',
     gender: '',
-    role: initialRole
+    role: initialRole,
+    license_number: '',
+    medical_council: '',
+    years_of_experience: '',
+    qualification: '',
+    specialization: '',
+    hospital: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,7 +52,13 @@ const RegisterPage = () => {
         password: formData.password,
         age: formData.age,
         gender: formData.gender,
-        role: formData.role
+        role: formData.role,
+        specialization: formData.specialization,
+        hospital: formData.hospital,
+        license_number: formData.license_number,
+        medical_council: formData.medical_council,
+        years_of_experience: formData.years_of_experience,
+        qualification: formData.qualification
       });
       if (res.success) {
         // Redirection based on role
@@ -173,30 +185,86 @@ const RegisterPage = () => {
             </div>
 
             {formData.role === 'doctor' && (
-              <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Specialization</label>
-                  <input 
-                    type="text" 
-                    name="specialization"
-                    value={formData.specialization || ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron transition-all outline-none" 
-                    placeholder="e.g. Hepatologist"
-                    required
-                  />
+              <div className="space-y-5 animate-in fade-in slide-in-from-top-2 duration-300 border-t border-slate-100 pt-5 mt-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">MRN / License #</label>
+                    <input 
+                      type="text" 
+                      name="license_number"
+                      value={formData.license_number}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron transition-all outline-none" 
+                      placeholder="e.g. MMC/2023/123"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Medical Council</label>
+                    <input 
+                      type="text" 
+                      name="medical_council"
+                      value={formData.medical_council}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron transition-all outline-none" 
+                      placeholder="e.g. NMC India"
+                      required
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Hospital/Clinic</label>
-                  <input 
-                    type="text" 
-                    name="hospital"
-                    value={formData.hospital || ''}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron transition-all outline-none" 
-                    placeholder="e.g. City Health"
-                    required
-                  />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Specialization</label>
+                    <input 
+                      type="text" 
+                      name="specialization"
+                      value={formData.specialization}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron transition-all outline-none" 
+                      placeholder="e.g. Hepatologist"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Experience (Years)</label>
+                    <input 
+                      type="number" 
+                      name="years_of_experience"
+                      value={formData.years_of_experience}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron transition-all outline-none" 
+                      placeholder="e.g. 10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Qualification</label>
+                    <input 
+                      type="text" 
+                      name="qualification"
+                      value={formData.qualification}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron transition-all outline-none" 
+                      placeholder="e.g. MD, MBBS"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5 uppercase tracking-wide">Hospital/Clinic</label>
+                    <input 
+                      type="text" 
+                      name="hospital"
+                      value={formData.hospital}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron transition-all outline-none" 
+                      placeholder="e.g. AIIMS Delhi"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
             )}

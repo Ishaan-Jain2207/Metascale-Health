@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const predictionController = require('../controllers/predictionController');
+const aiSvc = require('../services/aiService');
+const { sendSuccess, sendError } = require('../utils/apiResponse');
 const protect = require('../middleware/authMiddleware');
 const authorize = require('../middleware/roleMiddleware');
 const { body } = require('express-validator');
@@ -33,5 +35,16 @@ router.get('/history/:userId', protect, authorize('doctor', 'admin'), prediction
 
 // Detail
 router.get('/detail/:type/:id', protect, predictionController.getScreeningDetail);
+
+// AI Insight (On-demand)
+router.post('/explain', protect, async (req, res, next) => {
+  try {
+    const { type, data, result } = req.body;
+    const explanation = await aiSvc.explainScreening(type, data, result);
+    return sendSuccess(res, { explanation });
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = router;

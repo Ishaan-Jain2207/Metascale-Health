@@ -12,7 +12,11 @@ exports.registerUser = async (req, res, next) => {
       return sendError(res, 'Validation failed', 422, errors.array());
     }
 
-    const { full_name, email, password, age, gender, phone, role, specialization, hospital } = req.body;
+    const { 
+      full_name, email, password, age, gender, phone, role, 
+      specialization, hospital, license_number, 
+      medical_council, years_of_experience, qualification 
+    } = req.body;
     
     // Validate role (whitelist only patient and doctor for public registration)
     const validRoles = ['patient', 'doctor'];
@@ -26,9 +30,18 @@ exports.registerUser = async (req, res, next) => {
     const hash = await bcrypt.hash(password, salt);
 
     const [result] = await pool.query(
-      `INSERT INTO users (full_name, email, password_hash, role, age, gender, phone, specialization, hospital, is_approved)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [full_name, email, hash, assignedRole, age || null, gender || null, phone || '', specialization || '', hospital || '', assignedRole === 'doctor' ? 1 : 0]
+      `INSERT INTO users (
+        full_name, email, password_hash, role, age, gender, phone, 
+        specialization, hospital, license_number, medical_council, 
+        years_of_experience, qualification, is_approved
+      )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        full_name, email, hash, assignedRole, age || null, gender || null, phone || '', 
+        specialization || '', hospital || '', license_number || '', 
+        medical_council || '', years_of_experience || 0, qualification || '',
+        assignedRole === 'doctor' ? 1 : 0
+      ]
     );
 
     const token = generateToken({ id: result.insertId, role: assignedRole });

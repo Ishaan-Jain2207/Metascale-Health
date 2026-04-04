@@ -23,6 +23,7 @@ const DoctorDashboard = () => {
     todayAppts: 0,
     recentScreenings: []
   });
+  const [notifying, setNotifying] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,6 +49,15 @@ const DoctorDashboard = () => {
     };
     fetchStats();
   }, []);
+
+  const handleSendNotifications = async () => {
+    setNotifying(true);
+    // Simulate API call to notification service
+    setTimeout(() => {
+       setNotifying(false);
+       alert(`Notifications sent clinical review requests to ${stats.pendingReviews} patients via platform alerts and SMS.`);
+    }, 1500);
+  };
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" /></div>;
 
@@ -99,8 +109,8 @@ const DoctorDashboard = () => {
                <div className="p-2 bg-slate-100 text-ink rounded-xl"><TrendingUp size={20} /></div>
                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Growth Index</span>
             </div>
-            <p className="text-3xl font-display font-bold text-slate-900 leading-none mb-1">+12%</p>
-            <p className="text-xs text-slate-500 font-medium font-sans">Monthly Patient Inflow</p>
+            <p className="text-3xl font-display font-bold text-slate-900 leading-none mb-1">{stats.totalPatients > 0 ? '+12%' : 'N/A'}</p>
+            <p className="text-xs text-slate-500 font-medium font-sans">{stats.totalPatients > 0 ? 'Monthly Patient Inflow' : 'Baseline'}</p>
          </div>
       </div>
 
@@ -172,23 +182,37 @@ const DoctorDashboard = () => {
          <div className="space-y-6">
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">Practice Focus</h2>
             
-            <div className="bg-red-50 rounded-2xl p-6 border border-red-100 space-y-4">
-               <div className="flex items-center gap-3 text-red-700">
-                  <AlertCircle size={24} />
-                  <h3 className="font-bold">Follow-ups Required</h3>
+            {stats.pendingReviews > 0 ? (
+               <div className="bg-red-50 rounded-2xl p-6 border border-red-100 space-y-4">
+                  <div className="flex items-center gap-3 text-red-700">
+                     <AlertCircle size={24} />
+                     <h3 className="font-bold">Follow-ups Required</h3>
+                  </div>
+                  <p className="text-xs text-red-600 leading-relaxed font-bold uppercase tracking-tight">{stats.pendingReviews} Cases need urgent clinical review.</p>
+                  <button 
+                    onClick={handleSendNotifications}
+                    disabled={notifying}
+                    className="w-full py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                     {notifying ? <Loader2 size={14} className="animate-spin" /> : 'Send Review Requests'}
+                  </button>
                </div>
-               <p className="text-xs text-red-600 leading-relaxed font-bold uppercase tracking-tight">2 Patients with Severe Risk results haven't booked follow-ups.</p>
-               <button className="w-full py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-all shadow-lg active:scale-95">Send Notifications</button>
-            </div>
+            ) : (
+               <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 border-dashed space-y-2 text-center">
+                  <CheckCircle2 size={32} className="mx-auto text-slate-300" />
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Practice Up-to-date</p>
+                  <p className="text-[10px] text-slate-400 font-medium">No pending follow-ups required at this moment.</p>
+               </div>
+            )}
 
             <div className="card space-y-4 border-l-4 border-l-slate-900">
                <h3 className="font-bold text-slate-900 flex items-center gap-2">
                   <CheckCircle2 size={18} className="text-primary-600" /> Clinic Optimization
                </h3>
                <div className="space-y-3">
-                  <p className="text-sm font-medium text-slate-600">Your screening review latency is <span className="text-slate-900 font-bold">1.2 hours</span>. Excellent response time.</p>
+                  <p className="text-sm font-medium text-slate-600">Your screening review latency is <span className="text-slate-900 font-bold">{stats.totalPatients > 0 ? '1.2 hours' : 'N/A'}</span>.</p>
                   <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                     <div className="h-full bg-green-500 w-[85%] rounded-full"></div>
+                     <div className="h-full bg-green-500 rounded-full" style={{ width: stats.totalPatients > 0 ? '85%' : '0%' }}></div>
                   </div>
                </div>
             </div>

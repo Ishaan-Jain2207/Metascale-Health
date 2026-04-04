@@ -57,8 +57,9 @@ const _runInference = (features) => {
   if (regularMedicine) score += 5;
 
   // ── Age group ─────────────────────────────────────────────
-  if (ageGroup === '45-60') score += 8;
-  if (ageGroup === '60+')   score += 14;
+  if (ageGroup === '40-49')       score += 6;
+  if (ageGroup === '50-59')       score += 10;
+  if (ageGroup === '60 or above') score += 15;
 
   return Math.min(Math.max(Math.round(score), 0), 100);
 };
@@ -90,7 +91,7 @@ const _interpretation = (label) => {
 const _recommendations = (features, label) => {
   const recs = [];
   if (['High', 'Very High'].includes(label)) {
-    recs.push('Consult an endocrinologist or diabetologist promptly.');
+    recs.push('Schedule a clinical review with an endocrinologist or diabetologist.');
     recs.push('Request a fasting blood sugar and HbA1c test.');
   }
   if (features.bmi >= 25) recs.push('Target a BMI below 25 through diet and exercise.');

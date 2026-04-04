@@ -89,34 +89,44 @@ exports.reviewScreening = async (req, res, next) => {
 // ─── DOCTOR DASHBOARD STATS ────────────────────────────────────────────────
 exports.getDashboardStats = async (req, res, next) => {
   try {
-    const [patientCount] = await pool.query("SELECT COUNT(*) as total FROM users WHERE role = 'patient'");
-    const [liverCount] = await pool.query("SELECT COUNT(*) as total FROM liver_screenings");
-    const [diabetesCount] = await pool.query("SELECT COUNT(*) as total FROM diabetes_screenings");
-    
-    // High risk cases (Severe or Critical)
-    const [highRiskLiver] = await pool.query(
-      "SELECT COUNT(*) as total FROM liver_screenings WHERE risk_band IN ('Severe', 'Critical')"
-    );
-    const [highRiskDiabetes] = await pool.query(
-      "SELECT COUNT(*) as total FROM diabetes_screenings WHERE risk_band IN ('Severe', 'Critical')"
+    // Total patients who have booked with this doctor or whose screening this doctor reviewed
+    const [patientCount] = await pool.query(
+      `SELECT COUNT(DISTINCT patient_id) as total FROM (
+         SELECT patient_id FROM appointments WHERE doctor_id = ?
+         UNION
+         SELECT user_id as patient_id FROM liver_screenings WHERE doctor_id = ?
+         UNION
+         SELECT user_id as patient_id FROM diabetes_screenings WHERE doctor_id = ?
+       ) as dr_patients`,
+      [req.user.id, req.user.id, req.user.id]
     );
 
+    // Pending reviews (Patients with appointments or explicitly assigned screenings not yet reviewed)
+    const [pendingLiver] = await pool.query(
+      "SELECT COUNT(*) as total FROM liver_screenings WHERE is_reviewed = 0 AND doctor_id = ?",
+      [req.user.id]
+    );
+    const [pendingDiabetes] = await pool.query(
+      "SELECT COUNT(*) as total FROM diabetes_screenings WHERE is_reviewed = 0 AND doctor_id = ?",
+      [req.user.id]
+    );
+
+    // Recent screenings for this doctor's patients
     const [recentScreenings] = await pool.query(
-      `(SELECT u.full_name, 'liver' as type, s.prediction, s.risk_band, s.created_at 
-        FROM liver_screenings s JOIN users u ON s.user_id = u.id)
+      `(SELECT u.full_name, u.age, u.gender, 'liver' as type, s.prediction, s.risk_band, s.created_at, s.user_id as patient_id
+        FROM liver_screenings s JOIN users u ON s.user_id = u.id 
+        WHERE s.doctor_id = ? OR s.user_id IN (SELECT patient_id FROM appointments WHERE doctor_id = ?))
        UNION ALL
-       (SELECT u.full_name, 'diabetes' as type, s.prediction, s.risk_band, s.created_at 
-        FROM diabetes_screenings s JOIN users u ON s.user_id = u.id)
-       ORDER BY created_at DESC LIMIT 10`
+       (SELECT u.full_name, u.age, u.gender, 'diabetes' as type, s.prediction, s.risk_band, s.created_at, s.user_id as patient_id
+        FROM diabetes_screenings s JOIN users u ON s.user_id = u.id 
+        WHERE s.doctor_id = ? OR s.user_id IN (SELECT patient_id FROM appointments WHERE doctor_id = ?))
+       ORDER BY created_at DESC LIMIT 10`,
+      [req.user.id, req.user.id, req.user.id, req.user.id]
     );
 
     return sendSuccess(res, {
-      counts: {
-        patients: patientCount[0].total,
-        liverScreenings: liverCount[0].total,
-        diabetesScreenings: diabetesCount[0].total,
-        highRiskTotal: highRiskLiver[0].total + highRiskDiabetes[0].total
-      },
+      totalPatients: patientCount[0].total,
+      pendingReviews: pendingLiver[0].total + pendingDiabetes[0].total,
       recentScreenings
     });
   } catch (err) {
