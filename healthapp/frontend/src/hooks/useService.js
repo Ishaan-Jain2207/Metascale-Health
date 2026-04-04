@@ -2,25 +2,26 @@ import { useState, useEffect } from 'react';
 
 /**
  * useService — Custom hook to subscribe to an Angular-style RxJS Service.
- * Appropriately bridges the gap between Observables and React State.
- * This is the modern React version of an Angular subscription.
- *
- * @param {Observable} observable — The $ stream from the service.
- * @returns {any} value — The latest value emitted by the service.
+ * Includes defensive checks to prevent runtime crashes during SSR or initialization.
  */
 export function useService(observable) {
   const [value, setValue] = useState(() => {
-    // Attempt to get initial value if it's a BehaviorSubject
+    // Defensive check: prevent crashes if observable is not yet defined
+    if (!observable) return null;
     return 'getValue' in observable ? observable.getValue() : null;
   });
 
   useEffect(() => {
+    // Safety check for production environments
+    if (!observable || typeof observable.subscribe !== 'function') {
+      return;
+    }
+
     const subscription = observable.subscribe(
       (val) => setValue(val),
       (err) => console.error('Service subscription error:', err)
     );
 
-    // Unsubscribe on unmount (essential cleanup)
     return () => subscription.unsubscribe();
   }, [observable]);
 

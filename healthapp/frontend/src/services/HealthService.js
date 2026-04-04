@@ -3,33 +3,29 @@ import api from './api';
 
 /**
  * HealthService — Angular-style Service for Healthcare Logic
- * Uses RxJS BehaviorSubject to provide a "Stream" of health data.
- * Appropriately separates logic from the React UI components.
+ * Uses RxJS BehaviorSubject for data streams.
+ * Properly initialized to prevent runtime crashes.
  */
 class HealthService {
-  // Observables for reactive state management
-  predictionsSubject = new BehaviorSubject({
-    loading: false,
-    liver: null,
-    diabetes: null,
-    error: null,
-    history: []
-  });
+  constructor() {
+    // Ensuring observables are available immediately upon instantiation
+    this.predictionsSubject = new BehaviorSubject({
+      loading: false,
+      liver: null,
+      diabetes: null,
+      error: null,
+      history: []
+    });
 
-  predictions$ = this.predictionsSubject.asObservable();
+    this.predictions$ = this.predictionsSubject.asObservable();
+  }
 
-  // Current value getter for non-reactive access
   get currentPredictions() {
     return this.predictionsSubject.getValue();
   }
 
-  /**
-   * Run a new risk screening and stream the results.
-   * This is a "Service Method" that components can call.
-   */
   async runScreening(type, data) {
     this.updateState({ loading: true, error: null });
-
     try {
       const endpoint = type === 'liver' ? '/predictions/liver' : '/predictions/diabetes';
       const response = await api.post(endpoint, data);
@@ -49,9 +45,6 @@ class HealthService {
     }
   }
 
-  /**
-   * Fetch prediction history and update the stream.
-   */
   async fetchHistory() {
     try {
       const response = await api.get('/predictions/history');
@@ -61,7 +54,6 @@ class HealthService {
     }
   }
 
-  // Internal helper to update behavior subject state
   updateState(newState) {
     this.predictionsSubject.next({
       ...this.currentPredictions,
@@ -70,6 +62,6 @@ class HealthService {
   }
 }
 
-// Singleton instance export (Angular-style providedIn: 'root')
+// Singleton pattern
 export const healthService = new HealthService();
 export default healthService;

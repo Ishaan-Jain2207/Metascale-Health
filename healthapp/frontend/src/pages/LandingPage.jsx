@@ -1,3 +1,4 @@
+import React, { useRef } from 'react';
 import { 
   ShieldCheck, 
   Activity, 
@@ -9,7 +10,6 @@ import {
   Radar
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useRef } from 'react';
 
 // Angular-inspired Imports
 import { useRipple } from '../hooks/useRipple';
@@ -28,7 +28,9 @@ const LandingPage = () => {
   const ripples = useRipple(ctaRef);
   
   // Angular-style Service Subscription
-  const { loading, history } = useService(healthService.predictions$);
+  const streamData = useService(healthService?.predictions$);
+  const loading = streamData?.loading || false;
+  const history = streamData?.history || [];
 
   return (
     <div className="min-h-screen relative overflow-hidden">
