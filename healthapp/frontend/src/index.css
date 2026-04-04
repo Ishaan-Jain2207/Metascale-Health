@@ -103,4 +103,23 @@
     background: radial-gradient(circle, rgba(247,147,30,0.6) 0, transparent 65%);
     z-index: -1;
   }
+
+  /* Angular-inspired Ripple Animation */
+  @keyframes ripple {
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+
+  /* Premium Shimmer Effect */
+  @keyframes shimmer {
+    from { transform: translateX(-100%) rotate(45deg); }
+    to { transform: translateX(200%) rotate(45deg); }
+  }
+
+  .btn-primary {
+    position: relative;
+    overflow: hidden;
+  }
 }
