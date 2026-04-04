@@ -68,7 +68,6 @@ const LandingPage = () => {
           }}
           className="absolute inset-0 origin-center w-[200%] h-[200%] -left-1/2 -top-1/2"
         ></motion.div>
-        <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white"></div>
       </div>
       {/* Navbar - Matching Prototype */}
       <header className="fixed top-0 w-full z-50 py-4 px-6">
@@ -95,7 +94,6 @@ const LandingPage = () => {
           <div className="hidden md:flex items-center gap-8">
             <nav className="flex items-center gap-8 text-[13px] font-bold text-slate-600 uppercase tracking-widest">
               <a href="#features" className="hover:text-saffron-deep transition-colors">Features</a>
-              <a href="#how-it-works" className="hover:text-saffron-deep transition-colors">How it works</a>
             </nav>
           </div>
         </div>
@@ -164,35 +162,6 @@ const LandingPage = () => {
               </div>
            </motion.div>
 
-           {/* Professional Clinical Visual Anchor */}
-           <motion.div 
-             initial={{ opacity: 0, scale: 0.8 }}
-             animate={{ opacity: 1, scale: 1 }}
-             transition={{ delay: 0.6, duration: 1 }}
-             className="mt-20 flex justify-center relative z-10"
-           >
-              <div className="relative group perspective-[1000px]">
-                 {/* Saffron Glow Background */}
-                 <div className="absolute inset-0 bg-saffron/20 blur-[120px] rounded-full opacity-40 group-hover:opacity-60 transition-opacity"></div>
-                 
-                 {/* Professional 3D Clinical Asset */}
-                 <div className="w-[450px] h-[300px] flex items-center justify-center relative">
-                    <img 
-                      src="/professional_3d_clinical_asset_1775319031038.png" 
-                      alt="Clinical Intelligence"
-                      className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(247,147,30,0.4)] animate-in zoom-in-90 duration-1000"
-                    />
-                    {/* Floating Clinical UI */}
-                    <motion.div 
-                      animate={{ y: [0, -10, 0] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute top-10 right-10 p-3 bg-white/20 backdrop-blur-xl border border-white/40 rounded-2xl shadow-2xl"
-                    >
-                       <HeartPulse className="text-saffron-deep" size={24} />
-                    </motion.div>
-                 </div>
-              </div>
-           </motion.div>
         </div>
 
         {/* 3D Decorative Elements */}
