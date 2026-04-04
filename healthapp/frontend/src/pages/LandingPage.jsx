@@ -55,7 +55,7 @@ const LandingPage = () => {
   return (
     <div 
       onMouseMove={handleMouseMove}
-      className="min-h-screen relative overflow-hidden bg-white/50"
+      className="min-h-screen relative overflow-hidden bg-transparent"
     >
       {/* 3D Grid Floor Background */}
       <div className="absolute inset-0 pointer-events-none z-0 perspective-[1000px]">
@@ -121,12 +121,12 @@ const LandingPage = () => {
              className="text-5xl lg:text-[6rem] font-display font-bold text-slate-900 leading-[0.95] mb-12 tracking-[-0.04em] [text-shadow:_0_4px_12px_rgba(0,0,0,0.05)] transition-transform duration-100 ease-out"
            >
               Health insight for India, <br />
-              <span className="text-saffron-gradient relative inline-block">
+              <span className="text-saffron-deep relative inline-block drop-shadow-[0_5px_15px_rgba(247,147,30,0.3)]">
                 before
                 <motion.span 
-                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  animate={{ opacity: [0.4, 0.8, 0.4] }}
                   transition={{ duration: 3, repeat: Infinity }}
-                  className="absolute -inset-2 bg-saffron-light/20 blur-xl rounded-full -z-10"
+                  className="absolute -inset-2 bg-saffron-light/40 blur-2xl rounded-full -z-10"
                 ></motion.span>
               </span> disease.
            </motion.div>
@@ -164,46 +164,35 @@ const LandingPage = () => {
               </div>
            </motion.div>
 
-           {/* 3D Hero Orb */}
-           <div className="mt-20 flex justify-center perspective-[1000px]">
-              <motion.div 
-                style={{ rotateX: orbRotateX, rotateY: orbRotateY }}
-                className="w-64 h-64 relative group cursor-crosshair"
-              >
-                 <div className="absolute inset-0 bg-gradient-to-br from-saffron via-saffron-deep to-ink rounded-full blur-[80px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                 <div className="absolute inset-0 bg-white/10 backdrop-blur-3xl rounded-full border border-white/40 shadow-2xl overflow-hidden ring-1 ring-white/20">
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.4),transparent)]"></div>
-                    <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent rotate-45 transform -translate-x-full animate-[shimmer_5s_infinite]"></div>
+           {/* Professional Clinical Visual Anchor */}
+           <motion.div 
+             initial={{ opacity: 0, scale: 0.8 }}
+             animate={{ opacity: 1, scale: 1 }}
+             transition={{ delay: 0.6, duration: 1 }}
+             className="mt-20 flex justify-center relative z-10"
+           >
+              <div className="relative group perspective-[1000px]">
+                 {/* Saffron Glow Background */}
+                 <div className="absolute inset-0 bg-saffron/20 blur-[120px] rounded-full opacity-40 group-hover:opacity-60 transition-opacity"></div>
+                 
+                 {/* Professional 3D Clinical Asset */}
+                 <div className="w-[450px] h-[300px] flex items-center justify-center relative">
+                    <img 
+                      src="/professional_3d_clinical_asset_1775319031038.png" 
+                      alt="Clinical Intelligence"
+                      className="w-full h-full object-contain drop-shadow-[0_20px_50px_rgba(247,147,30,0.4)] animate-in zoom-in-90 duration-1000"
+                    />
+                    {/* Floating Clinical UI */}
                     <motion.div 
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                      className="absolute inset-[-50%] border-2 border-white/5 rounded-full"
-                    ></motion.div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                       <div className="w-32 h-32 bg-white/5 rounded-full flex items-center justify-center border border-white/20 shadow-inner">
-                          <Activity className="text-white/60" size={48} />
-                       </div>
-                    </div>
+                      animate={{ y: [0, -10, 0] }}
+                      transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute top-10 right-10 p-3 bg-white/20 backdrop-blur-xl border border-white/40 rounded-2xl shadow-2xl"
+                    >
+                       <HeartPulse className="text-saffron-deep" size={24} />
+                    </motion.div>
                  </div>
-                 {/* Floating Nodes Around Orb */}
-                 {[0, 120, 240].map((deg, i) => (
-                    <motion.div 
-                      key={i}
-                      animate={{ 
-                        y: [0, -10, 0],
-                        scale: [1, 1.1, 1]
-                      }}
-                      transition={{ duration: 3 + i, repeat: Infinity, ease: "easeInOut" }}
-                      className="absolute w-4 h-4 bg-saffron rounded-full shadow-[0_0_15px_rgba(247,147,30,0.6)]"
-                      style={{ 
-                        left: `${50 + 40 * Math.cos(deg * Math.PI / 180)}%`,
-                        top: `${50 + 40 * Math.sin(deg * Math.PI / 180)}%`,
-                        translateZ: '100px'
-                      }}
-                    ></motion.div>
-                 ))}
-              </motion.div>
-           </div>
+              </div>
+           </motion.div>
         </div>
 
         {/* 3D Decorative Elements */}
