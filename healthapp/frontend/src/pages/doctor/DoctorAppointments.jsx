@@ -11,7 +11,8 @@ import {
   Check,
   MessageSquare,
   ChevronRight,
-  Stethoscope
+  Stethoscope,
+  History
 } from 'lucide-react';
 import api from '../../services/api';
 
