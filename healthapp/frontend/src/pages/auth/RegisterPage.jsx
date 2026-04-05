@@ -111,19 +111,28 @@ const RegisterPage = () => {
         className="w-full max-w-2xl relative z-10"
       >
         <div className="text-center mb-8">
+          {/* ORIGINAL LOGO RESTORATION */}
           <Link to="/" className="inline-flex items-center justify-center gap-3 mb-8 group">
             <motion.div 
-               whileHover={{ scale: 1.1, rotate: 5 }}
-               transition={{ type: "spring", stiffness: 400, damping: 10 }}
-               className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white via-saffron-light to-saffron-deep shadow-[0_8px_30px_rgb(247,147,30,0.2)] ring-1 ring-white/60 flex-shrink-0 flex items-center justify-center"
+               whileHover={{ scale: 1.05 }}
+               className="flex items-center gap-3 cursor-pointer"
             >
-               <div className="w-6 h-6 bg-white/20 rounded-lg backdrop-blur-sm"></div>
+               <motion.div 
+                 animate={{ 
+                   boxShadow: ["0px 0px 0px rgba(247,147,30,0)", "0px 0px 20px rgba(247,147,30,0.3)", "0px 0px 0px rgba(247,147,30,0)"]
+                 }}
+                 transition={{ duration: 2, repeat: Infinity }}
+                 className="w-10 h-10 rounded-full bg-gradient-to-br from-white via-saffron-light to-saffron-deep shadow-lg ring-2 ring-white/60 flex-shrink-0 relative overflow-hidden"
+               >
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent rotate-45 transform -translate-x-full animate-[shimmer_3s_infinite]"></div>
+               </motion.div>
+               <div className="text-left">
+                  <div className="font-bold text-[13px] uppercase tracking-[0.1em] text-slate-900 leading-none mb-1 font-mono">Metascale Health</div>
+                  <div className="text-[10px] text-saffron-deep/80 font-bold uppercase tracking-tight">Register Portal</div>
+               </div>
             </motion.div>
-            <div className="text-left">
-                <div className="font-black text-[15px] uppercase tracking-[0.2em] text-slate-900 leading-none mb-1 font-mono">Metascale</div>
-                <div className="text-[10px] text-saffron-deep font-black uppercase tracking-[0.15em] opacity-80">Access Portal</div>
-            </div>
           </Link>
+
           <motion.h1 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -409,7 +418,7 @@ const RegisterPage = () => {
               disabled={loading}
               className="w-full btn-primary py-5 text-sm font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 group mt-6"
             >
-              {loading ? <Loader2 className="animate-spin" /> : 'Establish Clinical Profile'}
+              {loading ? <Loader2 className="animate-spin" /> : 'Create Account'}
               {!loading && <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />}
             </motion.button>
           </form>
@@ -420,7 +429,7 @@ const RegisterPage = () => {
             transition={{ delay: 1.1 }}
             className="mt-10 pt-8 border-t border-black/5 text-center"
           >
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.1em]">Already Authorized? <Link to="/login" className="text-saffron-deep font-black hover:underline underline-offset-4 ml-1">Portal Access</Link></p>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.1em]">Already Authorized? <Link to="/login" className="text-saffron-deep font-black hover:underline underline-offset-4 ml-1">Sign In</Link></p>
           </motion.div>
         </motion.div>
       </motion.div>
