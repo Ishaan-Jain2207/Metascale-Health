@@ -1,221 +1,207 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Users, 
-  Calendar, 
-  Activity, 
+  ClipboardList, 
   TrendingUp, 
-  ArrowUpRight, 
+  Calendar, 
   ArrowRight,
-  Clock,
-  ShieldCheck,
-  Zap,
+  Activity,
   CheckCircle2,
+  Clock,
   AlertCircle,
-  Stethoscope
+  Loader2
 } from 'lucide-react';
 import api from '../../services/api';
-/* eslint-disable no-unused-vars */
-import { motion, AnimatePresence } from 'framer-motion';
-/* eslint-enable no-unused-vars */
+import { useAuth } from '../../hooks/useAuth';
 
 const DoctorDashboard = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState({
-    total_patients: 0,
-    pending_appointments: 0,
-    recent_screenings: 0,
-    avg_confidence: 0
+    totalPatients: 0,
+    pendingReviews: 0,
+    todayAppts: 0,
+    recentScreenings: []
   });
-  const [recentPatients, setRecentPatients] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchInitialData = useCallback(async () => {
-    try {
-      const [statsRes, patientsRes] = await Promise.all([
-        api.get('/doctor/stats'),
-        api.get('/doctor/patients?limit=5')
-      ]);
-      setStats(statsRes.data.data);
-      setRecentPatients(patientsRes.data.data);
-    } catch {
-      console.error('Error fetching clinical data');
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [statsRes, apptRes] = await Promise.all([
+          api.get('/doctor/stats'),
+          api.get('/appointments/doctor')
+        ]);
+        
+        const today = new Date().toISOString().split('T')[0];
+        const todayAppts = apptRes.data.data.filter(a => a.appt_date === today && a.status === 'confirmed').length;
+        
+        setStats({
+          ...statsRes.data.data,
+          todayAppts
+        });
+      } catch (err) {
+        console.error('Error fetching doctor stats:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
   }, []);
 
-  useEffect(() => {
-    fetchInitialData();
-  }, [fetchInitialData]);
-
-  const statCards = useMemo(() => [
-    { label: 'Clinical Reach', value: stats.total_patients, icon: Users, color: 'bg-saffron', trend: '+12%' },
-    { label: 'Pending Mandates', value: stats.pending_appointments, icon: Calendar, color: 'bg-slate-900', trend: 'Active' },
-    { label: 'Spectral Density', value: stats.recent_screenings, icon: Activity, color: 'bg-saffron-deep', trend: 'Audit Req' },
-    { label: 'Model Assurance', value: `${(stats.avg_confidence * 100).toFixed(0)}%`, icon: ShieldCheck, color: 'bg-emerald-500', trend: 'SLA OK' }
-  ], [stats]);
-
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh] flex-col gap-6 text-white/20">
-      <Zap className="animate-spin text-saffron" size={48} />
-      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Synchronizing Master Node...</p>
-    </div>
-  );
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } }
-  };
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" /></div>;
 
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-16 pb-24"
-    >
-      {/* Dynamic Header */}
-      <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-10 border-b border-white/5 pb-10">
-         <div className="space-y-4">
-            <div className="inline-flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full text-saffron text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-xl border border-white/10">
-               <Zap size={14} className="animate-pulse" /> Personnel Session: 0x92f1
-            </div>
-            <h1 className="text-5xl md:text-8xl font-display font-black text-white tracking-tighter uppercase leading-none">
-               Clinical <br />
-               <span className="text-saffron italic font-sans font-medium lowercase">Overview</span>
-            </h1>
-         </div>
-         <div className="flex items-center gap-6">
-            <div className="text-right hidden md:block">
-               <p className="text-[10px] text-white/20 font-black uppercase tracking-widest mb-1">Temporal Audit</p>
-               <p className="text-white font-display font-black text-lg uppercase tracking-tight">{new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-            </div>
-            <div className="w-14 h-14 bg-white/5 border border-white/10 rounded-[28px] flex items-center justify-center text-saffron shadow-4xl cursor-help hover:bg-saffron hover:text-slate-900 transition-all">
-               <Clock size={24} />
-            </div>
-         </div>
-      </motion.div>
-
-      {/* Stats Cluster */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        {statCards.map((stat, i) => (
-          <motion.div 
-            variants={itemVariants}
-            key={i} 
-            className="glass-dark p-10 rounded-[56px] border border-white/5 shadow-5xl group hover:border-saffron/20 transition-all relative overflow-hidden"
-          >
-             <div className="absolute top-0 right-0 w-32 h-32 bg-saffron/5 rounded-full -mr-16 -mt-16 blur-2xl opacity-40 group-hover:scale-150 transition-transform"></div>
-             <div className="flex justify-between items-start relative z-10 mb-10">
-                <div className={`w-14 h-14 ${stat.color} rounded-[24px] flex items-center justify-center text-white shadow-2xl`}>
-                   <stat.icon size={24} />
-                </div>
-                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-saffron bg-saffron/5 px-3 py-1.5 rounded-full border border-saffron/10">
-                   {stat.trend} <ArrowUpRight size={10} />
-                </div>
-             </div>
-             <div className="relative z-10">
-                <h3 className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-3 italic">{stat.label}</h3>
-                <p className="text-5xl font-display font-black text-white tracking-tighter uppercase">{stat.value}</p>
-             </div>
-          </motion.div>
-        ))}
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+           <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">Clinical Overview</h1>
+           <p className="text-slate-500 font-medium">Welcome, Dr. {user?.full_name?.split(' ').pop()}. Practice summary for {new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}.</p>
+        </div>
+        <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl p-2 shadow-sm">
+           <div className="px-4 py-2 text-sm font-bold text-slate-500 flex items-center gap-2 border-r border-slate-100">
+              <Calendar size={16} /> {new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
+           </div>
+           <div className="px-4 py-2 text-sm font-bold text-green-600 flex items-center gap-2">
+              <CheckCircle2 size={16} /> Practice Active
+           </div>
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-16">
-         {/* Recent Clinical Registry */}
-         <motion.div variants={itemVariants} className="lg:col-span-2 space-y-10">
+      {/* Analytics Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="card border-l-4 border-l-saffron">
+            <div className="flex items-start justify-between mb-2">
+               <div className="p-2 bg-saffron/10 text-saffron-deep rounded-xl"><Users size={20} /></div>
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Managed</span>
+            </div>
+            <p className="text-3xl font-display font-bold text-slate-900 leading-none mb-1">{stats.totalPatients}</p>
+            <p className="text-xs text-slate-500 font-medium font-sans">Registered Patients</p>
+         </div>
+         <div className="card border-l-4 border-l-amber-500">
+            <div className="flex items-start justify-between mb-2">
+               <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><ClipboardList size={20} /></div>
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Review Depth</span>
+            </div>
+            <p className="text-3xl font-display font-bold text-slate-900 leading-none mb-1">{stats.pendingReviews}</p>
+            <p className="text-xs text-slate-500 font-medium font-sans">Pending Screenings</p>
+         </div>
+         <div className="card border-l-4 border-l-saffron-deep">
+            <div className="flex items-start justify-between mb-2">
+               <div className="p-2 bg-saffron-light/20 text-saffron-deep rounded-xl"><Clock size={20} /></div>
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Schedule Density</span>
+            </div>
+            <p className="text-3xl font-display font-bold text-slate-900 leading-none mb-1">{stats.todayAppts}</p>
+            <p className="text-xs text-slate-500 font-medium font-sans">Today's Confirmed Visits</p>
+         </div>
+         <div className="card border-l-4 border-l-ink">
+            <div className="flex items-start justify-between mb-2">
+               <div className="p-2 bg-slate-100 text-ink rounded-xl"><TrendingUp size={20} /></div>
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Growth Index</span>
+            </div>
+            <p className="text-3xl font-display font-bold text-slate-900 leading-none mb-1">+12%</p>
+            <p className="text-xs text-slate-500 font-medium font-sans">Monthly Patient Inflow</p>
+         </div>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-8">
+         {/* Pending & Recent Screenings */}
+         <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
-               <h2 className="text-2xl font-display font-black text-white uppercase tracking-tight flex items-center gap-4">
-                  <Users className="text-saffron" size={24} /> Registry Hub
-                  <div className="h-px w-24 bg-white/5"></div>
-               </h2>
-               <button className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-saffron transition-colors flex items-center gap-3 bg-white/5 px-6 py-3 rounded-full border border-white/5">
-                  Expand Registry <ArrowRight size={14} />
-               </button>
+               <h2 className="text-xl font-bold text-slate-900 tracking-tight">System Alerts & Recent Screenings</h2>
+               <Link to="/doctor/patients" className="text-primary-600 font-bold text-sm hover:underline flex items-center gap-1">Manage All <ArrowRight size={14} /></Link>
             </div>
 
-            <div className="space-y-6">
-               {recentPatients.map((patient) => (
-                  <motion.div 
-                     whileHover={{ x: 10 }}
-                     key={patient.id} 
-                     className="glass-dark p-8 rounded-[48px] border border-white/5 flex items-center justify-between shadow-5xl group transition-all relative overflow-hidden"
-                  >
-                     <div className="absolute left-0 top-0 w-2 h-full bg-saffron opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                     <div className="flex items-center gap-10">
-                        <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-[28px] flex items-center justify-center text-white font-display font-black text-2xl shadow-3xl text-saffron group-hover:scale-110 transition-transform">
-                           {patient.full_name.charAt(0)}
-                        </div>
-                        <div className="space-y-2">
-                           <h4 className="text-2xl font-display font-black text-white uppercase tracking-tight leading-tight">{patient.full_name}</h4>
-                           <div className="flex items-center gap-6 text-[9px] font-black text-white/20 uppercase tracking-widest">
-                              <span className="flex items-center gap-2"><Stethoscope size={10} className="text-saffron/40" /> ID_{patient.id}</span>
-                              <span className="flex items-center gap-2"><Activity size={10} className="text-saffron/40" /> META_{patient.age}Y</span>
-                           </div>
-                        </div>
-                     </div>
-                     <div className="flex items-center gap-8">
-                        <div className="text-right hidden md:block">
-                           <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mb-1 flex items-center justify-end gap-2 px-3 py-1 bg-emerald-500/5 rounded-full border border-emerald-500/10">
-                              <CheckCircle2 size={10} /> Active
-                           </p>
-                           <p className="text-[9px] text-white/10 font-black uppercase tracking-widest mt-2">{new Date(patient.created_at).toLocaleDateString()}</p>
-                        </div>
-                        <button className="w-14 h-14 bg-white/5 border border-white/10 rounded-full flex items-center justify-center text-white/20 hover:text-saffron hover:bg-saffron/10 hover:border-saffron/20 transition-all shadow-4xl group-hover:rotate-12">
-                           <ArrowUpRight size={24} />
-                        </button>
-                     </div>
-                  </motion.div>
-               ))}
+            <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-100">
+               <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                     <thead className="bg-slate-50/50 border-b border-slate-200">
+                        <tr>
+                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Patient Identity</th>
+                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Module</th>
+                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">AI Conclusion</th>
+                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Review</th>
+                        </tr>
+                     </thead>
+                     <tbody className="divide-y divide-slate-100">
+                        {stats.recentScreenings && stats.recentScreenings.map((screen) => (
+                           <tr key={`${screen.type}-${screen.id}`} className="hover:bg-slate-50/50 transition-colors group">
+                              <td className="px-6 py-4">
+                                 <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 text-xs">{screen.patient_name?.charAt(0)}</div>
+                                    <div>
+                                       <p className="font-bold text-slate-900 text-sm">{screen.patient_name}</p>
+                                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{screen.age}Y • {screen.gender}</p>
+                                    </div>
+                                 </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                 <div className="flex items-center gap-2">
+                                    <div className="text-saffron-deep"><Activity size={16} /></div>
+                                    <span className="text-xs font-bold text-slate-600 capitalize">{screen.type}</span>
+                                 </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                    screen.risk_band === 'Minimal' ? 'bg-green-100 text-green-700' :
+                                    screen.risk_band === 'Elevated' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
+                                 }`}>
+                                    {screen.risk_band}
+                                 </span>
+                              </td>
+                              <td className="px-6 py-4 text-right">
+                                 <Link to={`/doctor/patients/${screen.patient_id}`} className="p-2 hover:bg-primary-50 text-primary-600 rounded-lg transition-colors inline-block">
+                                    <ArrowRight size={18} />
+                                 </Link>
+                              </td>
+                           </tr>
+                        ))}
+                        {(!stats.recentScreenings || stats.recentScreenings.length === 0) && (
+                           <tr>
+                              <td colSpan="4" className="px-6 py-10 text-center text-slate-400 font-medium">No recent screenings to display.</td>
+                           </tr>
+                        )}
+                     </tbody>
+                  </table>
+               </div>
             </div>
-         </motion.div>
+         </div>
 
-         {/* Protocol Alerts */}
-         <motion.div variants={itemVariants} className="lg:col-span-1 space-y-10">
-            <h2 className="text-2xl font-display font-black text-white uppercase tracking-tight flex items-center gap-4">
-               <AlertCircle className="text-saffron" size={24} /> System Mandates
-            </h2>
+         {/* Right Sidebar: Quick Tasks */}
+         <div className="space-y-6">
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Practice Focus</h2>
             
-            <div className="space-y-6">
-               <div className="glass-dark p-10 rounded-[56px] border border-white/5 border-l-4 border-l-rose-500/40 relative overflow-hidden group shadow-5xl animate-pulse-slow">
-                  <div className="flex items-start gap-8 relative z-10">
-                     <div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500 shadow-2xl">
-                        <TrendingUp size={24} />
-                     </div>
-                     <div className="space-y-3">
-                        <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em] font-display">Priority Alert</h4>
-                        <p className="text-white font-display font-black text-sm uppercase tracking-tight leading-relaxed">Elevated Metabolic Risk Vectors detected in Cluster #7.</p>
-                        <p className="text-[10px] text-white/20 font-black uppercase tracking-widest">Temporal Stamp: 22:41 IST</p>
-                     </div>
-                  </div>
+            <div className="bg-red-50 rounded-2xl p-6 border border-red-100 space-y-4">
+               <div className="flex items-center gap-3 text-red-700">
+                  <AlertCircle size={24} />
+                  <h3 className="font-bold">Follow-ups Required</h3>
                </div>
+               <p className="text-xs text-red-600 leading-relaxed font-bold uppercase tracking-tight">2 Patients with Severe Risk results haven't booked follow-ups.</p>
+               <button className="w-full py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-all shadow-lg active:scale-95">Send Notifications</button>
+            </div>
 
-               <div className="glass-dark p-10 rounded-[56px] border border-white/5 border-l-4 border-l-saffron/40 relative overflow-hidden group shadow-5xl">
-                  <div className="flex items-start gap-8 relative z-10">
-                     <div className="w-12 h-12 bg-saffron/10 rounded-2xl flex items-center justify-center text-saffron shadow-2xl">
-                        <ShieldCheck size={24} />
-                     </div>
-                     <div className="space-y-3">
-                        <h4 className="text-[10px] font-black text-saffron uppercase tracking-[0.3em] font-display">System Integrity</h4>
-                        <p className="text-white font-display font-black text-sm uppercase tracking-tight leading-relaxed">Personnel registry synchronization complete. 0x0 errors detected.</p>
-                        <p className="text-[10px] text-white/20 font-black uppercase tracking-widest">Protocol: V4.1 Stable</p>
-                     </div>
+            <div className="card space-y-4 border-l-4 border-l-slate-900">
+               <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                  <CheckCircle2 size={18} className="text-primary-600" /> Clinic Optimization
+               </h3>
+               <div className="space-y-3">
+                  <p className="text-sm font-medium text-slate-600">Your screening review latency is <span className="text-slate-900 font-bold">1.2 hours</span>. Excellent response time.</p>
+                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                     <div className="h-full bg-green-500 w-[85%] rounded-full"></div>
                   </div>
-               </div>
-
-               <div className="p-10 rounded-[56px] bg-white/5 border border-white/5 grayscale opacity-50 select-none">
-                  <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.15em] leading-relaxed italic text-center">
-                     Personnel Dashboard v4.1: Clinical overview is generated based on secure nodal handshakes. All data is encrypted and board-certified.
-                  </p>
                </div>
             </div>
-         </motion.div>
+
+            <div className="bg-ink text-white rounded-3xl p-6 relative overflow-hidden group shadow-xl border border-white/10">
+               <div className="absolute -bottom-4 -right-4 text-white/5 transition-transform group-hover:scale-110"><TrendingUp size={100} /></div>
+               <h3 className="font-bold text-lg mb-2 relative z-10">Advanced Analytics</h3>
+               <p className="text-slate-400 text-sm mb-4 relative z-10 font-medium">View population-level insights for metabolic health trends.</p>
+               <Link to="/doctor/analytics" className="relative z-10 inline-flex items-center gap-2 text-saffron font-bold hover:translate-x-1 transition-transform">Explore Insights <ArrowRight size={16} /></Link>
+            </div>
+         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

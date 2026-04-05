@@ -1,281 +1,259 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Calendar, 
   Clock, 
-  ArrowRight, 
+  MapPin, 
+  User, 
+  Plus, 
+  Search, 
+  Info, 
   CheckCircle2, 
-  XCircle, 
+  XCircle,
   Loader2,
-  CalendarCheck,
-  Stethoscope,
-  BriefcaseMedical,
-  ShieldCheck,
-  Plus
+  AlertCircle
 } from 'lucide-react';
 import api from '../../services/api';
-/* eslint-disable no-unused-vars */
-import { motion, AnimatePresence } from 'framer-motion';
-/* eslint-enable no-unused-vars */
 
 const PatientAppointments = () => {
-  const [doctors, setDoctors] = useState([]);
   const [appointments, setAppointments] = useState([]);
+  const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [booking, setBooking] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
-
-  const [formData, setFormData] = useState({
+  const [showBooking, setShowBooking] = useState(false);
+  const [bookingLoading, setBookingLoading] = useState(false);
+  
+  const [newAppt, setNewAppt] = useState({
     doctor_id: '',
     appt_date: '',
     appt_time: '',
-    reason: ''
+    reason: '',
+    type: 'in-person'
   });
 
-  const fetchInitialData = useCallback(async () => {
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
     try {
-      const [docRes, apptRes] = await Promise.all([
-        api.get('/admin/doctors'),
-        api.get('/appointments/patient')
+      const [apptRes, doctorRes] = await Promise.all([
+        api.get('/appointments/patient'),
+        api.get('/auth/doctors') // Public Specialist discovery
       ]);
-      setDoctors(docRes.data.data);
       setAppointments(apptRes.data.data);
+      setDoctors(doctorRes.data.data);
     } catch {
-      console.error('Error fetching data:');
+      console.error('Error fetching data');
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    document.body.classList.add('app-dark-mode');
-    fetchInitialData();
-    return () => document.body.classList.remove('app-dark-mode');
-  }, [fetchInitialData]);
-
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const handleSubmit = async (e) => {
+  const handleBook = async (e) => {
     e.preventDefault();
-    setBooking(true);
-    setSuccess('');
-    setError('');
-
+    setBookingLoading(true);
     try {
-      await api.post('/appointments', formData);
-      setSuccess('Mandate synchronization successful. Personnel will verify your request.');
-      setFormData({ doctor_id: '', appt_date: '', appt_time: '', reason: '' });
-      fetchInitialData();
+      const res = await api.post('/appointments/book', newAppt);
+      if (res.data.success) {
+        setShowBooking(false);
+        fetchData();
+        setNewAppt({ doctor_id: '', appt_date: '', appt_time: '', reason: '', type: 'in-person' });
+      }
     } catch {
-      setError('Synchronization failed.');
+      console.error('Booking failed');
     } finally {
-      setBooking(false);
+      setBookingLoading(false);
     }
   };
 
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-[60vh] flex-col gap-6 text-white/20">
-      <Zap className="animate-spin text-saffron" size={48} />
-      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Restoring Clinical Schedule...</p>
-    </div>
-  );
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } }
-  };
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" /></div>;
 
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="max-w-7xl mx-auto space-y-16 pb-24 px-4 md:px-0"
-    >
-      <motion.div variants={itemVariants} className="text-left space-y-10 relative py-12 border-b border-white/5">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-saffron/10 blur-[120px] rounded-full opacity-40"></div>
-        <div className="inline-flex items-center gap-4 bg-white/5 backdrop-blur-md px-6 py-2.5 rounded-full text-saffron text-[10px] font-black uppercase tracking-[0.4em] mb-4 border border-white/10 shadow-2xl">
-           <BriefcaseMedical size={14} className="animate-pulse" /> Personnel Sync Protocol
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+           <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <Calendar className="text-primary-600" /> Consultations
+           </h1>
+           <p className="text-slate-500 font-medium">Manage your appointments and medical consultations.</p>
         </div>
-        <h1 className="text-5xl md:text-8xl font-display font-black text-white tracking-tighter leading-none uppercase">
-          Mandate <br/>
-          <span className="text-saffron italic font-sans font-medium lowercase">Management</span>
-        </h1>
-        <p className="text-white/20 text-xs md:text-sm max-w-2xl font-black uppercase tracking-[0.3em] leading-relaxed">
-           Schedule a clinical audit with specialized personnel to evaluate your biometric vectors.
-        </p>
-      </motion.div>
+        <button 
+          onClick={() => setShowBooking(!showBooking)}
+          className="btn-primary flex items-center gap-2 px-6"
+        >
+          {showBooking ? <XCircle size={18} /> : <Plus size={18} />}
+          {showBooking ? 'Cancel Booking' : 'Book Consultation'}
+        </button>
+      </div>
 
-      <div className="grid lg:grid-cols-3 gap-16">
-        <motion.div variants={itemVariants} className="lg:col-span-1 space-y-10">
-           <h2 className="text-2xl font-display font-black text-white uppercase tracking-tight flex items-center gap-4">
-              <Plus className="text-saffron" size={24} /> New Mandate
-           </h2>
-
-           <div className="glass-dark p-10 rounded-[56px] border border-white/5 shadow-5xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-saffron/5 rounded-full -mr-16 -mt-16 blur-2xl opacity-40"></div>
-              
-              <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
-                 <AnimatePresence>
-                   {success && (
-                     <motion.div 
-                        initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                        className="p-6 rounded-[28px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-4 backdrop-blur-xl mb-8"
-                     >
-                        <CheckCircle2 size={18} /> {success}
-                     </motion.div>
-                   )}
-                   {error && (
-                     <motion.div 
-                        initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                        className="p-6 rounded-[28px] bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-4 backdrop-blur-xl mb-8"
-                     >
-                        <XCircle size={18} /> {error}
-                     </motion.div>
-                   )}
-                 </AnimatePresence>
-
-                 <div className="space-y-3 relative group">
-                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-[0.3em] ml-6 italic">Clinical Lead</label>
-                    <div className="relative">
-                       <Stethoscope size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-saffron transition-colors" />
-                       <select 
-                         name="doctor_id" value={formData.doctor_id} onChange={handleChange}
-                         className="w-full pl-16 pr-8 py-5 bg-white/[0.03] border border-white/10 rounded-[32px] outline-none focus:ring-8 focus:ring-saffron/5 focus:border-saffron/40 font-black text-[10px] uppercase tracking-widest text-white appearance-none transition-all shadow-inner"
-                         required
-                       >
-                         <option value="" className="bg-ink text-white">Select Personnel</option>
-                         {doctors.map(doc => (
-                           <option key={doc.id} value={doc.id} className="bg-ink text-white">Dr. {doc.full_name}</option>
-                         ))}
-                       </select>
-                    </div>
-                 </div>
-
-                 <div className="space-y-3 group">
-                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-[0.3em] ml-6 italic">Audit Date</label>
-                    <div className="relative">
-                       <Calendar size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-saffron transition-colors" />
-                       <input 
-                         type="date" name="appt_date" value={formData.appt_date} onChange={handleChange}
-                         className="w-full pl-16 pr-8 py-5 bg-white/[0.03] border border-white/10 rounded-[32px] outline-none focus:ring-8 focus:ring-saffron/5 focus:border-saffron/40 font-black text-[10px] uppercase tracking-widest text-white transition-all shadow-inner" 
-                         required
-                       />
-                    </div>
-                 </div>
-
-                 <div className="space-y-3 group">
-                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-[0.3em] ml-6 italic">Synchronous Window</label>
-                    <div className="relative">
-                       <Clock size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-saffron transition-colors" />
-                       <input 
-                         type="time" name="appt_time" value={formData.appt_time} onChange={handleChange}
-                         className="w-full pl-16 pr-8 py-5 bg-white/[0.03] border border-white/10 rounded-[32px] outline-none focus:ring-8 focus:ring-saffron/5 focus:border-saffron/40 font-black text-[10px] uppercase tracking-widest text-white transition-all shadow-inner" 
-                         required
-                       />
-                    </div>
-                 </div>
-
-                 <div className="space-y-3 group">
-                    <label className="block text-[10px] font-black text-white/30 uppercase tracking-[0.3em] ml-6 italic">Personnel Notes</label>
-                    <textarea 
-                       name="reason" value={formData.reason} onChange={handleChange}
-                       className="w-full px-8 py-6 bg-white/[0.03] border border-white/10 rounded-[32px] outline-none focus:ring-8 focus:ring-saffron/5 focus:border-saffron/40 font-medium text-sm text-white transition-all shadow-inner min-h-[140px] placeholder:text-white/10" 
-                       placeholder="Detail your clinical manifestation..."
-                       required
-                    ></textarea>
-                 </div>
-
-                 <motion.button 
-                   whileHover={{ y: -5 }} whileTap={{ scale: 0.98 }}
-                   type="submit" disabled={booking}
-                   className="btn-primary w-full py-6 !text-[11px] !tracking-[0.4em] flex items-center justify-center gap-4 group disabled:opacity-50 shadow-5xl hover:shadow-saffron/40"
+      {showBooking && (
+        <div className="card shadow-2xl border-primary-100 animate-in zoom-in-95 duration-200">
+           <h2 className="text-xl font-bold text-slate-900 mb-6">Schedule New Appointment</h2>
+           <form onSubmit={handleBook} className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                 <label className="text-sm font-bold text-slate-700">SELECT DOCTOR</label>
+                 <select 
+                   value={newAppt.doctor_id}
+                   onChange={(e) => setNewAppt({...newAppt, doctor_id: e.target.value})}
+                   required
+                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-primary-500"
                  >
-                   {booking ? <Loader2 className="animate-spin" size={20} /> : (
-                     <>Synchronize Mandate <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" /></>
-                   )}
-                 </motion.button>
-              </form>
-           </div>
-        </motion.div>
-
-        <motion.div variants={itemVariants} className="lg:col-span-2 space-y-10">
-           <h2 className="text-2xl font-display font-black text-white uppercase tracking-tight flex items-center gap-4">
-              <CalendarCheck className="text-saffron" size={24} /> Sync Registry
-              <div className="h-px flex-1 bg-white/5"></div>
-           </h2>
-
-           <div className="space-y-8">
-              {appointments.length === 0 ? (
-                 <div className="glass-dark border-dashed border-2 border-white/5 p-20 rounded-[60px] text-center space-y-8 flex flex-col items-center">
-                    <div className="w-24 h-24 bg-white/5 border border-white/10 rounded-[40px] mx-auto flex items-center justify-center text-white/10 shadow-4xl mb-6">
-                       <Calendar size={48} className="animate-pulse" />
-                    </div>
-                    <div className="space-y-4">
-                       <p className="text-white font-display font-black text-2xl uppercase tracking-tight">Timeline Clean</p>
-                       <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] max-w-sm mx-auto italic leading-relaxed">No upcoming synchronized clinical audits detected in your personnel personnel timeline.</p>
-                    </div>
+                    <option value="">Choose a Specialist</option>
+                    {doctors.map(d => (
+                      <option key={d.id} value={d.id}>{d.full_name} ({d.specialization})</option>
+                    ))}
+                 </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">DATE</label>
+                    <input 
+                      type="date" 
+                      value={newAppt.appt_date}
+                      onChange={(e) => setNewAppt({...newAppt, appt_date: e.target.value})}
+                      required
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                    />
                  </div>
-              ) : (
-                <div className="grid md:grid-cols-1 gap-6">
-                   {appointments.map((appt) => (
-                     <motion.div 
-                        key={appt.id} 
-                        whileHover={{ x: 10 }}
-                        className="glass-dark p-8 rounded-[48px] border border-white/5 shadow-5xl group transition-all relative overflow-hidden"
-                     >
-                        <div className="absolute top-0 right-0 w-4 h-full bg-saffron opacity-20 group-hover:opacity-100 transition-opacity"></div>
-                        <div className="flex flex-col md:flex-row items-center justify-between gap-10 relative z-10">
-                           <div className="flex items-center gap-8">
-                              <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-[28px] flex items-center justify-center text-saffron shadow-3xl group-hover:scale-110 transition-transform">
-                                 <BriefcaseMedical size={28} />
+                 <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">TIME</label>
+                    <input 
+                      type="time" 
+                      value={newAppt.appt_time}
+                      onChange={(e) => setNewAppt({...newAppt, appt_time: e.target.value})}
+                      required
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                    />
+                 </div>
+              </div>
+              <div className="space-y-2">
+                 <label className="text-sm font-bold text-slate-700">CONSULTATION TYPE</label>
+                 <div className="flex gap-4 p-1 bg-slate-100 rounded-xl">
+                    <button 
+                      type="button"
+                      onClick={() => setNewAppt({...newAppt, type: 'in-person'})}
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${newAppt.type === 'in-person' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      In-Person
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setNewAppt({...newAppt, type: 'virtual'})}
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${newAppt.type === 'virtual' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      Virtual
+                    </button>
+                 </div>
+              </div>
+              <div className="space-y-2">
+                 <label className="text-sm font-bold text-slate-700">REASON FOR VISIT</label>
+                 <input 
+                   type="text" 
+                   value={newAppt.reason}
+                   onChange={(e) => setNewAppt({...newAppt, reason: e.target.value})}
+                   placeholder="e.g. Screening Report Review"
+                   required
+                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                 />
+              </div>
+              <div className="md:col-span-2 pt-4">
+                 <button 
+                   type="submit" 
+                   disabled={bookingLoading}
+                   className="w-full btn-primary py-4 text-lg font-bold flex items-center justify-center gap-2"
+                 >
+                   {bookingLoading ? <Loader2 className="animate-spin" /> : 'Confirm Booking Request'}
+                 </button>
+              </div>
+           </form>
+        </div>
+      )}
+
+      <div className="grid lg:grid-cols-3 gap-8">
+         <div className="lg:col-span-2 space-y-6">
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Your Schedule</h2>
+            {appointments.length > 0 ? (
+               <div className="space-y-4">
+                  {appointments.map(appt => (
+                     <div key={appt.id} className="card hover:shadow-md transition-all border-l-4 group" style={{ borderLeftColor: appt.status === 'confirmed' ? '#22c55e' : appt.status === 'pending' ? '#eab308' : '#ef4444' }}>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                           <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
+                                 <User size={24} />
                               </div>
                               <div>
-                                 <h4 className="text-2xl font-display font-black text-white uppercase tracking-tight leading-tight">Dr. {appt.doctor_name}</h4>
-                                 <div className="flex items-center gap-4 text-[10px] font-black text-white/30 uppercase tracking-widest mt-2">
-                                    <Clock size={14} className="text-saffron" /> {appt.appt_date} @ {appt.appt_time}
-                                 </div>
+                                 <p className="font-bold text-slate-900">{appt.doctor_name}</p>
+                                 <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{appt.specialization}</p>
                               </div>
                            </div>
-
-                           <div className="flex items-center gap-8 px-6 md:px-0">
-                              <span className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${
-                                 appt.status === 'confirmed' ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/5' :
-                                 appt.status === 'cancelled' ? 'border-rose-500/20 text-rose-400 bg-rose-500/5' :
-                                 'border-amber-500/20 text-amber-400 bg-amber-500/5 pulse'
+                           <div className="flex flex-wrap items-center gap-y-2 gap-x-6">
+                              <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                                 <Calendar size={16} className="text-primary-500" />
+                                 {new Date(appt.appt_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                                 <Clock size={16} className="text-primary-500" />
+                                 {appt.appt_time}
+                              </div>
+                              <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                                 appt.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                                 appt.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                 'bg-red-100 text-red-700'
                               }`}>
-                                 Identified: {appt.status}
-                              </span>
+                                 {appt.status}
+                              </div>
                            </div>
                         </div>
-                     </motion.div>
-                   ))}
-                </div>
-              )}
-           </div>
-           
-           <div className="flex items-center gap-6 p-10 bg-white/5 rounded-[40px] border border-white/5 shadow-4xl grayscale opacity-30 select-none">
-              <ShieldCheck size={28} className="text-saffron shrink-0" />
-              <p className="text-[10px] font-black uppercase tracking-[0.15em] leading-relaxed italic text-white/40">
-                 Personnel Synchronization v4.1: Clinical schedules are synchronized via encrypted nodal handshakes. All booking mandates are immutable once authorized by personnel.
-              </p>
-           </div>
-        </motion.div>
+                        {appt.doctor_notes && (
+                           <div className="mt-4 p-3 bg-saffron/10 rounded-xl border border-saffron/20 text-sm text-saffron-deep italic">
+                             " {appt.doctor_notes} "
+                           </div>
+                        )}
+                     </div>
+                  ))}
+               </div>
+            ) : (
+               <div className="card bg-slate-50 border-dashed border-2 border-slate-200 py-16 text-center space-y-4">
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-slate-300 mx-auto shadow-sm">
+                     <Calendar size={32} />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">No Scheduled Appts</h3>
+                  <p className="text-slate-500 text-sm max-w-xs mx-auto font-medium leading-relaxed">Schedule a consultation to discuss your screening results with a healthcare specialist.</p>
+               </div>
+            )}
+         </div>
+
+         <div className="space-y-6">
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Our Specialists</h2>
+            <div className="space-y-4">
+               {doctors.slice(0, 3).map(doctor => (
+                  <div key={doctor.id} className="card p-4 hover:border-primary-200 transition-colors">
+                     <div className="flex items-center gap-4 mb-3">
+                        <div className="w-10 h-10 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center font-bold">
+                           {doctor.full_name.charAt(0)}
+                        </div>
+                        <div>
+                           <p className="font-bold text-slate-900">{doctor.full_name}</p>
+                           <p className="text-[10px] text-primary-600 font-bold uppercase tracking-widest">{doctor.specialization}</p>
+                        </div>
+                     </div>
+                     <p className="text-xs text-slate-500 flex items-center gap-1 font-medium"><MapPin size={12} /> {doctor.hospital || 'Multi-speciality Clinic'}</p>
+                  </div>
+               ))}
+            </div>
+            
+            <div className="bg-primary-50 rounded-2xl p-6 border border-primary-100">
+               <div className="flex items-start gap-4 text-primary-700">
+                  <Info className="shrink-0 mt-0.5" size={20} />
+                  <div className="space-y-2">
+                     <h4 className="font-bold text-sm">Consultation Guidelines</h4>
+                     <p className="text-xs leading-relaxed font-medium">Please ensure you have your latest lab reports and screening ID ready before the consultation. Virtual meetings will be conducted via our secure platform.</p>
+                  </div>
+               </div>
+            </div>
+         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
-
-const Zap = ({ className, size }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
-  </svg>
-);
 
 export default PatientAppointments;

@@ -11,7 +11,7 @@ import {
   Clock
 } from 'lucide-react';
 import api from '../../services/api';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 
 const PatientDashboard = () => {
   const { user } = useAuth();

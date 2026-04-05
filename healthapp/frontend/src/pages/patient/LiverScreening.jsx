@@ -1,214 +1,196 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Activity, 
-  ShieldCheck, 
+  Database, 
+  ArrowLeft, 
   ArrowRight, 
-  ArrowLeft,
-  Zap,
+  CheckCircle2, 
   Info,
   Loader2,
-  AlertCircle,
-  FlaskConical,
-  Beaker,
-  Thermometer,
-  Scale
+  AlertCircle
 } from 'lucide-react';
 import api from '../../services/api';
-import MaterialStepper from '../../components/MaterialStepper';
-/* eslint-disable no-unused-vars */
-import { motion, AnimatePresence } from 'framer-motion';
-/* eslint-enable no-unused-vars */
 
 const LiverScreening = () => {
   const navigate = useNavigate();
-  const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState({
-    Age: '45',
-    Gender: '1',
-    Total_Bilirubin: '0.8',
-    Direct_Bilirubin: '0.2',
-    Alkaline_Phosphotase: '180',
-    Alamine_Aminotransferase: '25',
-    Aspartate_Aminotransferase: '30',
-    Total_Protiens: '6.8',
-    Albumin: '3.5',
-    Albumin_and_Globulin_Ratio: '1.1'
-  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const steps = useMemo(() => [
-    'Temporal Index',
-    'Gender Vector',
-    'Bilirubin Audit',
-    'Direct Spectrum',
-    'Phosphotase Pulse',
-    'Aminotransferase A',
-    'Aminotransferase B',
-    'Protein Density',
-    'Albumin Factor',
-    'Globulin Ratio'
-  ], []);
-
-  useEffect(() => {
-    document.body.classList.add('app-dark-mode');
-    return () => document.body.classList.remove('app-dark-mode');
-  }, []);
+  const [formData, setFormData] = useState({
+    age: '',
+    gender: '',
+    totalBilirubin: '',
+    directBilirubin: '',
+    alkalinePhosphotase: '',
+    alamineAminotransferase: '',
+    aspartateAminotransferase: '',
+    totalProteins: '',
+    albumin: '',
+    albuminGlobulinRatio: '',
+    alcoholPattern: 'none',
+    priorLiverDiagnosis: false,
+    liverTestResult: 'notsure'
+  });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value
+    });
   };
 
-  const handleNext = () => setActiveStep(prev => prev + 1);
-  const handleBack = () => setActiveStep(prev => prev - 1);
-
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setError('');
+
     try {
       const res = await api.post('/predict/liver', formData);
-      navigate(`/patient/result/liver/${res.data.data.id}`);
-    } catch {
-      setError('Signal Interruption: Hepatic synchronization failed. Verify biovariables.');
+      if (res.data.success) {
+        navigate('/patient/screening/result', { state: { result: res.data.data, type: 'liver' } });
+      } else {
+        setError(res.data.message);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to submit screening. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const renderStepContent = (step) => {
-    const configs = [
-      { name: 'Age', label: 'Identity Age', icon: Thermometer, min: 0, max: 120, desc: 'Biological age at point of diagnostic audit.' },
-      { name: 'Gender', label: 'Gender Vector', icon: ShieldCheck, min: 0, max: 1, desc: 'Biometric identity vector (0: Female, 1: Male).' },
-      { name: 'Total_Bilirubin', label: 'Total Bilirubin', icon: Activity, min: 0, max: 80, desc: 'Sum concentration of bilirubin particles (mg/dL).' },
-      { name: 'Direct_Bilirubin', label: 'Direct Bilirubin', icon: Beaker, min: 0, max: 20, desc: 'Conjugated bilirubin fraction density (mg/dL).' },
-      { name: 'Alkaline_Phosphotase', label: 'ALP Pulse', icon: Zap, min: 0, max: 2500, desc: 'Alkaline Phosphatase enzymatic activity (Units/L).' },
-      { name: 'Alamine_Aminotransferase', label: 'ALT Vector', icon: FlaskConical, min: 0, max: 2000, desc: 'Alanine Aminotransferase catalytic density (Units/L).' },
-      { name: 'Aspartate_Aminotransferase', label: 'AST Vector', icon: FlaskConical, min: 0, max: 2000, desc: 'Aspartate Aminotransferase catalytic density (Units/L).' },
-      { name: 'Total_Protiens', label: 'Total Proteins', icon: Scale, min: 0, max: 10, desc: 'Sum density of proteinaceous matter (g/dL).' },
-      { name: 'Albumin', label: 'Albumin Factor', icon: Info, min: 0, max: 6, desc: 'Albumin protein concentration (g/dL).' },
-      { name: 'Albumin_and_Globulin_Ratio', label: 'A/G Ratio Index', icon: Activity, min: 0, max: 3, desc: 'Proportional index between albumin and globulin.' }
-    ];
-
-    const config = configs[step];
-    if (!config) return null;
-
-    return (
-      <motion.div 
-        key={step}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 1.1 }}
-        className="space-y-12 py-10"
-      >
-        <div className="flex flex-col md:flex-row items-center gap-16">
-          <div className="w-32 h-32 bg-white/5 border border-white/10 rounded-[48px] flex items-center justify-center text-saffron shadow-5xl group-hover:rotate-12 transition-transform">
-             <config.icon size={48} strokeWidth={2.5} />
-          </div>
-          <div className="space-y-4 text-center md:text-left flex-1">
-             <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.4em] mb-4">Hepatic Step {step + 1} / 10</p>
-             <h3 className="text-4xl md:text-6xl font-display font-black text-white uppercase tracking-tight">{config.label}</h3>
-             <p className="text-[11px] text-white/30 font-black uppercase tracking-widest leading-loose italic max-w-xl">{config.desc}</p>
-          </div>
-        </div>
-
-        <div className="space-y-8 max-w-2xl mx-auto pt-10">
-           <div className="relative group">
-              <input 
-                type="number" 
-                step="0.01"
-                name={config.name}
-                value={formData[config.name]}
-                onChange={handleChange}
-                className="w-full pl-10 pr-10 py-10 bg-white/5 border border-white/10 rounded-[48px] outline-none focus:ring-12 focus:ring-saffron/5 focus:border-saffron/40 text-6xl font-display font-black text-white text-center shadow-5xl transition-all"
-              />
-              <div className="absolute top-1/2 left-8 -translate-y-1/2 text-white/10 group-focus-within:text-saffron transition-colors uppercase font-black text-[10px] tracking-widest">MIN_{config.min}</div>
-              <div className="absolute top-1/2 right-8 -translate-y-1/2 text-white/10 group-focus-within:text-saffron transition-colors uppercase font-black text-[10px] tracking-widest">MAX_{config.max}</div>
-           </div>
-           <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
-              <motion.div 
-                 initial={{ width: "0%" }}
-                 animate={{ width: `${(formData[config.name] / config.max) * 100}%` }}
-                 className="h-full bg-saffron shadow-[0_0_20px_rgba(247,147,30,0.4)]"
-              />
-           </div>
-        </div>
-      </motion.div>
-    );
-  };
-
   return (
-    <div className="max-w-5xl mx-auto pb-48 px-4 md:px-0 relative">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-saffron/5 blur-3xl rounded-full -mr-32 -mt-32"></div>
-      
-      <div className="mb-20 space-y-10 pt-16">
-         <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/20 border-b border-white/5 pb-8">
-            <Link to="/patient/screening" className="hover:text-saffron transition-all">Protocol Nexus</Link>
-            <ArrowRight size={14} className="text-white/5" />
-            <span className="text-saffron font-bold">Hepatic Diagnostic</span>
-            <div className="ml-auto flex items-center gap-3">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></div>
-               <span className="tracking-widest">Spectral Handshake: OK</span>
+    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-center justify-between mb-8">
+        <button onClick={() => navigate('/patient/screening')} className="flex items-center gap-2 text-slate-500 font-bold hover:text-saffron-deep transition-colors">
+          <ArrowLeft size={20} /> Back to Screening Portal
+        </button>
+        <div className="flex items-center gap-2 text-saffron-deep font-bold">
+           <Database size={20} /> Liver Screening Module
+        </div>
+      </div>
+
+      <div className="card shadow-xl border-white ring-1 ring-slate-200 p-8 lg:p-12">
+        <div className="mb-10 text-center">
+          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">Liver Health Assessment</h1>
+          <p className="text-slate-600 max-w-xl mx-auto font-medium">Please enter your clinical parameters based on your most recent lab report for accurate screening.</p>
+        </div>
+
+        {error && (
+          <div className="mb-8 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-start gap-4">
+            <AlertCircle className="shrink-0 mt-0.5" />
+            <p className="font-bold">{error}</p>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-10">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Basic Info Group */}
+            <div className="space-y-6">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2">Basic Demographics</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">AGE (YEARS)</label>
+                  <input type="number" name="age" value={formData.age} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 45" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">GENDER</label>
+                  <select name="gender" value={formData.gender} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none">
+                    <option value="">Select</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                 <label className="text-sm font-bold text-slate-700">ALCOHOL CONSUMPTION PATTERN</label>
+                 <select name="alcoholPattern" value={formData.alcoholPattern} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none">
+                    <option value="none">Never</option>
+                    <option value="social">Occasional (Social)</option>
+                    <option value="regular">Regular (2-3 times/week)</option>
+                    <option value="heavy">Heavy (Daily)</option>
+                 </select>
+              </div>
             </div>
-         </div>
-         <h1 className="text-5xl md:text-8xl font-display font-black text-white tracking-tighter leading-none uppercase">
-            Liver <br />
-            <span className="text-saffron italic font-sans font-medium lowercase">Protocol</span>
-         </h1>
-      </div>
 
-      <div className="mb-20 glass-dark p-8 rounded-[48px] border border-white/5 shadow-2xl">
-         <MaterialStepper steps={steps} activeStep={activeStep} onStepClick={setActiveStep} />
-      </div>
+            {/* Bilirubin & Proteins Group */}
+            <div className="space-y-6">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2">Bilirubin & Proteins</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">TOTAL BILIRUBIN</label>
+                  <input type="number" step="0.01" name="totalBilirubin" value={formData.totalBilirubin} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="mg/dL" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">DIRECT BILIRUBIN</label>
+                  <input type="number" step="0.01" name="directBilirubin" value={formData.directBilirubin} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="mg/dL" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                   <label className="text-sm font-bold text-slate-700">TOTAL PROTEINS</label>
+                   <input type="number" step="0.01" name="totalProteins" value={formData.totalProteins} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="g/dL" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-sm font-bold text-slate-700">ALBUMIN</label>
+                   <input type="number" step="0.01" name="albumin" value={formData.albumin} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="g/dL" />
+                 </div>
+              </div>
+            </div>
+          </div>
 
-      <div className="min-h-[400px]">
-         <AnimatePresence mode="wait">
-            {renderStepContent(activeStep)}
-         </AnimatePresence>
-      </div>
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Liver Enzymes Group */}
+            <div className="space-y-6">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2">Liver Enzymes (U/L)</h3>
+              <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">ALKALINE PHOSPHOTASE (ALP)</label>
+                  <input type="number" name="alkalinePhosphotase" value={formData.alkalinePhosphotase} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 110" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">SGPT / ALT</label>
+                  <input type="number" name="alamineAminotransferase" value={formData.alamineAminotransferase} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 35" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">SGOT / AST</label>
+                  <input type="number" name="aspartateAminotransferase" value={formData.aspartateAminotransferase} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 40" />
+                </div>
+              </div>
+            </div>
 
-      {error && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-          className="mt-12 p-8 rounded-[32px] bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center gap-6 shadow-xl backdrop-blur-xl"
-        >
-           <AlertCircle size={32} strokeWidth={2.5} />
-           <p className="text-xs md:text-[11px] font-black uppercase tracking-[0.2em] leading-loose">{error}</p>
-        </motion.div>
-      )}
+            {/* Other Metrics Group */}
+            <div className="space-y-6">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2">Ratios & History</h3>
+              <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">ALBUMIN / GLOBULIN RATIO</label>
+                  <input type="number" step="0.01" name="albuminGlobulinRatio" value={formData.albuminGlobulinRatio} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 0.90" />
+              </div>
+              <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700 italic">ANY PRIOR LIVER DIAGNOSIS?</label>
+                  <div className="flex items-center gap-6 pt-2">
+                     <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
+                        <input type="radio" name="priorLiverDiagnosis" checked={formData.priorLiverDiagnosis === true} onChange={() => setFormData({...formData, priorLiverDiagnosis: true})} className="accent-saffron-deep w-4 h-4" /> Yes
+                     </label>
+                     <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
+                        <input type="radio" name="priorLiverDiagnosis" checked={formData.priorLiverDiagnosis === false} onChange={() => setFormData({...formData, priorLiverDiagnosis: false})} className="accent-saffron-deep w-4 h-4" /> No
+                     </label>
+                  </div>
+              </div>
+            </div>
+          </div>
 
-      <div className="fixed bottom-12 left-0 w-full px-6 flex justify-center z-50">
-         <div className="w-full max-w-xl glass-dark backdrop-blur-3xl p-5 rounded-[40px] flex items-center gap-5 border border-white/10 shadow-5xl">
-            {activeStep > 0 && (
-               <button 
-                  onClick={handleBack} 
-                  className="flex-1 py-6 bg-white/5 rounded-[30px] text-white/30 hover:text-white hover:bg-white/10 transition-all font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 border border-white/5"
-               >
-                  <ArrowLeft size={16} /> Back Sequence
-               </button>
-            )}
-            {activeStep < steps.length - 1 ? (
-               <button 
-                  onClick={handleNext} 
-                  className="flex-[2] py-6 bg-saffron text-ink rounded-[30px] font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:shadow-saffron/20 shadow-xl transition-all"
-               >
-                  Advance Diagnostic <ArrowRight size={18} />
-               </button>
-            ) : (
-               <button 
-                  onClick={handleSubmit} 
-                  disabled={loading}
-                  className="flex-[2] py-6 bg-saffron text-ink rounded-[30px] font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:shadow-saffron/20 shadow-xl transition-all disabled:opacity-50"
-               >
-                  {loading ? <Loader2 className="animate-spin" size={20} /> : (
-                     <>
-                        Execute Final Audit <Zap size={18} />
-                     </>
-                  )}
-               </button>
-            )}
-         </div>
+          <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+             <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 md:max-w-md">
+                <Info size={18} className="text-slate-400 mt-1 shrink-0" />
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">Ensure all parameters are entered accurately as they significantly impact the AI prediction result.</p>
+             </div>
+             <button type="submit" disabled={loading} className="btn-primary w-full md:w-auto px-10 py-4 text-lg font-bold flex items-center justify-center gap-2">
+                {loading ? <Loader2 className="animate-spin" /> : 'Analyze Risk Indicators'}
+                {!loading && <CheckCircle2 size={20} />}
+             </button>
+          </div>
+        </form>
       </div>
     </div>
   );
