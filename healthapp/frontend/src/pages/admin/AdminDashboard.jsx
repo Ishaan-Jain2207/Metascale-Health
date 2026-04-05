@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+// eslint-disable-next-line no-unused-vars
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   BarChart3, 
   Users, 
@@ -26,7 +28,7 @@ const AdminDashboard = () => {
       const res = await api.get('/admin/analytics');
       setAnalytics(res.data.data);
     } catch (error) {
-      console.error('Error fetching data');
+      console.error('Error fetching analytics:', error);
     } finally {
       setLoading(false);
     }

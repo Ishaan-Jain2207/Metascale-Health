@@ -31,8 +31,8 @@ const PatientList = () => {
           setError(res.data.message);
         }
       } catch (error) {
-        console.error('Error fetching patients');
-    } finally {
+        console.error('Error fetching patients', error);
+      } finally {
         setLoading(false);
       }
     };

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Mail, Lock, User, ArrowRight, AlertCircle, Loader2, Calendar, Phone } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+// eslint-disable-next-line no-unused-vars
+import { motion, AnimatePresence } from 'framer-motion';
 
 const RegisterPage = () => {
   const location = useLocation();

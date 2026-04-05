@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Mail, Lock, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
-import { AnimatePresence } from 'framer-motion';
+// eslint-disable-next-line no-unused-vars
+import { motion, AnimatePresence } from 'framer-motion';
 
 const LoginPage = () => {
   const location = useLocation();
@@ -24,7 +25,7 @@ const LoginPage = () => {
     try {
       const cleanEmail = email.toLowerCase().trim();
       const cleanPassword = password.trim();
-      const res = await login(cleanEmail, cleanPassword);
+      const res = await login({ email: cleanEmail, password: cleanPassword });
       if (res.success) {
         const role = res.data.user.role;
         if (role === 'patient') navigate('/patient/dashboard');

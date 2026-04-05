@@ -31,7 +31,7 @@ const DoctorAppointments = () => {
       const res = await api.get('/appointments/doctor');
       setAppointments(res.data.data);
     } catch (error) {
-      console.error('Failed to load clinical schedule.');
+      console.error('Failed to load clinical schedule.', error);
     } finally {
       setLoading(false);
     }
@@ -47,7 +47,7 @@ const DoctorAppointments = () => {
       fetchAppointments();
       setNoteMap({ ...noteMap, [id]: '' });
     } catch (error) {
-        console.error('Error fetching patients');
+      console.error('Error updating status', error);
     } finally {
       setActionLoading(null);
     }

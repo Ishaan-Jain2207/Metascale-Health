@@ -34,17 +34,37 @@ export const AuthProvider = ({ children }) => {
   }, [checkUser]);
 
   const login = async (credentials) => {
-    const res = await api.post('/auth/login', credentials);
-    localStorage.setItem('token', res.data.data.token);
-    setUser(res.data.data.user);
-    return res.data.data.user;
+    try {
+      const res = await api.post('/auth/login', credentials);
+      if (res.data?.data) {
+        localStorage.setItem('token', res.data.data.token);
+        setUser(res.data.data.user);
+        return { success: true, data: res.data.data };
+      }
+      return { success: false, message: 'Invalid response from server' };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.response?.data?.message || error.message || 'Login failed' 
+      };
+    }
   };
 
   const register = async (userData) => {
-    const res = await api.post('/auth/register', userData);
-    localStorage.setItem('token', res.data.data.token);
-    setUser(res.data.data.user);
-    return res.data.data.user;
+    try {
+      const res = await api.post('/auth/register', userData);
+      if (res.data?.data) {
+        localStorage.setItem('token', res.data.data.token);
+        setUser(res.data.data.user);
+        return { success: true, data: res.data.data };
+      }
+      return { success: false, message: 'Invalid response from server' };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.response?.data?.message || error.message || 'Registration failed' 
+      };
+    }
   };
 
   const logout = () => {
