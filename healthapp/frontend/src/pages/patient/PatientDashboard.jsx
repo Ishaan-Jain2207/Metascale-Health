@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
+import AngularAuditTool from '../../components/AngularAuditTool';
 
 const PatientDashboard = () => {
   const { user } = useAuth();
@@ -235,6 +236,8 @@ const PatientDashboard = () => {
                   <Link to="/patient/appointments" className="text-primary-600 text-sm font-bold hover:underline">Schedule one now</Link>
                </div>
             )}
+            
+            <AngularAuditTool />
             
             <div className="bg-ink-mid/5 rounded-2xl p-6 border border-ink/10 relative overflow-hidden group">
                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">

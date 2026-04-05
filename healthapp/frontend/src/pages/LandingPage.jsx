@@ -14,6 +14,7 @@ import { useMotionValue, useTransform, useSpring, motion } from 'framer-motion';
 
 import { useRipple } from '../hooks/useRipple';
 import { useParallaxDirective } from '../hooks/useParallaxDirective';
+import AngularStatusWidget from '../components/AngularStatusWidget';
 
 const LandingPage = () => {
   const heroRef = useRef(null);
@@ -214,6 +215,8 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
+      
+      <AngularStatusWidget />
 
       {/* Footer */}
       <footer className="py-20 bg-slate-900 text-white relative z-10">
