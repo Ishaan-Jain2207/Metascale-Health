@@ -81,7 +81,7 @@ const PatientDashboard = () => {
          </div>
          <div className="relative z-10">
             <div className="inline-flex items-center gap-2 bg-saffron/20 text-saffron px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 border border-saffron/30">
-               <Activity size={14} /> AI Health Monitor
+               <Activity size={14} /> Clinical Monitor
             </div>
             <h1 className="text-4xl font-display font-bold mb-4 text-white">Welcome back, {user?.full_name?.split(' ')[0]}!</h1>
             <p className="text-slate-300 max-w-xl text-lg font-medium leading-relaxed">Your clinical data is being monitored. You have {stats.total} screening records in our secure vault.</p>
@@ -154,7 +154,6 @@ const PatientDashboard = () => {
                         }`}>
                           {stats.latestLiver.risk_band} RISK
                         </span>
-                        <span className="text-slate-400 text-xs font-medium">Confidence: {(stats.latestLiver.confidence * 100).toFixed(0)}%</span>
                       </div>
                       <p className="text-slate-600 text-sm line-clamp-2 mb-4">{stats.latestLiver.interpretation}</p>
                     </>
@@ -183,7 +182,6 @@ const PatientDashboard = () => {
                         }`}>
                           {stats.latestDiabetes.risk_band} RISK
                         </span>
-                        <span className="text-slate-400 text-xs font-medium">Confidence: {(stats.latestDiabetes.confidence * 100).toFixed(0)}%</span>
                       </div>
                       <p className="text-slate-600 text-sm line-clamp-2 mb-4">{stats.latestDiabetes.interpretation}</p>
                     </>

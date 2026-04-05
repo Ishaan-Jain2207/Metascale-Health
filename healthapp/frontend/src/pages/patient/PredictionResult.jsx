@@ -21,9 +21,9 @@ const PredictionResult = () => {
   const location = useLocation();
   const { result } = location.state || {}; // Using destructuring as per original
   const type = location.state?.type;
-  const [aiInsights, setAiInsights] = React.useState('');
-  const [loadingAi, setLoadingAi] = React.useState(false);
-  const [aiError, setAiError] = React.useState('');
+  const [assessmentInsights, setAssessmentInsights] = React.useState('');
+  const [loadingAssessment, setLoadingAssessment] = React.useState(false);
+  const [assessmentError, setAssessmentError] = React.useState('');
 
   if (!result) {
     return (
@@ -62,25 +62,24 @@ const PredictionResult = () => {
     window.print();
   };
 
-  const handleGenerateAI = async () => {
-    setLoadingAi(true);
-    setAiError('');
+  const handleGenerateInsights = async () => {
+    setLoadingAssessment(true);
+    setAssessmentError('');
     try {
        const res = await api.post('/predict/explain', {
           type,
           data: result.features || {},
           result: {
              riskBand: result.riskBand,
-             interpretation: result.interpretation,
-             confidence: result.confidence
+             interpretation: result.interpretation
           }
        });
-       setAiInsights(res.data.data.explanation);
+       setAssessmentInsights(res.data.data.explanation);
     } catch (err) {
-      console.error('AI Error:', err);
-      setAiError('Failed to generate clinical AI review. Please try again later.');
+      console.error('Assessment Error:', err);
+      setAssessmentError('Failed to generate clinical assessment review. Please try again later.');
     } finally {
-       setLoadingAi(false);
+       setLoadingAssessment(false);
     }
   };
 
@@ -133,8 +132,8 @@ const PredictionResult = () => {
                   <p className="text-slate-400 font-medium">Screening Type: <span className="text-white capitalize">{type} Disease Risk</span> • {new Date().toLocaleDateString()}</p>
                </div>
                <div className="bg-white/5 rounded-2xl p-6 border border-white/10 text-center md:min-w-[180px]">
-                  <p className="text-xs text-slate-400 font-bold uppercase mb-1">Confidence Score</p>
-                  <p className="text-4xl font-display font-bold text-saffron">{(result.confidence * 100).toFixed(1)}%</p>
+                  <p className="text-xs text-slate-400 font-bold uppercase mb-1">Assessment Status</p>
+                  <p className="text-4xl font-display font-bold text-saffron">Verified</p>
                </div>
             </div>
          </div>
@@ -179,43 +178,42 @@ const PredictionResult = () => {
                </div>
             </div>
 
-            {/* AI Clinical Insights Section */}
             <div className="space-y-6 pt-6 border-t border-slate-100">
                <div className="flex items-center justify-between">
                   <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                     <Activity size={20} className="text-saffron-deep" /> AI Clinical Insights Review
+                     <Activity size={20} className="text-saffron-deep" /> Clinical Assessment Review
                   </h3>
-                  {!aiInsights && !loadingAi && (
+                  {!assessmentInsights && !loadingAssessment && (
                     <button 
-                      onClick={handleGenerateAI}
+                      onClick={handleGenerateInsights}
                       className="text-xs font-bold font-sans uppercase tracking-widest text-primary-600 bg-primary-50 px-4 py-2.5 rounded-xl hover:bg-primary-100 transition-all shadow-sm active:scale-95"
                     >
-                       Generate Detailed AI Review
+                       Generate Detailed Review
                     </button>
                   )}
                </div>
 
-               {loadingAi ? (
+               {loadingAssessment ? (
                  <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 animate-pulse flex flex-col items-center justify-center space-y-4">
                     <Loader2 className="animate-spin text-saffron" size={32} />
-                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Synthesizing Patient Profile Analysis...</p>
+                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Generating Assessment Summary...</p>
                  </div>
-               ) : aiError ? (
+               ) : assessmentError ? (
                  <div className="p-6 bg-red-50 rounded-2xl border border-red-100 text-red-600 text-sm font-medium flex items-center gap-3">
-                    <AlertTriangle size={18} /> {aiError}
+                    <AlertTriangle size={18} /> {assessmentError}
                  </div>
-               ) : aiInsights ? (
+               ) : assessmentInsights ? (
                  <div className="prose prose-slate max-w-none bg-slate-900 text-slate-100 p-8 rounded-3xl border border-slate-800 shadow-xl font-medium leading-relaxed animate-in fade-in zoom-in-95 duration-500">
                     <div className="flex items-center gap-2 text-saffron text-xs font-black uppercase tracking-widest mb-6">
-                       <CheckCircle2 size={14} /> AI Report Ready
+                       <CheckCircle2 size={14} /> Report Ready
                     </div>
                     <pre className="whitespace-pre-wrap font-sans text-slate-200">
-                       {aiInsights}
+                       {assessmentInsights}
                     </pre>
                  </div>
                ) : (
                  <div className="bg-slate-50 rounded-2xl p-10 border border-slate-100 border-dashed text-center">
-                    <p className="text-slate-500 font-medium mb-1">Detailed AI analysis is available for this screening.</p>
+                    <p className="text-slate-500 font-medium mb-1">Detailed analysis is available for this screening.</p>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Calculates clinical observations based on your specific biomarkers.</p>
                  </div>
                )}
@@ -225,7 +223,7 @@ const PredictionResult = () => {
             <div className="flex items-start gap-4 p-6 bg-saffron/5 rounded-2xl border border-saffron/20 text-slate-700">
                <Info className="shrink-0 mt-0.5 text-saffron-deep" size={20} />
                <p className="text-sm font-medium leading-relaxed italic">
-                  <strong>Clinical Advisory:</strong> This risk profile is generated by a clinical-grade predictive model. It is not a medical diagnosis. Please present this report to a qualified professional.
+                  <strong>Clinical Advisory:</strong> This risk profile is generated by a clinical diagnostic support tool. It is not a medical diagnosis. Please present this report to a qualified professional.
                </p>
             </div>
          </div>

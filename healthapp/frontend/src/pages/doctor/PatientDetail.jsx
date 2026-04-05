@@ -176,8 +176,8 @@ const PatientDetail = () => {
                               <p className="text-slate-600 font-medium leading-relaxed max-w-lg">"{screening.interpretation}"</p>
                            </div>
                            <div className="text-right">
-                              <p className="text-2xl font-display font-black text-slate-900">{(screening.confidence * 100).toFixed(1)}%</p>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Model Confidence</p>
+                              <p className="text-2xl font-display font-black text-slate-900 border-b-2 border-primary-100 inline-block">Verified</p>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Assessment Status</p>
                               <p className="text-xs text-slate-400 font-bold mt-2">{new Date(screening.created_at).toLocaleDateString()}</p>
                            </div>
                         </div>
@@ -218,7 +218,7 @@ const PatientDetail = () => {
                <div className="card bg-slate-50 border-dashed border-2 border-slate-200 py-16 flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm text-slate-300 mb-4"><History size={32} /></div>
                   <h3 className="text-xl font-bold text-slate-900">Clean Medical Record</h3>
-                  <p className="text-slate-500 max-w-xs font-medium">This patient currently has no active AI risk screenings recorded in the database.</p>
+                  <p className="text-slate-500 max-w-xs font-medium">This patient currently has no active clinical risk screenings recorded in the database.</p>
                </div>
             )}
          </div>

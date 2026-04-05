@@ -45,7 +45,7 @@ const AdminDashboard = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
            <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight flex items-center gap-3">
-              <BarChart3 className="text-primary-600" /> System Intelligence
+              <BarChart3 className="text-primary-600" /> System Analytics
            </h1>
            <p className="text-slate-500 font-medium">Global metascale metrics and operational health overview.</p>
         </div>
@@ -97,7 +97,7 @@ const AdminDashboard = () => {
             <div className="card p-0 overflow-hidden relative border-none shadow-2xl shadow-slate-200">
                <div className="bg-slate-900 text-white p-8">
                   <h3 className="text-xl font-bold flex items-center gap-2 mb-2"><Globe size={24} className="text-primary-400" /> Screening Growth Trend</h3>
-                  <p className="text-sm text-slate-400 font-medium">Monthly volume of AI risk assessments across sectors.</p>
+                  <p className="text-sm text-slate-400 font-medium">Monthly volume of clinical risk assessments across sectors.</p>
                </div>
                <div className="p-8 space-y-6 bg-white">
                   {analytics?.trend?.map((item, i) => (

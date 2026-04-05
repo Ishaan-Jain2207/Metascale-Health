@@ -189,16 +189,16 @@ const DoctorAppointments = () => {
                <div className="absolute top-0 right-0 p-4 opacity-5">
                   <MessageSquare size={80} />
                </div>
-               <h3 className="text-lg font-bold mb-4 relative z-10 text-saffron">Diagnostic Accuracy</h3>
+               <h3 className="text-lg font-bold mb-4 relative z-10 text-saffron">Clinical Correlation Index</h3>
                <div className="space-y-4 relative z-10">
                   <div className="flex justify-between text-xs font-bold uppercase text-slate-400">
-                     <span>Clinical Correlation</span>
+                     <span>Observation Alignment</span>
                      <span>92%</span>
                   </div>
                   <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                      <div className="h-full bg-saffron w-[92%] rounded-full shadow-[0_0_12px_rgba(247,147,30,0.4)]"></div>
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed font-bold uppercase tracking-tight pt-4">Your clinical notes match AI predictions in 9 out of 10 cases this month.</p>
+                  <p className="text-xs text-slate-400 leading-relaxed font-bold uppercase tracking-tight pt-4">Your clinical notes match automated screening indicators in 9 out of 10 cases this month.</p>
                </div>
             </div>
 

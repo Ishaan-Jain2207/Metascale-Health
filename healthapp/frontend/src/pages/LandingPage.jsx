@@ -181,8 +181,8 @@ const LandingPage = () => {
       <section id="features" className="py-32 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20">
-             <h2 className="text-4xl lg:text-5xl font-display font-bold text-slate-900 mb-6 tracking-tight">Precision Intelligence. Built for Humans.</h2>
-             <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">Early detection is the key to longevity. Metascale combines predictive analysis with lifestyle data to keep you ahead.</p>
+             <h2 className="text-4xl lg:text-5xl font-display font-bold text-slate-900 mb-6 tracking-tight">Clinical Guidance. Built for Humans.</h2>
+             <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">Early detection is the key to longevity. Metascale combines health assessments with lifestyle data to keep you ahead.</p>
           </div>
           
           <div className="grid md:grid-cols-3 gap-10">

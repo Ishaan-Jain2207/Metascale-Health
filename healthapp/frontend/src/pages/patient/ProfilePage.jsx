@@ -161,35 +161,35 @@ const ProfilePage = () => {
       <div className="grid lg:grid-cols-3 gap-12">
          {/* Settings Sidebar */}
          <div className="lg:col-span-1 space-y-8">
-            <motion.div variants={itemVariants} className="card !bg-white/40 backdrop-blur-3xl border border-white/60 p-8 rounded-[40px] shadow-3xl">
-               <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 pl-1">Identity Security</h3>
-               <div className="space-y-2">
-                  {[
-                    { icon: <UserCircle size={18} />, label: 'Profile Intelligence', active: true },
-                    { icon: <Fingerprint size={18} />, label: 'Credential Parity', active: false },
-                    { icon: <Lock size={18} />, label: 'Data Encryption', active: false },
-                    { icon: <Settings size={18} />, label: 'System Prefs', active: false }
-                  ].map((item) => (
-                    <button key={item.label} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest ${item.active ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:bg-slate-50'}`}>
-                       {item.icon}
-                       {item.label}
-                    </button>
-                  ))}
-               </div>
-            </motion.div>
-
-            <motion.div variants={itemVariants} className="bg-mesh-saffron rounded-[40px] p-10 text-white shadow-3xl relative overflow-hidden group">
-               <div className="absolute -bottom-10 -right-10 opacity-10 group-hover:rotate-12 transition-transform">
-                  <ShieldCheck size={200} />
-               </div>
-               <div className="relative z-10 space-y-6">
-                  <h4 className="font-display font-black text-2xl uppercase tracking-tighter leading-tight">Zero-Knowledge Architecture</h4>
-                  <p className="text-white/70 text-xs font-medium leading-relaxed uppercase tracking-widest">Metascale employs full homomorphic encryption for clinical vectors. Your data remains your property.</p>
-                  <button className="bg-white text-saffron-deep px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:shadow-2xl transition-all active:scale-95">
-                     Privacy Protocol
-                  </button>
-               </div>
-            </motion.div>
+             <motion.div variants={itemVariants} className="card !bg-white/40 backdrop-blur-3xl border border-white/60 p-8 rounded-[40px] shadow-3xl">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 pl-1">Account Settings</h3>
+                <div className="space-y-2">
+                   {[
+                     { icon: <UserCircle size={18} />, label: 'Profile Details', active: true },
+                     { icon: <Phone size={18} />, label: 'Contact Info', active: false },
+                     { icon: <Lock size={18} />, label: 'Security & Password', active: false },
+                     { icon: <Settings size={18} />, label: 'Preferences', active: false }
+                   ].map((item) => (
+                     <button key={item.label} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest ${item.active ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:bg-slate-50'}`}>
+                        {item.icon}
+                        {item.label}
+                     </button>
+                   ))}
+                </div>
+             </motion.div>
+ 
+             <motion.div variants={itemVariants} className="bg-mesh-saffron rounded-[40px] p-10 text-white shadow-3xl relative overflow-hidden group">
+                <div className="absolute -bottom-10 -right-10 opacity-10 group-hover:rotate-12 transition-transform">
+                   <ShieldCheck size={200} />
+                </div>
+                <div className="relative z-10 space-y-6">
+                   <h4 className="font-display font-black text-2xl uppercase tracking-tighter leading-tight">Secure Clinical Storage</h4>
+                   <p className="text-white/70 text-xs font-medium leading-relaxed uppercase tracking-widest">Metascale employs industry-standard encryption for clinical data. Your information is protected and private.</p>
+                   <button className="bg-white text-saffron-deep px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:shadow-2xl transition-all active:scale-95">
+                      Privacy Policy
+                   </button>
+                </div>
+             </motion.div>
          </div>
 
          {/* Configuration Forms */}

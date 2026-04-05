@@ -132,7 +132,7 @@ const DoctorDashboard = () => {
                         <tr>
                            <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Patient Identity</th>
                            <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Module</th>
-                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">AI Conclusion</th>
+                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Clinical Assessment</th>
                            <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Review</th>
                         </tr>
                      </thead>
@@ -219,7 +219,7 @@ const DoctorDashboard = () => {
             </div>
             <div className="card border-l-4 border-l-green-600">
                <div className="flex items-center gap-3 text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">
-                  <CheckCircle2 size={14} /> Diagnostic Accuracy
+                  <CheckCircle2 size={14} /> Clinical Confidence
                </div>
                <div className="flex items-end gap-2">
                   <span className="text-3xl font-bold text-slate-900">{accuracy}%</span>
@@ -238,7 +238,7 @@ const DoctorDashboard = () => {
 
             <div className="bg-ink text-white rounded-3xl p-6 relative overflow-hidden group shadow-xl border border-white/10">
                <div className="absolute -bottom-4 -right-4 text-white/5 transition-transform group-hover:scale-110"><TrendingUp size={100} /></div>
-               <h3 className="font-bold text-lg mb-2 relative z-10">Advanced Analytics</h3>
+               <h3 className="font-bold text-lg mb-2 relative z-10">Practice Insights</h3>
                <p className="text-slate-400 text-sm mb-4 relative z-10 font-medium">View population-level insights for metabolic health trends.</p>
                <Link to="/doctor/analytics" className="relative z-10 inline-flex items-center gap-2 text-saffron font-bold hover:translate-x-1 transition-transform">Explore Insights <ArrowRight size={16} /></Link>
             </div>

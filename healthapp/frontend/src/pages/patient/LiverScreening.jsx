@@ -183,7 +183,7 @@ const LiverScreening = () => {
           <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
              <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 md:max-w-md">
                 <Info size={18} className="text-slate-400 mt-1 shrink-0" />
-                <p className="text-xs text-slate-500 font-medium leading-relaxed">Ensure all parameters are entered accurately as they significantly impact the AI prediction result.</p>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">Ensure all parameters are entered accurately as they significantly impact the clinical assessment result.</p>
              </div>
              <button type="submit" disabled={loading} className="btn-primary w-full md:w-auto px-10 py-4 text-lg font-bold flex items-center justify-center gap-2">
                 {loading ? <Loader2 className="animate-spin" /> : 'Analyze Risk Indicators'}
