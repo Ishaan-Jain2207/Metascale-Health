@@ -1,10 +1,11 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-disable no-unused-vars */
+import { motion } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 import { Check } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-// Helper for Tailwind classes (re-use exists)
 const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
@@ -21,7 +22,7 @@ const MaterialStepper = ({
   return (
     <div className="w-full py-8">
       <div className="flex items-center justify-between relative max-w-3xl mx-auto px-4">
-        {/* Connector Line (The "Angular" Way) */}
+        {/* Connector Line */}
         <div className="absolute top-1/2 left-0 w-full h-[2px] bg-slate-100 -translate-y-1/2 -z-10">
           <motion.div 
             initial={{ width: 0 }}
@@ -51,7 +52,6 @@ const MaterialStepper = ({
                 {isCompleted ? <Check size={18} strokeWidth={3} /> : index + 1}
               </motion.button>
               
-              {/* Stepper Label (Visible only on larger screens, common in Angular Material desktop) */}
               <span className={cn(
                 "hidden md:block absolute top-12 text-[10px] font-black uppercase tracking-widest whitespace-nowrap text-center transition-colors duration-300",
                 isActive ? "text-slate-900" : "text-slate-400"

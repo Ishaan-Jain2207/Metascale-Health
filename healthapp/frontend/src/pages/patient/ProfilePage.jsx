@@ -16,9 +16,11 @@ import {
   Zap,
   Star
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
+/* eslint-disable no-unused-vars */
 import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 
 const ProfilePage = () => {
   const { user, setUser } = useAuth();

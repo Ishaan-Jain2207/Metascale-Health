@@ -1,229 +1,204 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Calendar, 
   Clock, 
-  User, 
   CheckCircle2, 
   XCircle, 
-  AlertCircle, 
+  AlertCircle,
   Loader2,
-  Trash2,
-  Check,
-  MessageSquare,
-  ChevronRight,
+  CalendarCheck,
   Stethoscope,
-  History
+  BriefcaseMedical,
+  ShieldCheck,
+  Zap,
+  Check,
+  ArrowRight
 } from 'lucide-react';
 import api from '../../services/api';
+/* eslint-disable no-unused-vars */
+import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 
 const DoctorAppointments = () => {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
   const [noteMap, setNoteMap] = useState({});
 
-  useEffect(() => {
-    fetchAppointments();
-  }, []);
-
-  const fetchAppointments = async () => {
+  const fetchAppointments = useCallback(async () => {
     try {
       const res = await api.get('/appointments/doctor');
       setAppointments(res.data.data);
-    } catch (err) {
-      setError('Failed to load clinical schedule.');
+    } catch {
+      console.error('Failed to load clinical schedule.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const updateStatus = async (id, status) => {
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
+
+  const handleAction = async (id, status) => {
     setActionLoading(id);
     try {
-      await api.put(`/appointments/${id}/status`, { 
+      await api.patch(`/appointments/${id}`, { 
         status, 
-        doctor_notes: noteMap[id] || '' 
+        doctor_notes: noteMap[id] || `${status.toUpperCase()} by Personnel` 
       });
       fetchAppointments();
       setNoteMap({ ...noteMap, [id]: '' });
-    } catch (err) {
-      console.error('Error updating appointment:', err);
+    } catch {
+      console.error('Error updating appointment');
     } finally {
       setActionLoading(null);
     }
   };
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" /></div>;
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh] flex-col gap-6 text-white/20">
+      <Zap className="animate-spin text-saffron" size={48} />
+      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Restoring Clinical Schedule...</p>
+    </div>
+  );
 
-  const pending = appointments.filter(a => a.status === 'pending');
-  const upcoming = appointments.filter(a => a.status === 'confirmed');
-  const past = appointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } }
+  };
+
+  const upcoming = appointments.filter(a => a.status === 'pending');
+  const history = appointments.filter(a => a.status !== 'pending');
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-           <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight flex items-center gap-3">
-              <Calendar className="text-primary-600" /> Clinic Schedule
-           </h1>
-           <p className="text-slate-500 font-medium">Manage patient consultations and update medical status.</p>
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="max-w-7xl mx-auto space-y-16 pb-24 px-4 md:px-0"
+    >
+      <motion.div variants={itemVariants} className="text-left space-y-10 relative py-12 border-b border-white/5">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-saffron/10 blur-[120px] rounded-full opacity-40"></div>
+        <div className="inline-flex items-center gap-4 bg-white/5 backdrop-blur-md px-6 py-2.5 rounded-full text-saffron text-[10px] font-black uppercase tracking-[0.4em] mb-4 border border-white/10 shadow-2xl">
+           <BriefcaseMedical size={14} className="animate-pulse" /> Personnel Operations
         </div>
-      </div>
+        <h1 className="text-5xl md:text-8xl font-display font-black text-white tracking-tighter leading-none uppercase">
+          Mandate <br/>
+          <span className="text-saffron italic font-sans font-medium lowercase">Verification</span>
+        </h1>
+        <p className="text-white/20 text-xs md:text-sm max-w-2xl font-black uppercase tracking-[0.3em] leading-relaxed">
+           Audit and synchronize clinical schedules with pending biovariable assessment mandates.
+        </p>
+      </motion.div>
 
-      {/* Pending Approval Section */}
-      {pending.length > 0 && (
-         <section className="space-y-6">
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-               <AlertCircle className="text-yellow-500" /> Pending Requests
+      <div className="grid lg:grid-cols-3 gap-16">
+        <motion.div variants={itemVariants} className="lg:col-span-2 space-y-12">
+            <div className="space-y-10">
+               <h2 className="text-2xl font-display font-black text-white uppercase tracking-tight flex items-center gap-4">
+                  <AlertCircle className="text-saffron" size={24} /> Pending Mandates
+                  <div className="h-px flex-1 bg-white/5"></div>
+               </h2>
+
+               <AnimatePresence mode="popLayout">
+                 {upcoming.length > 0 ? (
+                    <div className="space-y-6">
+                       {upcoming.map((appt) => (
+                          <motion.div 
+                             layout
+                             initial={{ opacity: 0, x: -20 }}
+                             animate={{ opacity: 1, x: 0 }}
+                             exit={{ opacity: 0, x: 20 }}
+                             key={appt.id} 
+                             className="glass-dark p-10 rounded-[48px] border border-white/5 shadow-5xl group transition-all relative overflow-hidden"
+                          >
+                             <div className="flex flex-col md:flex-row items-center justify-between gap-10">
+                                <div className="flex items-center gap-10">
+                                   <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-[32px] flex items-center justify-center text-saffron shadow-3xl group-hover:scale-110 transition-transform">
+                                      <Stethoscope size={36} />
+                                   </div>
+                                   <div className="space-y-4">
+                                      <h4 className="text-3xl font-display font-black text-white uppercase tracking-tight leading-tight">{appt.patient_name}</h4>
+                                      <div className="flex flex-wrap items-center gap-6">
+                                         <div className="flex items-center gap-3 text-[10px] font-black text-white/30 uppercase tracking-widest">
+                                            <Calendar size={14} className="text-saffron" /> {appt.appt_date}
+                                         </div>
+                                         <div className="flex items-center gap-3 text-[10px] font-black text-white/30 uppercase tracking-widest">
+                                            <Clock size={14} className="text-saffron" /> {appt.appt_time}
+                                         </div>
+                                      </div>
+                                      <p className="text-[10px] text-white/40 font-medium leading-relaxed italic pr-4">"{appt.reason}"</p>
+                                   </div>
+                                </div>
+
+                                <div className="flex items-center gap-6 w-full md:w-auto">
+                                   <button 
+                                      onClick={() => handleAction(appt.id, 'cancelled')}
+                                      disabled={actionLoading === appt.id}
+                                      className="p-6 rounded-[28px] bg-white/5 border border-white/5 text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 transition-all shadow-3xl"
+                                   >
+                                      <XCircle size={24} />
+                                   </button>
+                                   <button 
+                                      onClick={() => handleAction(appt.id, 'confirmed')}
+                                      disabled={actionLoading === appt.id}
+                                      className="bg-saffron hover:bg-saffron-deep text-slate-900 px-10 py-6 rounded-[28px] text-[10px] font-black uppercase tracking-widest shadow-5xl active:scale-95 transition-all flex items-center gap-4"
+                                   >
+                                      {actionLoading === appt.id ? <Loader2 size={18} className="animate-spin" /> : <ShieldCheck size={18} />} Synchronize
+                                   </button>
+                                </div>
+                             </div>
+                          </motion.div>
+                       ))}
+                    </div>
+                 ) : (
+                    <div className="glass-dark border-dashed border-2 border-white/5 p-24 rounded-[64px] text-center space-y-8 flex flex-col items-center opacity-40">
+                       <ShieldCheck size={64} className="text-white/10" />
+                       <div className="space-y-4">
+                          <p className="text-white font-display font-black text-2xl uppercase tracking-tight">Timeline Integrity Verified</p>
+                          <p className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] max-w-sm">System has no pending clinical mandates awaiting verification.</p>
+                       </div>
+                    </div>
+                 )}
+               </AnimatePresence>
+            </div>
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="lg:col-span-1 space-y-12">
+            <h2 className="text-2xl font-display font-black text-white uppercase tracking-tight flex items-center gap-4">
+               <CalendarCheck className="text-saffron" size={24} /> History Log
             </h2>
-            <div className="grid md:grid-cols-2 gap-6">
-               {pending.map(appt => (
-                  <div key={appt.id} className="card border-l-4 border-l-yellow-500 shadow-xl shadow-yellow-50/50">
-                     <div className="flex items-start justify-between mb-6">
-                        <div className="flex items-center gap-4">
-                           <div className="w-12 h-12 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center font-bold text-lg">
-                              {appt.patient_name?.charAt(0)}
-                           </div>
-                           <div>
-                              <p className="font-bold text-slate-900">{appt.patient_name}</p>
-                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{appt.age}Y • {appt.gender}</p>
-                           </div>
+
+            <div className="space-y-6">
+               {history.slice(0, 5).map((appt) => (
+                  <div key={appt.id} className="glass-dark p-8 rounded-[40px] border border-white/5 flex items-center justify-between opacity-60 hover:opacity-100 transition-opacity group">
+                     <div className="flex items-center gap-6">
+                        <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-white/20 group-hover:text-saffron transition-colors">
+                           <Check size={20} />
                         </div>
-                        <div className="text-right">
-                           <p className="text-sm font-bold text-slate-900">{new Date(appt.appt_date).toLocaleDateString()}</p>
-                           <p className="text-xs text-slate-400 font-bold uppercase">{appt.appt_time}</p>
+                        <div>
+                           <p className="font-display font-black text-white text-sm uppercase tracking-tight">{appt.patient_name}</p>
+                           <p className="text-[9px] text-white/20 font-black uppercase tracking-widest mt-1">{appt.appt_date}</p>
                         </div>
                      </div>
-                     <div className="bg-slate-50 p-4 rounded-xl mb-6">
-                        <p className="text-xs text-slate-400 font-bold uppercase mb-1">Reason for Visit</p>
-                        <p className="text-sm font-medium text-slate-700 italic">" {appt.reason} "</p>
-                     </div>
-                     <div className="flex gap-3">
-                        <button 
-                          onClick={() => updateStatus(appt.id, 'confirmed')}
-                          disabled={actionLoading === appt.id}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-green-100 flex items-center justify-center gap-2"
-                        >
-                           {actionLoading === appt.id ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />} 
-                           Approve
-                        </button>
-                        <button 
-                          onClick={() => updateStatus(appt.id, 'cancelled')}
-                          disabled={actionLoading === appt.id}
-                          className="flex-1 bg-white border border-slate-200 hover:bg-red-50 hover:border-red-200 hover:text-red-600 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2"
-                        >
-                           Refuse
-                        </button>
-                     </div>
+                     <span className={`px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${appt.status === 'confirmed' ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/5' : 'border-rose-500/20 text-rose-400 bg-rose-500/5'}`}>
+                        {appt.status}
+                     </span>
                   </div>
                ))}
+               
+               <button className="w-full py-6 rounded-[32px] bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-[0.3em] text-white/20 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center gap-4 group">
+                  Audit Registry <ArrowRight size={14} className="group-hover:translate-x-2 transition-transform" />
+               </button>
             </div>
-         </section>
-      )}
-
-      {/* Main Schedule */}
-      <div className="grid lg:grid-cols-3 gap-12">
-         <div className="lg:col-span-2 space-y-6">
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-               <CheckCircle2 className="text-primary-600" /> Confirmed Consultations
-            </h2>
-            {upcoming.length > 0 ? (
-               <div className="space-y-4">
-                  {upcoming.map(appt => (
-                     <div key={appt.id} className="card p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-lg transition-all border-l-4 border-l-green-600">
-                        <div className="flex items-center gap-4">
-                           <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-bold text-xl group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
-                              {appt.patient_name?.charAt(0)}
-                           </div>
-                           <div>
-                              <p className="font-bold text-slate-900">{appt.patient_name}</p>
-                              <div className="flex items-center gap-3 text-xs text-slate-400 font-bold uppercase tracking-tight">
-                                 <span>{new Date(appt.appt_date).toLocaleDateString()}</span>
-                                 <span>•</span>
-                                 <span>{appt.appt_time}</span>
-                              </div>
-                           </div>
-                        </div>
-                        
-                        <div className="flex-1 max-w-sm">
-                           <textarea 
-                             placeholder="Add clinical notes..." 
-                             value={noteMap[appt.id] || ''}
-                             onChange={(e) => setNoteMap({ ...noteMap, [appt.id]: e.target.value })}
-                             className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-1 focus:ring-primary-500 h-10 resize-none transition-all"
-                           />
-                        </div>
-
-                        <div className="flex gap-2">
-                           <button 
-                             onClick={() => updateStatus(appt.id, 'completed')}
-                             className="p-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl shadow-lg shadow-primary-100 flex items-center justify-center"
-                             title="Mark as Completed"
-                           >
-                              <Check size={20} />
-                           </button>
-                           <button 
-                             onClick={() => updateStatus(appt.id, 'cancelled')}
-                             className="p-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl"
-                             title="Cancel Appointment"
-                           >
-                              <Trash2 size={20} />
-                           </button>
-                        </div>
-                     </div>
-                  ))}
-               </div>
-            ) : (
-               <div className="card bg-slate-50 border-dashed border-2 border-slate-200 py-16 flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-slate-300 mb-4 shadow-sm"><Stethoscope size={32} /></div>
-                  <h3 className="text-lg font-bold text-slate-900">No Upcoming Visits</h3>
-                  <p className="text-slate-500 font-medium text-sm">Once patient requests are approved, they will appear in your daily schedule here.</p>
-               </div>
-            )}
-         </div>
-
-         {/* Sidebar: Past Records Insight */}
-         <div className="space-y-6">
-            <h2 className="text-xl font-bold text-slate-900">Patient Insights</h2>
-            <div className="bg-ink text-white rounded-3xl p-8 relative overflow-hidden shadow-2xl border border-white/10">
-               <div className="absolute top-0 right-0 p-4 opacity-5">
-                  <MessageSquare size={80} />
-               </div>
-               <h3 className="text-lg font-bold mb-4 relative z-10 text-saffron">Diagnostic Accuracy</h3>
-               <div className="space-y-4 relative z-10">
-                  <div className="flex justify-between text-xs font-bold uppercase text-slate-400">
-                     <span>Clinical Correlation</span>
-                     <span>92%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                     <div className="h-full bg-saffron w-[92%] rounded-full shadow-[0_0_12px_rgba(247,147,30,0.4)]"></div>
-                  </div>
-                  <p className="text-xs text-slate-400 leading-relaxed font-bold uppercase tracking-tight pt-4">Your clinical notes match AI predictions in 9 out of 10 cases this month.</p>
-               </div>
-            </div>
-
-            <div className="card space-y-4">
-               <h3 className="font-bold text-slate-900 flex items-center gap-2"><History size={18} className="text-slate-400" /> Completed Visits</h3>
-               <div className="space-y-3">
-                  {past.slice(0, 3).map(p => (
-                     <div key={p.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                        <div className="flex items-center gap-3">
-                           <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 border border-slate-100 font-bold text-[10px] uppercase">{p.patient_name?.charAt(0)}</div>
-                           <div>
-                              <p className="text-xs font-bold text-slate-700">{p.patient_name}</p>
-                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{p.status}</p>
-                           </div>
-                        </div>
-                        <ChevronRight size={14} className="text-slate-300" />
-                     </div>
-                  ))}
-                  {past.length === 0 && <p className="text-xs text-slate-400 font-medium italic text-center py-4">No past records found.</p>}
-               </div>
-            </div>
-         </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

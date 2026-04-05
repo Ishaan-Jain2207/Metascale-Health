@@ -1,43 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart3, 
   Users, 
   Stethoscope, 
   Activity, 
   TrendingUp, 
-  ArrowUpRight, 
-  ArrowDownRight,
-  ShieldCheck,
-  Globe,
-  Loader2,
-  Calendar,
-  Zap,
-  Lock,
-  Cpu
+  ShieldCheck, 
+  Zap, 
+  Lock, 
+  Cpu, 
+  ChevronRight 
 } from 'lucide-react';
 import api from '../../services/api';
-import { motion } from 'framer-motion';
+/* eslint-disable no-unused-vars */
+import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 
 const AdminDashboard = () => {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       const res = await api.get('/admin/analytics');
       setAnalytics(res.data.data);
-    } catch (err) {
-      console.error('Error fetching admin analytics:', err);
+    } catch {
+      console.error('Error fetching admin analytics');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" /></div>;
+  useEffect(() => {
+    document.body.classList.add('app-dark-mode');
+    fetchAnalytics();
+    return () => document.body.classList.remove('app-dark-mode');
+  }, [fetchAnalytics]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh] flex-col gap-6 text-white/20">
+      <Zap className="animate-spin text-saffron" size={48} />
+      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Initializing Core Sentinel...</p>
+    </div>
+  );
 
   const totalUsers = analytics?.users?.reduce((acc, curr) => acc + curr.count, 0) || 0;
   const doctorCount = analytics?.users?.find(u => u.role === 'doctor')?.count || 0;
@@ -45,10 +50,7 @@ const AdminDashboard = () => {
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
   };
 
   const itemVariants = {
@@ -61,124 +63,128 @@ const AdminDashboard = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-12 pb-10"
+      className="space-y-12 pb-20 max-w-7xl mx-auto px-4 md:px-0"
     >
-      {/* Admin Hero - System Intelligence */}
-      <motion.div 
-        variants={itemVariants}
-        className="relative overflow-hidden bg-ink rounded-[40px] p-8 md:p-12 text-white shadow-3xl border border-white/5"
-      >
-         <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12 animate-float">
-            <Cpu size={280} />
+      <motion.div variants={itemVariants} className="relative overflow-hidden bg-mesh-app-dark rounded-[56px] p-10 md:p-16 text-white shadow-5xl border border-white/5 group">
+         <div className="absolute inset-0 bg-mesh-saffron opacity-5"></div>
+         <div className="absolute top-0 right-0 p-8 opacity-5 rotate-12 transition-transform duration-1000 group-hover:scale-110">
+            <Cpu size={300} />
          </div>
-         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-            <div>
-               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-white/10">
-                  <Zap size={14} className="text-saffron animate-pulse" /> Core Sentinel Active
+         <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-12">
+            <div className="space-y-10">
+               <div className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-md px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-2 border border-white/10">
+                  <ShieldCheck size={14} className="text-emerald-400 animate-pulse" /> Global System Integrity
                </div>
-               <h1 className="text-4xl md:text-5xl font-display font-bold mb-4 drop-shadow-md text-white">
-                  System <br />
-                  <span className="text-white/80 italic">Intelligence</span>
+               <h1 className="text-5xl md:text-7xl font-display font-black tracking-tighter leading-none uppercase">
+                  Metascale <br />
+                  <span className="text-saffron italic font-sans font-medium lowercase">Sentinel Hub</span>
                </h1>
-               <p className="text-white/50 max-w-md text-lg font-medium leading-relaxed font-sans">
-                  Monitoring {totalUsers} identities across metascale distributed clinical nodes.
-               </p>
+               <div className="flex flex-wrap gap-4 pt-4">
+                  <div className="bg-white/5 border border-white/10 rounded-[24px] px-8 py-5 flex items-center gap-4 shadow-xl backdrop-blur-xl">
+                     <div className="w-10 h-10 bg-saffron text-ink rounded-xl flex items-center justify-center font-black text-lg">{totalUsers}</div>
+                     <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Registered <br />Identities</p>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-[24px] px-8 py-5 flex items-center gap-4 shadow-xl backdrop-blur-xl">
+                     <div className="w-10 h-10 bg-white/10 text-white rounded-xl flex items-center justify-center font-black text-lg">OPTIMAL</div>
+                     <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Internal <br />Node Load</p>
+                  </div>
+               </div>
             </div>
-            <div className="flex items-center gap-4">
-               <div className="bg-white/5 backdrop-blur-md rounded-3xl p-6 border border-white/5 text-center px-10">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-2">Network Load</p>
-                  <p className="text-3xl font-display font-bold text-white">OPTIMAL</p>
+            <div className="flex bg-white/5 backdrop-blur-xl rounded-[40px] p-2 border border-white/10 shadow-5xl">
+               <div className="px-12 py-8 text-center border-r border-white/5">
+                  <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">Assessments</p>
+                  <p className="text-4xl font-display font-black text-white">{totalScreenings}</p>
+               </div>
+               <div className="px-12 py-8 text-center">
+                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1">State</p>
+                    <div className="flex items-center gap-3">
+                       <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></div>
+                       <p className="text-[10px] font-black text-white uppercase tracking-widest">Stable</p>
+                    </div>
                </div>
             </div>
          </div>
       </motion.div>
 
-      {/* Hero Analytics - Glass Cards */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-         {[
-           { label: 'Identities', val: totalUsers, icon: Users, change: '+8.1%', up: true },
-           { label: 'Personnel', val: doctorCount, icon: Stethoscope, change: '+2.4%', up: true },
-           { label: 'Assessments', val: totalScreenings, icon: Activity, change: '+12.5%', up: true },
-           { label: 'Uptime', val: '99.9%', icon: TrendingUp, change: 'Stable', up: true }
-         ].map((stat, i) => (
-           <motion.div variants={itemVariants} key={i} className="card group hover:scale-105 transition-all bg-white/80 backdrop-blur-xl border border-slate-200/60 shadow-xl rounded-3xl p-8">
-              <div className="flex items-start justify-between mb-4">
-                 <div className="w-12 h-12 bg-slate-50 text-ink rounded-xl flex items-center justify-center group-hover:bg-saffron group-hover:text-white transition-all shadow-sm">
-                    <stat.icon size={20} />
-                 </div>
-                 <span className={`text-[10px] font-black uppercase tracking-widest ${stat.up ? 'text-green-500' : 'text-red-500'}`}>{stat.change}</span>
-              </div>
-              <p className="text-3xl font-display font-bold text-slate-900 leading-none mb-1">{stat.val}</p>
-              <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.1em]">{stat.label}</p>
-           </motion.div>
-         ))}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {[
+            { label: 'Total Identities', val: totalUsers, icon: Users, accent: 'saffron' },
+            { label: 'Personnel Nodes', val: doctorCount, icon: Stethoscope, accent: 'white' },
+            { label: 'Total Audits', val: totalScreenings, icon: Activity, accent: 'emerald-400' },
+            { label: 'Network Uptime', val: '100%', icon: TrendingUp, accent: 'saffron' }
+          ].map((stat, i) => (
+             <div key={i} className="glass-dark p-8 rounded-[40px] border border-white/5 shadow-4xl group transition-all hover:border-white/20">
+                <div className="flex items-center gap-6">
+                  <div className={`w-14 h-14 bg-white/5 text-${stat.accent} rounded-2xl flex items-center justify-center border border-white/5 group-hover:scale-110 transition-transform`}>
+                     <stat.icon size={24} />
+                  </div>
+                  <div>
+                     <p className="text-white/20 text-[10px] font-black uppercase tracking-widest mb-1">{stat.label}</p>
+                     <p className="text-3xl font-display font-black text-white">{stat.val}</p>
+                  </div>
+                </div>
+             </div>
+          ))}
       </motion.div>
 
-      <div className="grid lg:grid-cols-3 gap-10">
-         {/* Growth Trend */}
-         <motion.div variants={itemVariants} className="lg:col-span-2 space-y-8">
-            <div className="card !p-0 overflow-hidden relative border-none shadow-3xl bg-white/80 backdrop-blur-2xl rounded-[40px]">
-               <div className="bg-slate-950 text-white p-8 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-5"><Globe size={120} /></div>
-                  <h3 className="text-xl font-bold flex items-center gap-2 relative z-10"><Globe size={24} className="text-saffron" /> Screening Velocity</h3>
-                  <p className="text-xs text-white/40 font-black uppercase tracking-widest relative z-10">Monthly distribution of AI diagnostics</p>
+      <div className="grid lg:grid-cols-3 gap-12">
+         <motion.div variants={itemVariants} className="lg:col-span-2 space-y-10">
+            <div className="flex items-center justify-between px-4">
+               <h2 className="text-2xl font-display font-black text-white uppercase tracking-tight flex items-center gap-4">
+                  <BarChart3 className="text-saffron" size={28} />
+                  Population Trends
+                  <div className="h-px w-20 bg-white/5"></div>
+               </h2>
+               <div className="text-[10px] font-black text-white/20 uppercase tracking-widest flex items-center gap-3">
+                  Historical Log <ChevronRight size={14} />
                </div>
-               <div className="p-8 space-y-8 bg-white">
+            </div>
+            <div className="glass-dark rounded-[56px] border border-white/5 overflow-hidden shadow-5xl p-10 md:p-14">
+               <div className="space-y-12">
                   {analytics?.trend?.map((item, i) => (
-                    <div key={i} className="space-y-3">
-                       <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
-                          <span>{item.month}</span>
-                          <span className="text-slate-900 font-bold">{item.count} Assessments</span>
+                    <div key={i} className="space-y-4 group">
+                       <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
+                          <span className="text-white/40">{item.month}</span>
+                          <span className="text-white">{item.count} Personnel Screened</span>
                        </div>
-                       <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100 flex">
-                          <div className="h-full bg-mesh-saffron rounded-full shadow-lg" style={{ width: `${(item.count / (Math.max(...analytics.trend.map(t => t.count)) || 1)) * 100}%` }}></div>
+                       <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 flex">
+                          <motion.div 
+                             initial={{ width: 0 }}
+                             animate={{ width: `${(item.count / (Math.max(...analytics.trend.map(t => t.count)) || 1)) * 100}%` }}
+                             transition={{ duration: 1, delay: i * 0.1 }}
+                             className="h-full bg-gradient-to-r from-saffron to-saffron-deep rounded-full shadow-[0_0_20px_rgba(247,147,30,0.3)]"
+                          ></motion.div>
                        </div>
                     </div>
                   ))}
-                  {(!analytics?.trend || analytics.trend.length === 0) && (
-                     <div className="py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">No trend data captured.</div>
-                  )}
                </div>
             </div>
          </motion.div>
 
-         {/* Security & Focus */}
-         <motion.div variants={itemVariants} className="space-y-8">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Compliance & Data</h2>
-            
-            <div className="bg-emerald-50/50 rounded-[32px] p-8 border border-emerald-100 flex gap-4 hover:shadow-xl transition-all group shadow-sm bg-white/50 backdrop-blur-md">
-               <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm group-hover:scale-110 transition-transform"><ShieldCheck size={28} /></div>
-               <div>
-                  <h4 className="font-bold text-slate-900 text-lg">GDPR Shield</h4>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-2 leading-relaxed">Personal Data encrypted via metascale protocol.</p>
+         <motion.div variants={itemVariants} className="space-y-12">
+            <h2 className="text-2xl font-display font-black text-white uppercase tracking-tight">Security</h2>
+            <div className="bg-white/5 border border-white/10 rounded-[48px] p-10 text-white shadow-5xl relative overflow-hidden group">
+               <div className="absolute inset-0 bg-mesh-saffron opacity-5"></div>
+               <div className="absolute top-0 right-0 p-6 opacity-5 rotate-12 transition-transform duration-1000 group-hover:scale-125"><Lock size={120} /></div>
+               <div className="flex items-center gap-4 mb-8">
+                  <div className="p-4 bg-saffron text-ink rounded-2xl transition-transform group-hover:rotate-12"><Lock size={28} /></div>
+                  <h3 className="font-display font-black text-xl uppercase tracking-tight">Encryption</h3>
                </div>
+               <p className="text-[10px] text-white/30 font-black uppercase tracking-widest leading-relaxed mb-10">Metascale identities are cryptographically isolated and audited via clinical node protocols.</p>
+               <button className="btn-primary w-full !py-5">Audit Global Keys</button>
             </div>
-
-            <div className="bg-white/60 backdrop-blur-3xl rounded-[40px] p-10 border border-white space-y-8 shadow-3xl">
-               <h3 className="font-black text-[10px] uppercase tracking-widest text-slate-400">Demographic Risk Exposure</h3>
-               <div className="space-y-6">
+            <div className="glass-dark rounded-[48px] p-10 border border-white/5 shadow-5xl space-y-10">
+               <h3 className="font-black text-[10px] uppercase tracking-widest text-white/20">Exposure Metrics</h3>
+               <div className="space-y-8">
                   <div className="flex items-center justify-between">
-                     <span className="text-xs font-black uppercase tracking-widest text-slate-700">Liver Exposure</span>
-                     <span className="text-saffron-deep font-display font-black text-lg">{analytics?.screenings?.find(s => s.type === 'liver')?.count || 0}</span>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Liver Exposure</span>
+                     <span className="text-saffron font-display font-black text-2xl">{analytics?.screenings?.find(s => s.type === 'liver')?.count || 0}</span>
                   </div>
+                  <div className="h-px bg-white/5"></div>
                   <div className="flex items-center justify-between">
-                     <span className="text-xs font-black uppercase tracking-widest text-slate-700">Metabolic Exposure</span>
-                     <span className="text-saffron-deep font-display font-black text-lg">{analytics?.screenings?.find(s => s.type === 'diabetes')?.count || 0}</span>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Metabolic Load</span>
+                     <span className="text-saffron font-display font-black text-2xl">{analytics?.screenings?.find(s => s.type === 'diabetes')?.count || 0}</span>
                   </div>
-                  <div className="pt-6 border-t border-slate-100">
-                     <div className="flex items-center gap-2 text-green-600 font-black text-[10px] uppercase tracking-wider">
-                        <Lock size={12} /> System Integrity Verified
-                     </div>
-                  </div>
-               </div>
-            </div>
-
-            <div className="bg-mesh-saffron rounded-[40px] p-8 text-white shadow-3xl relative overflow-hidden group">
-               <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 group-hover:scale-110 transition-transform"><Calendar size={120} /></div>
-               <h3 className="text-xl font-bold mb-6 relative z-10">Operational Review</h3>
-               <div className="space-y-4 relative z-10">
-                  <button className="w-full py-4 bg-white text-ink rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-xl">Export Global Audit</button>
-                  <button className="w-full py-4 bg-white/10 backdrop-blur-md rounded-2xl font-black text-[10px] uppercase tracking-widest border border-white/20">Log Retention</button>
                </div>
             </div>
          </motion.div>

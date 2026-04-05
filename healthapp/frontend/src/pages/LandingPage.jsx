@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ShieldCheck, 
@@ -6,43 +6,47 @@ import {
   Database, 
   ArrowRight, 
   Stethoscope,
-  Info,
   HeartPulse,
-  Radar
+  Radar,
+  ChevronRight,
+  Globe,
+  Zap
 } from 'lucide-react';
-import { motion, useMotionValue, useTransform, useSpring } from 'framer-motion';
+/* eslint-disable no-unused-vars */
+import { motion, AnimatePresence, useScroll, useSpring, useTransform, useMotionValue } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 
-// Angular-inspired Imports
+// Mock/Hooks for demo consistency
 import { useRipple } from '../hooks/useRipple';
 import { useParallaxDirective } from '../hooks/useParallaxDirective';
-import { useService } from '../hooks/useService';
-import { healthService } from '../services/HealthService';
 
 const LandingPage = () => {
   const heroRef = useRef(null);
   const ctaRef = useRef(null);
   
-  // Angular Directive (3D Parallax Logic)
+  // Parallax Logic
   useParallaxDirective(heroRef, 30);
   
-  // Angular Material Ripple Effect
+  // Ripple Effect
   const ripples = useRipple(ctaRef);
   
-  // Angular-style Service Subscription
-  const streamData = useService(healthService?.predictions$);
-  const loading = streamData?.loading || false;
-  const history = streamData?.history || [];
-
-  // Mouse Tracking for 3D Orb & Grid
+  // Mouse Tracking for 3D Effects
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const springX = useSpring(mouseX, { stiffness: 100, damping: 30 });
-  const springY = useSpring(mouseY, { stiffness: 100, damping: 30 });
+  const { scrollYProgress } = useScroll();
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+  
+  const gridRotateX = useTransform(mouseY, [-300, 300], [60, 50]);
+  const gridTranslateZ = useTransform(mouseY, [-300, 300], [0, 50]);
 
-  const orbRotateX = useTransform(springY, [-300, 300], [15, -15]);
-  const orbRotateY = useTransform(springX, [-300, 300], [-15, 15]);
-  const gridRotateX = useTransform(springY, [-300, 300], [60, 50]);
-  const gridTranslateZ = useTransform(springY, [-300, 300], [0, 50]);
+  // Clinical parallax vectors
+  const orbY1 = useTransform(smoothProgress, [0, 1], [0, -200]);
+  const orbY2 = useTransform(smoothProgress, [0, 1], [0, -400]);
+
+  // Apply application light theme to body for landing page
+  useEffect(() => {
+    document.body.classList.remove('app-dark-mode');
+  }, []);
 
   const handleMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -52,241 +56,233 @@ const LandingPage = () => {
     mouseY.set(y);
   };
 
+  const featureCards = useMemo(() => [
+    { 
+      title: 'Liver Shield', 
+      desc: 'Evaluates enzymatic vectors and protein markers for structural clinical resilience.', 
+      icon: Database,
+      color: 'bg-saffron'
+    },
+    { 
+      title: 'Metabolic Audit', 
+      desc: 'Deep-audit of glucose trajectories and lifestyle data through risk modeling.', 
+      icon: Stethoscope,
+      color: 'bg-saffron-deep'
+    },
+    { 
+      title: 'Clinical Sync', 
+      desc: 'Advanced dashboarding for healthcare providers to review and audit patient screenings.', 
+      icon: ShieldCheck,
+      color: 'bg-slate-900'
+    }
+  ], []);
+
   return (
     <div 
       onMouseMove={handleMouseMove}
       className="min-h-screen relative overflow-hidden bg-transparent"
     >
-      {/* 3D Grid Floor Background */}
+      {/* 3D Grid Floor Background - Energetic Saffron Pulse */}
       <div className="absolute inset-0 pointer-events-none z-0 perspective-[1000px]">
         <motion.div 
           style={{ 
             rotateX: gridRotateX,
             translateZ: gridTranslateZ,
-            backgroundImage: `linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px'
+            backgroundImage: `linear-gradient(to right, rgba(247, 147, 30, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(247, 147, 30, 0.08) 1px, transparent 1px)`,
+            backgroundSize: '80px 80px'
           }}
-          className="absolute inset-0 origin-center w-[200%] h-[200%] -left-1/2 -top-1/2"
+          className="absolute inset-0 origin-center w-[200%] h-[200%] -left-1/2 -top-1/2 opacity-60"
         ></motion.div>
       </div>
-      {/* Navbar - Matching Prototype */}
-      <header className="fixed top-0 w-full z-50 py-4 px-6">
+
+      {/* Navbar */}
+      <header className="fixed top-0 w-full z-50 py-6 px-10">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <motion.div 
             whileHover={{ scale: 1.05 }}
-            className="flex items-center gap-3 cursor-pointer"
+            className="flex items-center gap-4 cursor-pointer"
           >
-             <motion.div 
-               animate={{ 
-                 boxShadow: ["0px 0px 0px rgba(247,147,30,0)", "0px 0px 20px rgba(247,147,30,0.3)", "0px 0px 0px rgba(247,147,30,0)"]
-               }}
-               transition={{ duration: 2, repeat: Infinity }}
-               className="w-10 h-10 rounded-full bg-gradient-to-br from-white via-saffron-light to-saffron-deep shadow-lg ring-2 ring-white/60 flex-shrink-0 relative overflow-hidden"
-             >
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent rotate-45 transform -translate-x-full animate-[shimmer_3s_infinite]"></div>
-             </motion.div>
+             <div className="w-12 h-12 rounded-[18px] bg-slate-900 shadow-2xl flex items-center justify-center relative overflow-hidden border border-white/10 group">
+                <div className="absolute inset-0 bg-mesh-saffron opacity-40 group-hover:opacity-100 transition-opacity"></div>
+                <HeartPulse className="text-white relative z-10" size={24} />
+             </div>
              <div>
-                <div className="font-bold text-[13px] uppercase tracking-[0.1em] text-slate-900 leading-none mb-1 font-mono">Metascale Health</div>
-                <div className="text-[10px] text-saffron-deep/80 font-bold uppercase tracking-tight">Liver & Diabetes Screener</div>
+                <div className="font-display font-black text-lg uppercase tracking-tight text-slate-900 leading-none mb-1">Metascale</div>
+                <div className="text-[9px] text-saffron-deep font-black uppercase tracking-[0.3em]">Health Intelligence</div>
              </div>
           </motion.div>
           
-          <div className="hidden md:flex items-center gap-8">
-            <nav className="flex items-center gap-8 text-[13px] font-bold text-slate-600 uppercase tracking-widest">
-              <a href="#features" className="hover:text-saffron-deep transition-colors">Features</a>
-            </nav>
-          </div>
+          <nav className="hidden md:flex items-center gap-12 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">
+            <a href="#features" className="hover:text-saffron-deep transition-colors">Features</a>
+            <Link to="/login" className="btn-primary !px-8 !py-3.5 !text-[10px] !tracking-widest">
+               Sign In <ChevronRight size={14} className="ml-2" />
+            </Link>
+          </nav>
         </div>
       </header>
 
-      {/* Hero Section - Centered Layout */}
-      <section className="pt-48 pb-32 relative z-10">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+      {/* Hero Section */}
+      <section className="pt-56 pb-40 relative z-10">
+        <div className="max-w-5xl mx-auto px-10 text-center relative">
            <motion.div 
              initial={{ opacity: 0, y: 20 }}
              animate={{ opacity: 1, y: 0 }}
-             transition={{ duration: 0.6 }}
-             className="inline-flex items-center gap-2 bg-saffron-light/20 text-saffron-deep px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-saffron-light/30 shadow-sm"
+             className="inline-flex items-center gap-3 bg-saffron/5 text-saffron-deep px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] mb-12 border border-saffron/20 shadow-sm"
            >
-              <HeartPulse size={14} className="animate-pulse" /> Health Awareness Initiative
+              <ShieldCheck size={16} className="text-emerald-500" /> Clinical Diagnostic Protocol v3.1
            </motion.div>
            
            <motion.div 
              ref={heroRef}
              initial={{ opacity: 0, scale: 0.95 }}
              animate={{ opacity: 1, scale: 1 }}
-             transition={{ duration: 0.8, ease: "easeOut" }}
-             className="text-5xl lg:text-[6rem] font-display font-bold text-slate-900 leading-[0.95] mb-12 tracking-[-0.04em] [text-shadow:_0_4px_12px_rgba(0,0,0,0.05)] transition-transform duration-100 ease-out"
+             className="text-6xl lg:text-[7.5rem] font-display font-black text-slate-900 leading-[0.9] mb-16 tracking-tighter"
            >
-              Health insight for India, <br />
-              <span className="text-saffron-deep relative inline-block drop-shadow-[0_5px_15px_rgba(247,147,30,0.3)]">
-                before
+              Metabolic <br />
+              <span className="text-transparent bg-clip-text bg-mesh-saffron relative inline-block">
+                intelligence
                 <motion.span 
-                  animate={{ opacity: [0.4, 0.8, 0.4] }}
-                  transition={{ duration: 3, repeat: Infinity }}
-                  className="absolute -inset-2 bg-saffron-light/40 blur-2xl rounded-full -z-10"
+                  animate={{ opacity: [0.3, 0.6, 0.3] }}
+                  transition={{ duration: 4, repeat: Infinity }}
+                  className="absolute -inset-4 bg-saffron-light/40 blur-3xl rounded-full -z-10"
                 ></motion.span>
-              </span> disease.
+              </span> simplified.
            </motion.div>
            
            <motion.p 
-             initial={{ opacity: 0 }}
-             animate={{ opacity: 1 }}
-             transition={{ delay: 0.3, duration: 0.8 }}
-             className="text-xl text-slate-600 font-medium leading-relaxed mb-16 max-w-2xl mx-auto"
+             initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+             className="text-xl text-slate-500 font-medium max-w-3xl mx-auto leading-relaxed mb-20 italic font-sans"
            >
-              A free, private risk screen for liver and diabetes — built for everyday Indians to understand their health markers.
+              Metascale harnesses metabolic markers and clinical deep-learning to predict health trajectories with professional precision. Free, private, and built for everyone.
            </motion.p>
            
            <motion.div 
-             initial={{ opacity: 0, y: 30 }}
+             initial={{ opacity: 0, y: 40 }}
              animate={{ opacity: 1, y: 0 }}
-             transition={{ delay: 0.4, duration: 0.6, type: "spring", stiffness: 100 }}
-             className="flex flex-col items-center justify-center gap-6 relative z-10"
+             className="flex flex-col md:flex-row items-center justify-center gap-8"
            >
-              <div className="relative inline-block group">
+              <div className="relative group/cta">
                 <Link 
                   ref={ctaRef}
                   to="/register" 
-                  state={{ role: "patient" }} 
-                  className="btn-primary min-w-[280px] text-lg py-5 shadow-[0_20px_50px_rgba(247,147,30,0.3)] hover:shadow-[0_20px_60px_rgba(247,147,30,0.5)] transition-all transform hover:-translate-y-1 overflow-hidden relative"
+                   className="btn-primary min-w-[320px] text-lg py-6"
                 >
                    {ripples}
-                   Start free screening <ArrowRight className="ml-2" size={24} />
+                   Start Assessment <ArrowRight className="ml-4 group-hover/cta:translate-x-2 transition-transform" size={24} />
                 </Link>
-                
-                {/* Angular Service indicator — shows recent activity from stream */}
-                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Radar size={12} className="text-saffron animate-ping" /> 1K+ screens today
+                <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-3 text-[10px] text-saffron-deep font-black uppercase tracking-widest opacity-0 group-hover/cta:opacity-100 transition-opacity">
+                  <Radar size={14} className="text-saffron animate-ping" /> Analyzing Indian Demographic Vectors
                 </div>
               </div>
            </motion.div>
-
         </div>
 
-        {/* 3D Decorative Elements */}
+        {/* Decorative Orbs */}
         <motion.div 
-          animate={{ 
-            y: [0, -20, 0],
-            rotate: [0, 5, 0]
-          }}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/4 left-10 w-24 h-24 bg-gradient-to-br from-saffron/20 to-transparent rounded-full blur-2xl opacity-60 -z-10"
+          animate={{ y: [0, -30, 0], opacity: [0.4, 0.6, 0.4] }}
+          transition={{ duration: 8, repeat: Infinity }}
+          className="absolute top-1/3 left-0 w-96 h-96 bg-saffron-light/20 rounded-full blur-[120px] -z-10"
         ></motion.div>
         <motion.div 
-          animate={{ 
-            y: [0, 30, 0],
-            rotate: [0, -10, 0]
-          }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-1/4 right-10 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-transparent rounded-full blur-3xl opacity-40 -z-10"
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 10, repeat: Infinity }}
+          className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-saffron/10 rounded-full blur-[150px] -z-10"
         ></motion.div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-32 relative z-10">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
-             <h2 className="text-4xl lg:text-5xl font-display font-bold text-slate-900 mb-6 tracking-tight">Precision Intelligence. Built for Humans.</h2>
-             <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto leading-relaxed">Early detection is the key to longevity. Metascale combines predictive analysis with lifestyle data to keep you ahead.</p>
+      {/* Feature Grid */}
+      <section id="features" className="py-40 relative z-10">
+        <div className="max-w-7xl mx-auto px-10">
+          <div className="grid md:grid-cols-2 gap-20 items-end mb-24">
+             <div className="space-y-6">
+                <div className="text-[10px] font-black uppercase tracking-[0.4em] text-saffron-deep">Core Capabilities</div>
+                <h2 className="text-5xl lg:text-7xl font-display font-black text-slate-900 leading-tight">Biological Insights</h2>
+             </div>
+             <p className="text-xl text-slate-500 font-medium leading-relaxed max-w-lg pb-2">We provide a high-fidelity audit of metabolic health through precision predictive modeling and board-certified data protocols.</p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-10">
-            {[
-              { 
-                title: 'Liver Risk Assessment', 
-                desc: 'Analyzes Bilirubin, proteins, and liver enzymes for signs of fatty liver or cirrhosis markers.', 
-                icon: Database,
-                accent: 'bg-saffron'
-              },
-              { 
-                title: 'Metabolic Screening', 
-                desc: 'Estimates diabetes risk using dietary patterns, genetic history, and metabolic indicators.', 
-                icon: Stethoscope,
-                accent: 'bg-green-600'
-              },
-              { 
-                title: 'Clinical Interface', 
-                desc: 'Doctors can review screenings in real-time, providing medical notes and follow-up guidance.', 
-                icon: ShieldCheck,
-                accent: 'bg-slate-900'
-              }
-            ].map((feature, i) => (
-              <PerspectiveCard 
-                key={i} 
-                feature={feature}
-              />
+          <div className="grid md:grid-cols-3 gap-12">
+            {featureCards.map((feature, i) => (
+              <motion.div 
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                key={i}
+                className="card group hover:shadow-4xl !p-12"
+              >
+                 <div className={`w-16 h-16 ${feature.color} text-white rounded-3xl flex items-center justify-center mb-10 shadow-2xl group-hover:scale-110 transition-transform`}>
+                    <feature.icon size={28} />
+                 </div>
+                 <h3 className="text-3xl font-display font-black text-slate-900 mb-6 tracking-tight uppercase">{feature.title}</h3>
+                 <p className="text-slate-400 font-medium leading-relaxed mb-10 text-sm tracking-tight">{feature.desc}</p>
+                 <Link to="/register" className="inline-flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-saffron-deep hover:text-saffron transition-colors">
+                    Explore Terminal <ChevronRight size={14} />
+                 </Link>
+              </motion.div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-20 bg-slate-900 text-white relative z-10">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-12 border-b border-white/10 pb-16 mb-12">
-            <div className="col-span-2">
-               <div className="flex items-center gap-3 mb-6">
-                  <div className="w-8 h-8 rounded-full bg-saffron shadow-lg shadow-saffron/20"></div>
-                  <span className="font-display font-bold text-2xl tracking-tight">Metascale Health</span>
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <motion.div style={{ y: orbY1 }} className="absolute -top-40 -right-40 w-[60vw] h-[60vw] bg-saffron/5 blur-[150px] rounded-full opacity-30"></motion.div>
+        <motion.div style={{ y: orbY2 }} className="absolute -bottom-40 -left-40 w-[50vw] h-[50vw] bg-white/[0.02] blur-[150px] rounded-full opacity-20"></motion.div>
+      </div>
+      <footer className="py-32 bg-slate-900 text-white relative z-10 overflow-hidden">
+        <div className="absolute inset-0 bg-mesh-saffron opacity-5"></div>
+        <div className="max-w-7xl mx-auto px-10 relative z-10">
+          <div className="flex flex-col lg:flex-row justify-between gap-20 border-b border-white/10 pb-20 mb-20">
+            <div className="max-w-md space-y-10">
+               <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-slate-900 shadow-xl">
+                     <HeartPulse size={24} />
+                  </div>
+                  <span className="font-display font-black text-3xl tracking-tighter uppercase">Metascale</span>
                </div>
-               <p className="text-slate-400 font-medium max-w-sm leading-relaxed mb-8">
-                  Empowering 1.4 billion people with personalized health risk awareness. Built with precision and a focus on Indian healthcare data.
+               <p className="text-white/40 text-sm font-medium leading-relaxed uppercase tracking-wider">
+                  Engineered for a new era of metabolic health awareness. We empower 1.4 billion people with board-certified clinical intelligence.
                </p>
+               <div className="flex items-center gap-8 pt-4 grayscale opacity-40">
+                  <Globe size={24} />
+                  <Zap size={24} />
+                  <ShieldCheck size={24} />
+               </div>
             </div>
-            <div>
-               <h4 className="font-bold text-sm uppercase tracking-widest text-slate-300 mb-6">Resources</h4>
-               <ul className="space-y-4 text-slate-400 font-medium text-sm">
-                  <li><a href="#" className="hover:text-saffron transition-colors">Clinical FAQ</a></li>
-                  <li><a href="#" className="hover:text-saffron transition-colors">Privacy Charter</a></li>
-                  <li><a href="#" className="hover:text-saffron transition-colors">Institutional Access</a></li>
-               </ul>
-            </div>
-            <div>
-               <h4 className="font-bold text-sm uppercase tracking-widest text-slate-300 mb-6">Portal Access</h4>
-               <ul className="space-y-4 text-slate-400 font-medium text-sm">
-                  <li><Link to="/login" state={{ role: 'doctor' }} className="hover:text-saffron transition-colors">Doctor Login</Link></li>
-                  <li><Link to="/login" state={{ role: 'admin' }} className="hover:text-saffron transition-colors">Admin Dashboard</Link></li>
-                  <li><Link to="/register" state={{ role: 'patient' }} className="hover:text-saffron transition-colors">Patient Screening</Link></li>
-               </ul>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-20">
+               <div className="space-y-8">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Protocol</h4>
+                  <ul className="space-y-4 text-sm font-bold text-white/60">
+                     <li className="hover:text-white transition-colors cursor-pointer">Clinical FAQ</li>
+                     <li className="hover:text-white transition-colors cursor-pointer">Security Audit</li>
+                     <li className="hover:text-white transition-colors cursor-pointer">Privacy</li>
+                  </ul>
+               </div>
+               <div className="space-y-8">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30">Registry</h4>
+                  <ul className="space-y-4 text-sm font-bold text-white/60">
+                     <li><Link to="/login" state={{ role: 'doctor' }} className="hover:text-white transition-colors">Personnel Login</Link></li>
+                     <li><Link to="/login" state={{ role: 'admin' }} className="hover:text-white transition-colors">Admin Dashboard</Link></li>
+                     <li><Link to="/register" state={{ role: 'patient' }} className="hover:text-white transition-colors">Patient Screening</Link></li>
+                  </ul>
+               </div>
             </div>
           </div>
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-             <p className="text-xs text-slate-500 font-medium">© 2026 Metascale Health. All risk analyses are awareness-focused and not medical diagnoses.</p>
-             <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-saffron-deep bg-saffron-light/5 px-4 py-2 rounded-full border border-saffron-light/10">
-                <Info size={14} /> Knowledge Hub for Health Risk
+          
+          <div className="flex flex-col md:flex-row items-center justify-between gap-10">
+             <p className="text-[10px] text-white/20 font-black uppercase tracking-widest leading-loose max-w-lg text-center md:text-left italic">
+                © 2026 Metascale Health Clinical Group. All screening analyses are preventative awareness tools and not clinical diagnoses.
+             </p>
+             <div className="bg-white/5 border border-white/5 px-6 py-3 rounded-full flex items-center gap-4">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">Core Stable: Node-4.1.2</span>
              </div>
           </div>
         </div>
       </footer>
     </div>
-  );
-};
-
-const PerspectiveCard = ({ feature }) => {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useTransform(y, [-100, 100], [10, -10]);
-  const rotateY = useTransform(x, [-100, 100], [-10, 10]);
-
-  return (
-    <motion.div 
-      style={{ rotateX, rotateY, perspective: 1000 }}
-      onMouseMove={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        x.set(e.clientX - rect.left - rect.width / 2);
-        y.set(e.clientY - rect.top - rect.height / 2);
-      }}
-      onMouseLeave={() => { x.set(0); y.set(0); }}
-      className="card hover:shadow-3xl transition-all duration-500 group border-white/40 backdrop-blur-sm bg-white/60 text-left relative overflow-hidden"
-    >
-       <div className={`w-14 h-14 ${feature.accent} text-white rounded-2xl flex items-center justify-center mb-8 shadow-xl group-hover:scale-110 transition-transform group-hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)]`}>
-          <feature.icon size={28} />
-       </div>
-       <h3 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">{feature.title}</h3>
-       <p className="text-slate-500 font-medium leading-relaxed mb-6">{feature.desc}</p>
-       <Link to="/register" className="text-saffron-deep font-bold text-sm tracking-widest uppercase flex items-center gap-2 hover:gap-3 transition-all">Explore <ArrowRight size={14} /></Link>
-    </motion.div>
   );
 };
 

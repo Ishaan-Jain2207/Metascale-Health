@@ -1,246 +1,212 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Stethoscope, 
-  ArrowLeft, 
+  Activity, 
+  ShieldCheck, 
   ArrowRight, 
-  CheckCircle2, 
+  ArrowLeft,
+  Zap,
   Info,
   Loader2,
   AlertCircle,
-  Activity,
-  Zap,
-  Globe
+  FlaskConical,
+  Beaker,
+  Thermometer,
+  Scale
 } from 'lucide-react';
 import api from '../../services/api';
-import { motion } from 'framer-motion';
+import MaterialStepper from '../../components/MaterialStepper';
+/* eslint-disable no-unused-vars */
+import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 
 const DiabetesScreening = () => {
   const navigate = useNavigate();
+  const [activeStep, setActiveStep] = useState(0);
+  const [formData, setFormData] = useState({
+    Pregnancies: '0',
+    Glucose: '100',
+    BloodPressure: '70',
+    SkinThickness: '20',
+    Insulin: '80',
+    BMI: '25',
+    DiabetesPedigreeFunction: '0.47',
+    Age: '30'
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
-    age: '',
-    gender: '',
-    familyDiabetes: false,
-    highBP: false,
-    physicallyActive: 'none',
-    bmi: '',
-    smoking: false,
-    alcohol: false,
-    sleepHours: '',
-    soundSleep: '',
-    regularMedicine: false,
-    junkFood: 'rarely',
-    stress: 'none',
-    bpLevel: 'normal',
-    pregnancies: 0,
-    prediabetes: false,
-    urinationFreq: 'notMuch'
-  });
+
+  const steps = useMemo(() => [
+    'Reproductive Context',
+    'Glycemic Index',
+    'Vascular Pulse',
+    'Epidermal Depth',
+    'Insulinic Vector',
+    'Metabolic Mass',
+    'Genetic Lineage',
+    'Biological Age'
+  ], []);
+
+  useEffect(() => {
+    document.body.classList.add('app-dark-mode');
+    return () => document.body.classList.remove('app-dark-mode');
+  }, []);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleNext = () => setActiveStep(prev => prev + 1);
+  const handleBack = () => setActiveStep(prev => prev - 1);
+
+  const handleSubmit = async () => {
     setLoading(true);
-    
-    const ageGroup = 
-      formData.age < 40 ? 'below 40' :
-      formData.age <= 49 ? '40-49' :
-      formData.age <= 59 ? '50-59' : '60 or above';
-
-    const submissionData = {
-      ...formData,
-      ageGroup
-    };
-
+    setError('');
     try {
-      const res = await api.post('/predict/diabetes', submissionData);
-      if (res.data.success) {
-        navigate('/patient/screening/result', { state: { result: res.data.data, type: 'diabetes' } });
-      } else {
-        setError(res.data.message);
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit screening. Please try again.');
+      const res = await api.post('/predict/diabetes', formData);
+      navigate(`/patient/result/diabetes/${res.data.data.id}`);
+    } catch {
+      setError('Signal Interruption: Neural synchronization failed. Verify biovariables.');
     } finally {
       setLoading(false);
     }
   };
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
-  };
+  const renderStepContent = (step) => {
+    const configs = [
+      { name: 'Pregnancies', label: 'Reproductive Cycles', icon: ShieldCheck, min: 0, max: 20, desc: 'Total count of gestations recorded in medical history.' },
+      { name: 'Glucose', label: 'Plasma Glucose', icon: Activity, min: 0, max: 300, desc: 'Concentration of glycemic particles post-handshake.' },
+      { name: 'BloodPressure', label: 'Diastolic Pressure', icon: Zap, min: 0, max: 200, desc: 'Internal vascular tension measured in mm Hg.' },
+      { name: 'SkinThickness', label: 'Epidermal Fold', icon: FlaskConical, min: 0, max: 100, desc: 'Triceps skin fold density measured in mm.' },
+      { name: 'Insulin', label: 'Serum Insulin', icon: Beaker, min: 0, max: 900, desc: '2-Hour serum insulin concentration (mu U/ml).' },
+      { name: 'BMI', label: 'Body Mass Vector', icon: Scale, min: 0, max: 70, desc: 'Weight (kg) / Height (m)^2 biometric ratio.' },
+      { name: 'DiabetesPedigreeFunction', label: 'Lineage Index', icon: Info, min: 0, max: 3, desc: 'Probabilistic likelihood of inherited glycemic dysfunction.' },
+      { name: 'Age', label: 'Temporal Biological Age', icon: Thermometer, min: 0, max: 120, desc: 'Biological age at point of diagnostic audit.' }
+    ];
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } }
+    const config = configs[step];
+    if (!config) return null;
+
+    return (
+      <motion.div 
+        key={step}
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -50 }}
+        className="space-y-12 py-10"
+      >
+        <div className="flex flex-col md:flex-row items-center gap-16">
+          <div className="w-32 h-32 bg-saffron rounded-[48px] flex items-center justify-center text-ink shadow-5xl group-hover:rotate-12 transition-transform">
+             <config.icon size={48} strokeWidth={2.5} />
+          </div>
+          <div className="space-y-4 text-center md:text-left flex-1">
+             <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.4em] mb-4">Diagnostic Step {step + 1} / 8</p>
+             <h3 className="text-4xl md:text-6xl font-display font-black text-white uppercase tracking-tight">{config.label}</h3>
+             <p className="text-[11px] text-white/30 font-black uppercase tracking-widest leading-loose italic max-w-xl">{config.desc}</p>
+          </div>
+        </div>
+
+        <div className="space-y-8 max-w-2xl mx-auto pt-10">
+           <div className="relative group">
+              <input 
+                type="number" 
+                step={config.name === 'BMI' || config.name === 'DiabetesPedigreeFunction' ? '0.01' : '1'}
+                name={config.name}
+                value={formData[config.name]}
+                onChange={handleChange}
+                className="w-full pl-10 pr-10 py-10 bg-white/5 border border-white/10 rounded-[48px] outline-none focus:ring-12 focus:ring-saffron/5 focus:border-saffron/40 text-6xl font-display font-black text-white text-center shadow-5xl transition-all"
+              />
+              <div className="absolute top-1/2 left-8 -translate-y-1/2 text-white/10 group-focus-within:text-saffron transition-colors uppercase font-black text-[10px] tracking-widest">MIN_{config.min}</div>
+              <div className="absolute top-1/2 right-8 -translate-y-1/2 text-white/10 group-focus-within:text-saffron transition-colors uppercase font-black text-[10px] tracking-widest">MAX_{config.max}</div>
+           </div>
+           
+           <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+              <motion.div 
+                 initial={{ width: "0%" }}
+                 animate={{ width: `${(formData[config.name] / config.max) * 100}%` }}
+                 className="h-full bg-saffron shadow-[0_0_20px_rgba(247,147,30,0.4)]"
+              />
+           </div>
+        </div>
+      </motion.div>
+    );
   };
 
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="max-w-5xl mx-auto space-y-10 pb-16"
-    >
-      {/* Header Mini-Hero */}
-      <motion.div 
-        variants={itemVariants}
-        className="relative overflow-hidden bg-mesh-saffron rounded-[40px] p-8 md:p-12 text-white shadow-3xl border border-white/20"
-      >
-         <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 animate-float">
-            <Stethoscope size={240} />
+    <div className="max-w-5xl mx-auto pb-48 px-4 md:px-0 relative">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-saffron/5 blur-3xl rounded-full -mr-32 -mt-32"></div>
+      
+      <div className="mb-20 space-y-10 pt-16">
+         <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/20 border-b border-white/5 pb-8">
+            <Link to="/patient/screening" className="hover:text-saffron transition-all">Protocol Nexus</Link>
+            <ArrowRight size={14} className="text-white/5" />
+            <span className="text-saffron font-bold">Metabolic Audit</span>
+            <div className="ml-auto flex items-center gap-3">
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></div>
+               <span className="tracking-widest">Temporal Sync: OK</span>
+            </div>
          </div>
-         <div className="relative z-10">
-            <button 
-              onClick={() => navigate('/patient/screening')} 
-              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-white/20 hover:bg-white/20 transition-all"
-            >
-               <ArrowLeft size={14} /> Back to Screening Portal
-            </button>
-            <h1 className="text-4xl md:text-5xl font-display font-bold mb-4 drop-shadow-md text-white">
-               Metabolic <br />
-               <span className="text-white/80 italic font-sans font-medium">Risk Analysis</span>
-            </h1>
-            <p className="text-white/70 max-w-lg text-lg font-medium leading-relaxed">
-               Analyze your systemic health parameters to detect early-stage metabolic variations.
-            </p>
+         <h1 className="text-5xl md:text-8xl font-display font-black text-white tracking-tighter leading-none uppercase">
+            Glycemic <br />
+            <span className="text-saffron italic font-sans font-medium lowercase">Protocol</span>
+         </h1>
+      </div>
+
+      <div className="mb-20 glass-dark p-8 rounded-[48px] border border-white/5 shadow-2xl">
+         <MaterialStepper steps={steps} activeStep={activeStep} onStepClick={setActiveStep} />
+      </div>
+
+      <div className="min-h-[400px]">
+         <AnimatePresence mode="wait">
+            {renderStepContent(activeStep)}
+         </AnimatePresence>
+      </div>
+
+      {error && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+          className="mt-12 p-8 rounded-[32px] bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center gap-6 shadow-xl backdrop-blur-xl"
+        >
+           <AlertCircle size={32} strokeWidth={2.5} />
+           <p className="text-xs md:text-[11px] font-black uppercase tracking-[0.2em] leading-loose">{error}</p>
+        </motion.div>
+      )}
+
+      <div className="fixed bottom-12 left-0 w-full px-6 flex justify-center z-50">
+         <div className="w-full max-w-xl glass-dark backdrop-blur-3xl p-5 rounded-[40px] flex items-center gap-5 border border-white/10 shadow-5xl">
+            {activeStep > 0 && (
+               <button 
+                  onClick={handleBack} 
+                  className="flex-1 py-6 bg-white/5 rounded-[30px] text-white/30 hover:text-white hover:bg-white/10 transition-all font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 border border-white/5"
+               >
+                  <ArrowLeft size={16} /> Back Sequence
+               </button>
+            )}
+            
+            {activeStep < steps.length - 1 ? (
+               <button 
+                  onClick={handleNext} 
+                  className="flex-[2] py-6 bg-saffron text-ink rounded-[30px] font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:shadow-saffron/20 shadow-xl transition-all"
+               >
+                  Advance Diagnostic <ArrowRight size={18} />
+               </button>
+            ) : (
+               <button 
+                  onClick={handleSubmit} 
+                  disabled={loading}
+                  className="flex-[2] py-6 bg-saffron text-ink rounded-[30px] font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-4 hover:shadow-saffron/20 shadow-xl transition-all disabled:opacity-50"
+               >
+                  {loading ? <Loader2 className="animate-spin" size={20} /> : (
+                     <>
+                        Execute Final Audit <Zap size={18} />
+                     </>
+                  )}
+               </button>
+            )}
          </div>
-      </motion.div>
-
-      <motion.div variants={itemVariants} className="card !bg-white/40 backdrop-blur-3xl border border-white/60 shadow-3xl p-8 md:p-14 rounded-[48px] relative overflow-hidden">
-        {error && (
-          <div className="mb-10 p-6 bg-red-50/50 backdrop-blur-sm border border-red-100 text-red-600 rounded-[24px] flex items-start gap-4">
-            <AlertCircle className="shrink-0 mt-0.5" />
-            <p className="font-bold text-sm">{error}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-12">
-          {/* Section 1: Clinical & Demo */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div className="space-y-8">
-              <div className="flex items-center gap-3 mb-4">
-                 <div className="w-10 h-10 bg-saffron/10 text-saffron-deep rounded-xl flex items-center justify-center font-bold">01</div>
-                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Clinical Baseline</h3>
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Age</label>
-                  <input type="number" name="age" value={formData.age} onChange={handleChange} required className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium" />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Gender</label>
-                  <select name="gender" value={formData.gender} onChange={handleChange} required className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium">
-                    <option value="">Select</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                  </select>
-                </div>
-              </div>
-              <div className="space-y-3">
-                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">BMI (Index Value)</label>
-                 <input type="number" step="0.1" name="bmi" value={formData.bmi} onChange={handleChange} required className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium" />
-              </div>
-            </div>
-
-            <div className="space-y-6 pt-12">
-               {[
-                 { name: 'familyDiabetes', label: 'Genetic Predisposition (Family)' },
-                 { name: 'highBP', label: 'History of Hypertension' },
-                 { name: 'prediabetes', label: 'Prior Metabolic Diagnosis' },
-                 { name: 'regularMedicine', label: 'Maintenance Medication Usage' }
-               ].map((field) => (
-                 <label key={field.name} className="flex items-center gap-4 cursor-pointer group bg-slate-50/50 p-4 rounded-2xl border border-slate-100 hover:bg-white transition-all">
-                    <input type="checkbox" name={field.name} checked={formData[field.name]} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep border-slate-300" />
-                    <span className="text-xs font-black text-slate-600 uppercase tracking-widest group-hover:text-saffron-deep transition-colors">{field.label}</span>
-                 </label>
-               ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8 border-t border-slate-100">
-            {/* Lifestyle */}
-            <div className="space-y-8">
-              <div className="flex items-center gap-3 mb-4">
-                 <div className="w-10 h-10 bg-saffron/10 text-saffron-deep rounded-xl flex items-center justify-center font-bold">02</div>
-                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Lifestyle Vector</h3>
-              </div>
-              <div className="space-y-3">
-                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Physical Activity</label>
-                 <select name="physicallyActive" value={formData.physicallyActive} onChange={handleChange} className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium font-sans">
-                    <option value="none">Sedentary Profile</option>
-                    <option value="lt30">&lt; 30 mins Maintenance</option>
-                    <option value="30-60">High Physical Activity</option>
-                    <option value="gt60">Athlete / Peak Activity</option>
-                 </select>
-              </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Sleep (Hrs)</label>
-                  <input type="number" name="sleepHours" value={formData.sleepHours} onChange={handleChange} required className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium" />
-                </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Dietary Pattern</label>
-                  <select name="junkFood" value={formData.junkFood} onChange={handleChange} className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium">
-                     <option value="rarely">Clean / Controlled</option>
-                     <option value="occasionally">Moderate Processed</option>
-                     <option value="often">High Processed Exposure</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Metabolic Indicators */}
-            <div className="space-y-8">
-               <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-saffron/10 text-saffron-deep rounded-xl flex items-center justify-center font-bold">03</div>
-                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Risk Indicators</h3>
-               </div>
-               <div className="grid grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Systemic BP</label>
-                     <select name="bpLevel" value={formData.bpLevel} onChange={handleChange} className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium font-sans">
-                        <option value="low">Hypotensive</option>
-                        <option value="normal">Normotensive</option>
-                        <option value="high">Hypertensive</option>
-                     </select>
-                  </div>
-                  <div className="space-y-3">
-                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Urination Index</label>
-                     <select name="urinationFreq" value={formData.urinationFreq} onChange={handleChange} className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium font-sans">
-                        <option value="notMuch">Normal Range</option>
-                        <option value="quiteOften">Frequency Deviation</option>
-                     </select>
-                  </div>
-               </div>
-               <div className="pt-2">
-                  <button 
-                    type="submit" 
-                    disabled={loading} 
-                    className="w-full py-6 rounded-[24px] bg-mesh-saffron text-white font-display font-black text-lg uppercase tracking-widest shadow-3xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
-                  >
-                     {loading ? <Loader2 className="animate-spin" /> : <Zap size={24} />}
-                     {loading ? 'Analyzing Vector...' : 'Execute Risk Analysis'}
-                  </button>
-               </div>
-            </div>
-          </div>
-        </form>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 

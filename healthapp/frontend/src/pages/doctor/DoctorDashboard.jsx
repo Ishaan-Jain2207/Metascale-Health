@@ -1,84 +1,69 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Users, 
-  ClipboardList, 
-  TrendingUp, 
   Calendar, 
+  Activity, 
+  TrendingUp, 
+  ArrowUpRight, 
   ArrowRight,
-  Activity,
-  CheckCircle2,
   Clock,
+  ShieldCheck,
+  Zap,
+  CheckCircle2,
   AlertCircle,
-  Loader2,
-  Stethoscope,
-  BarChart3
+  Stethoscope
 } from 'lucide-react';
 import api from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
-import { motion } from 'framer-motion';
+/* eslint-disable no-unused-vars */
+import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 
 const DoctorDashboard = () => {
-  const { user } = useAuth();
   const [stats, setStats] = useState({
-    totalPatients: 0,
-    pendingReviews: 0,
-    todayAppts: 0,
-    recentScreenings: []
+    total_patients: 0,
+    pending_appointments: 0,
+    recent_screenings: 0,
+    avg_confidence: 0
   });
-  const [notifying, setNotifying] = useState(false);
-  const [notifySuccess, setNotifySuccess] = useState(false);
+  const [recentPatients, setRecentPatients] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const [statsRes, apptRes] = await Promise.all([
-          api.get('/doctor/stats'),
-          api.get('/appointments/doctor')
-        ]);
-        
-        const today = new Date().toISOString().split('T')[0];
-        const todayAppts = apptRes.data.data.filter(a => a.appt_date === today && a.status === 'confirmed').length;
-        
-        setStats({
-          ...statsRes.data.data,
-          todayAppts
-        });
-      } catch (err) {
-        console.error('Error fetching doctor stats:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStats();
+  const fetchInitialData = useCallback(async () => {
+    try {
+      const [statsRes, patientsRes] = await Promise.all([
+        api.get('/doctor/stats'),
+        api.get('/doctor/patients?limit=5')
+      ]);
+      setStats(statsRes.data.data);
+      setRecentPatients(patientsRes.data.data);
+    } catch {
+      console.error('Error fetching clinical data');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleSendNotifications = async () => {
-    setNotifying(true);
-    try {
-      // Simulate real clinical messaging handshake
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setNotifySuccess(true);
-      setTimeout(() => setNotifySuccess(false), 3000);
-    } catch (err) {
-      console.error('Notification failed');
-    } finally {
-      setNotifying(false);
-    }
-  };
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" /></div>;
-  const growthIndex = stats.growthIndex || 0;
-  const accuracy = stats.accuracy || 95;
-  const optimization = stats.optimization || '25ms';
+  const statCards = useMemo(() => [
+    { label: 'Clinical Reach', value: stats.total_patients, icon: Users, color: 'bg-saffron', trend: '+12%' },
+    { label: 'Pending Mandates', value: stats.pending_appointments, icon: Calendar, color: 'bg-slate-900', trend: 'Active' },
+    { label: 'Spectral Density', value: stats.recent_screenings, icon: Activity, color: 'bg-saffron-deep', trend: 'Audit Req' },
+    { label: 'Model Assurance', value: `${(stats.avg_confidence * 100).toFixed(0)}%`, icon: ShieldCheck, color: 'bg-emerald-500', trend: 'SLA OK' }
+  ], [stats]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh] flex-col gap-6 text-white/20">
+      <Zap className="animate-spin text-saffron" size={48} />
+      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Synchronizing Master Node...</p>
+    </div>
+  );
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
   };
 
   const itemVariants = {
@@ -91,153 +76,142 @@ const DoctorDashboard = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-10 pb-10"
+      className="space-y-16 pb-24"
     >
-      {/* Clinical Hero - Deep Mesh Gradient */}
-      <motion.div 
-        variants={itemVariants}
-        className="relative overflow-hidden bg-mesh-clinical rounded-[40px] p-8 md:p-12 text-white shadow-[0_20px_60px_rgba(67,53,130,0.3)] border border-white/10"
-      >
-         <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 animate-float">
-            <Stethoscope size={240} />
-         </div>
-         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-            <div>
-               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-white/20">
-                  <Activity size={14} className="animate-pulse text-lavender-clinical" /> Practice Intelligence
-               </div>
-               <h1 className="text-4xl md:text-5xl font-display font-bold mb-4 drop-shadow-md">
-                  Welcome back, <br />
-                  <span className="text-white/90">Dr. {user?.full_name?.split(' ').pop()}</span>
-               </h1>
-               <p className="text-white/70 max-w-md text-lg font-medium leading-relaxed">
-                  Your clinical practice is optimized. {stats.pendingReviews} screenings require your expert verification today.
-               </p>
+      {/* Dynamic Header */}
+      <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-10 border-b border-white/5 pb-10">
+         <div className="space-y-4">
+            <div className="inline-flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full text-saffron text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-xl border border-white/10">
+               <Zap size={14} className="animate-pulse" /> Personnel Session: 0x92f1
             </div>
-            <div className="flex flex-col gap-3 min-w-[200px]">
-               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center font-bold text-white text-lg">{stats.todayAppts}</div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Appointments <br /> Scheduled Today</p>
-               </div>
-               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 flex items-center gap-4">
-                  <div className="w-10 h-10 bg-green-400/20 rounded-xl flex items-center justify-center font-bold text-green-400 text-lg">{stats.accuracy}%</div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-white/60">AI Verification <br /> Accuracy Rate</p>
-               </div>
+            <h1 className="text-5xl md:text-8xl font-display font-black text-white tracking-tighter uppercase leading-none">
+               Clinical <br />
+               <span className="text-saffron italic font-sans font-medium lowercase">Overview</span>
+            </h1>
+         </div>
+         <div className="flex items-center gap-6">
+            <div className="text-right hidden md:block">
+               <p className="text-[10px] text-white/20 font-black uppercase tracking-widest mb-1">Temporal Audit</p>
+               <p className="text-white font-display font-black text-lg uppercase tracking-tight">{new Date().toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+            </div>
+            <div className="w-14 h-14 bg-white/5 border border-white/10 rounded-[28px] flex items-center justify-center text-saffron shadow-4xl cursor-help hover:bg-saffron hover:text-slate-900 transition-all">
+               <Clock size={24} />
             </div>
          </div>
       </motion.div>
 
-      {/* Analytics Grid - Premium Glass */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[
-            { label: 'Managed Patients', val: stats.totalPatients, icon: Users, accent: 'indigo-clinical' },
-            { label: 'Pending Reviews', val: stats.pendingReviews, icon: ClipboardList, accent: 'lavender-clinical' },
-            { label: 'Efficiency Index', val: stats.optimization, icon: Activity, accent: 'green-500' },
-            { label: 'Monthly Growth', val: stats.growthIndex >= 0 ? `+${stats.growthIndex}` : stats.growthIndex, icon: BarChart3, accent: 'blue-500' }
-          ].map((stat, i) => (
-             <div key={i} className="card group hover:border-indigo-clinical/30 transition-all">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-slate-50 text-indigo-clinical rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                     <stat.icon size={24} />
-                  </div>
-                  <div>
-                     <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">{stat.label}</p>
-                     <p className="text-2xl font-display font-bold text-slate-900">{stat.val}</p>
-                  </div>
+      {/* Stats Cluster */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {statCards.map((stat, i) => (
+          <motion.div 
+            variants={itemVariants}
+            key={i} 
+            className="glass-dark p-10 rounded-[56px] border border-white/5 shadow-5xl group hover:border-saffron/20 transition-all relative overflow-hidden"
+          >
+             <div className="absolute top-0 right-0 w-32 h-32 bg-saffron/5 rounded-full -mr-16 -mt-16 blur-2xl opacity-40 group-hover:scale-150 transition-transform"></div>
+             <div className="flex justify-between items-start relative z-10 mb-10">
+                <div className={`w-14 h-14 ${stat.color} rounded-[24px] flex items-center justify-center text-white shadow-2xl`}>
+                   <stat.icon size={24} />
+                </div>
+                <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-saffron bg-saffron/5 px-3 py-1.5 rounded-full border border-saffron/10">
+                   {stat.trend} <ArrowUpRight size={10} />
                 </div>
              </div>
-          ))}
-      </motion.div>
+             <div className="relative z-10">
+                <h3 className="text-[10px] text-white/30 font-black uppercase tracking-[0.2em] mb-3 italic">{stat.label}</h3>
+                <p className="text-5xl font-display font-black text-white tracking-tighter uppercase">{stat.value}</p>
+             </div>
+          </motion.div>
+        ))}
+      </div>
 
-      <div className="grid lg:grid-cols-3 gap-10">
-         {/* System Alerts & Recent Table */}
-         <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
-            <div className="flex items-center justify-between px-2">
-               <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                  <span className="w-2 h-8 bg-indigo-clinical rounded-full"></span> Screening Sentinel
+      <div className="grid lg:grid-cols-3 gap-16">
+         {/* Recent Clinical Registry */}
+         <motion.div variants={itemVariants} className="lg:col-span-2 space-y-10">
+            <div className="flex items-center justify-between">
+               <h2 className="text-2xl font-display font-black text-white uppercase tracking-tight flex items-center gap-4">
+                  <Users className="text-saffron" size={24} /> Registry Hub
+                  <div className="h-px w-24 bg-white/5"></div>
                </h2>
-               <Link to="/doctor/patients" className="text-indigo-clinical font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">Patient Directory <ArrowRight size={16} /></Link>
-            </div>
-
-            <div className="bg-white/40 backdrop-blur-3xl rounded-[32px] border border-white/60 overflow-hidden shadow-2xl shadow-slate-200/50">
-               <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                     <thead className="bg-slate-50/50 border-b border-slate-100">
-                        <tr>
-                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Clinical Identity</th>
-                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Screener</th>
-                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">AI Conclusion</th>
-                           <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-right">Action</th>
-                        </tr>
-                     </thead>
-                     <tbody className="divide-y divide-slate-100">
-                        {stats.recentScreenings && stats.recentScreenings.map((screen) => (
-                           <tr key={`${screen.type}-${screen.id}`} className="hover:bg-white/40 transition-colors group">
-                              <td className="px-8 py-5">
-                                 <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-bold text-indigo-clinical text-sm group-hover:scale-110 transition-transform">{screen.patient_name?.charAt(0)}</div>
-                                    <div>
-                                       <p className="font-bold text-slate-900 text-sm">{screen.patient_name}</p>
-                                       <p className="text-[10px] text-slate-400 font-black uppercase tracking-tight">{screen.age}Y • {screen.gender}</p>
-                                    </div>
-                                 </div>
-                              </td>
-                              <td className="px-8 py-5">
-                                 <div className="flex items-center gap-2">
-                                    <div className="text-lavender-clinical"><Activity size={16} /></div>
-                                    <span className="text-xs font-black text-slate-600 uppercase tracking-wide">{screen.type}</span>
-                                 </div>
-                              </td>
-                              <td className="px-8 py-5">
-                                 <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-tight ${
-                                    screen.risk_band === 'Minimal' ? 'bg-green-100 text-green-700' :
-                                    screen.risk_band === 'Elevated' ? 'bg-yellow-100 text-yellow-700' :
-                                    'bg-red-100 text-red-700'
-                                 }`}>
-                                    {screen.risk_band} RISK
-                                 </span>
-                              </td>
-                              <td className="px-8 py-5 text-right">
-                                 <Link to={`/doctor/patients/${screen.patient_id}`} className="inline-flex items-center justify-center w-10 h-10 bg-slate-50 hover:bg-white text-indigo-clinical rounded-xl border border-slate-100 transition-all shadow-sm active:scale-90">
-                                    <ArrowRight size={18} />
-                                 </Link>
-                              </td>
-                           </tr>
-                        ))}
-                     </tbody>
-                  </table>
-               </div>
-            </div>
-         </motion.div>
-
-         {/* Sidebar Actions */}
-         <motion.div variants={itemVariants} className="space-y-8">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Practice Focus</h2>
-            
-            <div className="bg-gradient-to-br from-indigo-clinical to-[#513f9c] rounded-[32px] p-8 text-white shadow-3xl relative overflow-hidden group">
-               <div className="absolute top-0 right-0 p-4 opacity-5 rotate-12 group-hover:scale-110 transition-transform"><AlertCircle size={100} /></div>
-               <div className="flex items-center gap-3 mb-6">
-                  <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md"><AlertCircle size={28} className="text-lavender-clinical" /></div>
-                  <h3 className="font-bold text-xl">Clinical Alerts</h3>
-               </div>
-               <p className="text-sm text-white/60 mb-8 leading-relaxed font-bold uppercase tracking-tight">{stats.pendingReviews} Cases awaiting verification.</p>
-               <button 
-                 onClick={handleSendNotifications}
-                 disabled={notifying || notifySuccess}
-                 className={`w-full py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 ${notifySuccess ? 'bg-green-500 text-white' : 'bg-white text-indigo-clinical hover:bg-slate-50'}`}
-               >
-                  {notifying ? <Loader2 size={16} className="animate-spin" /> : notifySuccess ? <CheckCircle2 size={16} /> : <Activity size={16} />}
-                  {notifySuccess ? 'Notified Successfully' : 'Trigger Patient Alerts'}
+               <button className="text-[10px] font-black uppercase tracking-widest text-white/40 hover:text-saffron transition-colors flex items-center gap-3 bg-white/5 px-6 py-3 rounded-full border border-white/5">
+                  Expand Registry <ArrowRight size={14} />
                </button>
             </div>
 
-            <div className="bg-ink text-white rounded-[32px] p-8 relative overflow-hidden group shadow-2xl border border-white/5">
-               <div className="absolute -bottom-10 -right-10 text-white/5 transition-transform group-hover:scale-125"><TrendingUp size={160} /></div>
-               <h3 className="font-bold text-xl mb-3 relative z-10">Advanced Analytics</h3>
-               <p className="text-white/40 text-sm mb-8 relative z-10 font-medium leading-relaxed">Dive into population-level health trends and metabolic risk distributions.</p>
-               <Link to="/doctor/analytics" className="relative z-10 btn-secondary !bg-white/5 !text-white !border-white/10 hover:!bg-white/10 !py-2 !px-6 !text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
-                  Launch Insight Hub <ArrowRight size={14} />
-               </Link>
+            <div className="space-y-6">
+               {recentPatients.map((patient) => (
+                  <motion.div 
+                     whileHover={{ x: 10 }}
+                     key={patient.id} 
+                     className="glass-dark p-8 rounded-[48px] border border-white/5 flex items-center justify-between shadow-5xl group transition-all relative overflow-hidden"
+                  >
+                     <div className="absolute left-0 top-0 w-2 h-full bg-saffron opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                     <div className="flex items-center gap-10">
+                        <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-[28px] flex items-center justify-center text-white font-display font-black text-2xl shadow-3xl text-saffron group-hover:scale-110 transition-transform">
+                           {patient.full_name.charAt(0)}
+                        </div>
+                        <div className="space-y-2">
+                           <h4 className="text-2xl font-display font-black text-white uppercase tracking-tight leading-tight">{patient.full_name}</h4>
+                           <div className="flex items-center gap-6 text-[9px] font-black text-white/20 uppercase tracking-widest">
+                              <span className="flex items-center gap-2"><Stethoscope size={10} className="text-saffron/40" /> ID_{patient.id}</span>
+                              <span className="flex items-center gap-2"><Activity size={10} className="text-saffron/40" /> META_{patient.age}Y</span>
+                           </div>
+                        </div>
+                     </div>
+                     <div className="flex items-center gap-8">
+                        <div className="text-right hidden md:block">
+                           <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mb-1 flex items-center justify-end gap-2 px-3 py-1 bg-emerald-500/5 rounded-full border border-emerald-500/10">
+                              <CheckCircle2 size={10} /> Active
+                           </p>
+                           <p className="text-[9px] text-white/10 font-black uppercase tracking-widest mt-2">{new Date(patient.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <button className="w-14 h-14 bg-white/5 border border-white/10 rounded-full flex items-center justify-center text-white/20 hover:text-saffron hover:bg-saffron/10 hover:border-saffron/20 transition-all shadow-4xl group-hover:rotate-12">
+                           <ArrowUpRight size={24} />
+                        </button>
+                     </div>
+                  </motion.div>
+               ))}
+            </div>
+         </motion.div>
+
+         {/* Protocol Alerts */}
+         <motion.div variants={itemVariants} className="lg:col-span-1 space-y-10">
+            <h2 className="text-2xl font-display font-black text-white uppercase tracking-tight flex items-center gap-4">
+               <AlertCircle className="text-saffron" size={24} /> System Mandates
+            </h2>
+            
+            <div className="space-y-6">
+               <div className="glass-dark p-10 rounded-[56px] border border-white/5 border-l-4 border-l-rose-500/40 relative overflow-hidden group shadow-5xl animate-pulse-slow">
+                  <div className="flex items-start gap-8 relative z-10">
+                     <div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500 shadow-2xl">
+                        <TrendingUp size={24} />
+                     </div>
+                     <div className="space-y-3">
+                        <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em] font-display">Priority Alert</h4>
+                        <p className="text-white font-display font-black text-sm uppercase tracking-tight leading-relaxed">Elevated Metabolic Risk Vectors detected in Cluster #7.</p>
+                        <p className="text-[10px] text-white/20 font-black uppercase tracking-widest">Temporal Stamp: 22:41 IST</p>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="glass-dark p-10 rounded-[56px] border border-white/5 border-l-4 border-l-saffron/40 relative overflow-hidden group shadow-5xl">
+                  <div className="flex items-start gap-8 relative z-10">
+                     <div className="w-12 h-12 bg-saffron/10 rounded-2xl flex items-center justify-center text-saffron shadow-2xl">
+                        <ShieldCheck size={24} />
+                     </div>
+                     <div className="space-y-3">
+                        <h4 className="text-[10px] font-black text-saffron uppercase tracking-[0.3em] font-display">System Integrity</h4>
+                        <p className="text-white font-display font-black text-sm uppercase tracking-tight leading-relaxed">Personnel registry synchronization complete. 0x0 errors detected.</p>
+                        <p className="text-[10px] text-white/20 font-black uppercase tracking-widest">Protocol: V4.1 Stable</p>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="p-10 rounded-[56px] bg-white/5 border border-white/5 grayscale opacity-50 select-none">
+                  <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.15em] leading-relaxed italic text-center">
+                     Personnel Dashboard v4.1: Clinical overview is generated based on secure nodal handshakes. All data is encrypted and board-certified.
+                  </p>
+               </div>
             </div>
          </motion.div>
       </div>

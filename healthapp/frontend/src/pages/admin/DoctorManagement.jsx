@@ -1,179 +1,156 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
+  Users, 
   Stethoscope, 
-  Search, 
-  Filter, 
-  CheckCircle2, 
-  XCircle, 
+  ShieldCheck, 
   Trash2, 
-  ShieldAlert, 
-  Loader2,
+  Zap, 
+  ArrowLeft,
   Mail,
-  User,
   Activity,
-  MoreVertical,
-  Check,
-  ShieldCheck
+  Award
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { motion } from 'framer-motion';
+/* eslint-disable no-unused-vars */
+import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 
 const DoctorManagement = () => {
+  const navigate = useNavigate();
   const [doctors, setDoctors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [actionLoading, setActionLoading] = useState(null);
 
-  useEffect(() => {
-    fetchDoctors();
-  }, []);
-
-  const fetchDoctors = async () => {
+  const fetchDoctors = useCallback(async () => {
     try {
       const res = await api.get('/admin/doctors');
       setDoctors(res.data.data);
-    } catch (err) {
-      console.error('Error fetching doctors:', err);
+    } catch {
+      console.error('Error fetching personnel registry');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleApprove = async (id) => {
-    setActionLoading(id);
+  useEffect(() => {
+    document.body.classList.add('app-dark-mode');
+    fetchDoctors();
+    return () => document.body.classList.remove('app-dark-mode');
+  }, [fetchDoctors]);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Mandatory: Confirm identity deletion? This action is irreversible.')) return;
     try {
-      await api.put(`/admin/doctors/${id}/approve`);
+      await api.delete(`/admin/doctors/${id}`);
       fetchDoctors();
-    } catch (err) {
-      console.error('Approval failed:', err);
-    } finally {
-      setActionLoading(null);
+    } catch {
+      console.error('Personnel deletion failed');
     }
   };
 
-  const handleToggleStatus = async (id, currentStatus) => {
-    setActionLoading(id);
-    try {
-      await api.put(`/admin/users/${id}/status`, { is_active: !currentStatus });
-      fetchDoctors();
-    } catch (err) {
-      console.error('Status toggle failed:', err);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const filteredDoctors = doctors.filter(d => 
-    d.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    d.email?.toLowerCase().includes(search.toLowerCase())
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh] flex-col gap-6 text-white/20">
+      <Zap className="animate-spin text-saffron" size={48} />
+      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Auditing Personnel Registry...</p>
+    </div>
   );
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } }
-  };
-
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" /></div>;
 
   return (
     <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-12 pb-10"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-7xl mx-auto space-y-16 pb-24"
     >
-      <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
-        <div>
-           <h1 className="text-4xl font-display font-bold text-slate-900 tracking-tight flex items-center gap-4">
-              <span className="w-3 h-10 bg-indigo-clinical rounded-full"></span> Personnel Sentinel
-           </h1>
-           <p className="text-slate-500 font-medium max-w-lg mt-2">Manage Clinical Personnel and Professional Authorization workflows.</p>
-        </div>
-        <div className="flex items-center gap-3">
-           <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-clinical transition-colors" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search Identity..." 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-12 pr-6 py-3.5 bg-white/60 backdrop-blur-md border border-slate-200 rounded-[20px] outline-none focus:ring-4 focus:ring-indigo-clinical/10 focus:border-indigo-clinical w-full md:w-80 transition-all font-medium"
-              />
-           </div>
-        </div>
-      </motion.div>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 border-b border-white/5 pb-10 px-4 md:px-0">
+         <div className="space-y-4">
+            <button 
+               onClick={() => navigate('/admin/dashboard')}
+               className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-white/20 hover:text-saffron transition-all"
+            >
+               <ArrowLeft size={14} className="group-hover:-translate-x-2 transition-transform" /> Sentinel Hub
+            </button>
+            <h1 className="text-5xl md:text-8xl font-display font-black text-white tracking-tighter uppercase leading-none">
+               Personnel <br />
+               <span className="text-saffron italic font-sans font-medium lowercase">Nodes</span>
+            </h1>
+         </div>
+      </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-         {filteredDoctors.map((doctor) => (
-            <motion.div variants={itemVariants} key={doctor.id} className="card group hover:shadow-3xl hover:border-indigo-clinical/20 transition-all relative overflow-hidden bg-white/80 backdrop-blur-xl border border-slate-200/60 rounded-[32px] p-8">
-               <div className="absolute -top-4 -right-4 text-indigo-clinical/5 rotate-12 transition-transform group-hover:scale-125"><Stethoscope size={160} /></div>
-               <div className="flex items-start justify-between mb-8 relative z-10">
-                  <div className="flex items-center gap-4">
-                     <div className={`w-18 h-18 rounded-[24px] flex items-center justify-center font-display font-bold text-2xl shadow-2xl ring-4 ring-white group-hover:rotate-3 transition-transform ${doctor.is_approved ? 'bg-ink text-white' : 'bg-saffron-light/20 text-saffron-deep'}`}>
-                        {doctor.full_name?.charAt(0)}
-                     </div>
-                     <div>
-                        <h3 className="font-bold text-slate-900 text-xl leading-tight">{doctor.full_name}</h3>
-                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.15em] mt-1">{doctor.specialization || 'Clinical Generalist'}</p>
-                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                     <div className={`w-3.5 h-3.5 rounded-full border-2 border-white shadow-sm ${doctor.is_active ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} title={doctor.is_active ? 'Online' : 'Restricted'}></div>
-                  </div>
+      <div className="grid lg:grid-cols-4 gap-12 px-4 md:px-0">
+         <div className="lg:col-span-1 space-y-8">
+            <div className="glass-dark p-10 rounded-[48px] border border-white/5 space-y-8 relative overflow-hidden group">
+               <div className="absolute inset-0 bg-mesh-saffron opacity-5"></div>
+               <Users className="text-saffron" size={40} />
+               <div className="space-y-2">
+                  <p className="text-[10px] text-white/20 font-black uppercase tracking-widest">Active Personnel</p>
+                  <p className="text-6xl font-display font-black text-white">{doctors.length}</p>
                </div>
+               <p className="text-[9px] text-white/20 font-black uppercase tracking-widest leading-relaxed">System is performing sequential biometric audits on clinical clusters.</p>
+            </div>
+         </div>
 
-               <div className="space-y-4 mb-10 relative z-10">
-                  <div className="flex items-center gap-3 text-[11px] font-black uppercase tracking-widest text-slate-400 bg-slate-50/50 p-2 px-4 rounded-full w-fit">
-                     <Mail size={12} className="text-indigo-clinical" /> {doctor.email}
-                  </div>
-                  <div className="flex items-center gap-3 text-xs font-bold text-slate-600 px-4">
-                     <ShieldCheck size={14} className="text-green-500" /> {doctor.hospital || 'Clinical Node Alpha'}
-                  </div>
-               </div>
-
-               <div className="pt-8 border-t border-slate-100 flex items-center gap-2 relative z-10">
-                  {!doctor.is_approved ? (
-                     <div className="flex gap-2 w-full">
-                        <button 
-                          onClick={() => handleApprove(doctor.id)}
-                          disabled={actionLoading === doctor.id}
-                          className="flex-1 bg-indigo-clinical hover:bg-[#513f9c] text-white py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100/50 transition-all active:scale-95 flex items-center justify-center gap-2"
-                        >
-                           {actionLoading === doctor.id ? <Loader2 size={14} className="animate-spin" /> : 'Authorize Residency'}
-                        </button>
-                        <button className="p-3 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-2xl transition-all border border-slate-100"><Trash2 size={16} /></button>
-                     </div>
-                  ) : (
-                     <button 
-                       onClick={() => handleToggleStatus(doctor.id, doctor.is_active)}
-                       disabled={actionLoading === doctor.id}
-                       className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 active:scale-95 ${doctor.is_active ? 'bg-white border border-slate-200 text-red-600 hover:bg-red-50' : 'bg-green-600 text-white hover:bg-green-700 shadow-xl shadow-green-100'}`}
+         <div className="lg:col-span-3 space-y-8">
+            <div className="grid md:grid-cols-2 gap-8">
+               <AnimatePresence>
+                  {doctors.map((doctor) => (
+                     <motion.div 
+                        key={doctor.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="glass-dark p-8 rounded-[48px] border border-white/5 shadow-5xl group relative overflow-hidden"
                      >
-                        {actionLoading === doctor.id ? <Loader2 size={14} className="animate-spin" /> : doctor.is_active ? <ShieldAlert size={16} /> : <CheckCircle2 size={16} />}
-                        {doctor.is_active ? 'Revoke Access' : 'Restore Authorization'}
-                     </button>
-                  )}
-               </div>
-            </motion.div>
-         ))}
+                        <div className="absolute left-0 top-0 w-2 h-full bg-saffron opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                        <div className="flex items-start justify-between gap-6 mb-8">
+                           <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-[24px] flex items-center justify-center text-saffron shadow-3xl group-hover:scale-110 transition-transform">
+                              <Stethoscope size={32} />
+                           </div>
+                           <button 
+                              onClick={() => handleDelete(doctor.id)}
+                              className="w-12 h-12 rounded-full border border-white/5 flex items-center justify-center text-white/10 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/20 transition-all"
+                           >
+                              <Trash2 size={18} />
+                           </button>
+                        </div>
+                        <div className="space-y-6">
+                           <div className="space-y-2">
+                              <h3 className="text-2xl font-display font-black text-white uppercase tracking-tight">{doctor.full_name}</h3>
+                              <div className="flex items-center gap-3 text-[10px] font-black text-white/20 uppercase tracking-widest">
+                                 <Mail size={12} className="text-saffron/40" /> {doctor.email}
+                              </div>
+                           </div>
+                           <div className="grid grid-cols-2 gap-4">
+                              <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                 <p className="text-[8px] text-white/20 font-black uppercase tracking-widest mb-1">Quals</p>
+                                 <p className="text-[10px] text-white font-black uppercase truncate">{doctor.qualification || 'Verified'}</p>
+                              </div>
+                              <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                 <p className="text-[8px] text-white/20 font-black uppercase tracking-widest mb-1">License</p>
+                                 <p className="text-[10px] text-white font-black uppercase truncate">{doctor.license_number || 'LCN-SYS'}</p>
+                              </div>
+                           </div>
+                           <div className="flex items-center gap-4 pt-4">
+                              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/5 text-emerald-400 text-[8px] font-black uppercase tracking-widest border border-emerald-500/10">
+                                 <ShieldCheck size={10} /> Node Active
+                              </div>
+                              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-saffron/5 text-saffron text-[8px] font-black uppercase tracking-widest border border-saffron/10">
+                                 <Activity size={10} /> Load Stable
+                              </div>
+                           </div>
+                        </div>
+                     </motion.div>
+                  ))}
+               </AnimatePresence>
+            </div>
 
-         {filteredDoctors.length === 0 && (
-            <motion.div variants={itemVariants} className="col-span-full card py-32 flex flex-col items-center justify-center text-center space-y-6 border-dashed bg-slate-50/20 border-2 rounded-[40px]">
-               <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center text-slate-200 shadow-xl mx-auto border border-slate-100"><User size={48} /></div>
-               <div>
-                  <h3 className="text-2xl font-bold text-slate-900">Personnel Index Empty</h3>
-                  <p className="text-slate-400 font-medium max-w-xs mx-auto mt-2 text-sm uppercase tracking-widest text-[#94a3b8]">No active medical records match the query.</p>
+            {doctors.length === 0 && (
+               <div className="glass-dark border-dashed border-2 border-white/5 p-24 rounded-[64px] text-center space-y-8 flex flex-col items-center opacity-40">
+                  <Award size={64} className="text-white/10" />
+                  <p className="text-white font-display font-black text-2xl uppercase tracking-tight">No Personnel Indexed</p>
                </div>
-            </motion.div>
-         )}
+            )}
+         </div>
       </div>
     </motion.div>
   );

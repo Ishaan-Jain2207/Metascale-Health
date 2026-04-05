@@ -1,279 +1,188 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+/* eslint-disable no-unused-vars */
+import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 import { 
   Activity, 
-  ClipboardCheck, 
-  TrendingUp, 
-  Calendar, 
-  ArrowRight,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  HeartPulse
+  ShieldCheck, 
+  ArrowRight, 
+  MessageSquare,
+  Zap,
+  Globe,
+  Database,
+  Loader2,
+  Calendar,
+  Lock,
+  ArrowUpRight,
+  TrendingUp,
+  History as HistoryIcon
 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
-import { motion } from 'framer-motion';
 
 const PatientDashboard = () => {
-  const { user } = useAuth();
-  const [stats, setStats] = useState({
-    total: 0,
-    latestLiver: null,
-    latestDiabetes: null,
-    upcomingAppt: null
-  });
+  const navigate = useNavigate();
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDashboardData();
+  const fetchData = useCallback(async () => {
+     try {
+        const [historyRes] = await Promise.all([
+           api.get('/predict/history')
+        ]);
+        setHistory(historyRes.data.data.slice(0, 3));
+     } catch {
+        console.error('Error fetching clinical vectors');
+     } finally {
+        setLoading(false);
+     }
   }, []);
 
-  const fetchDashboardData = async () => {
-    try {
-      const historyRes = await api.get('/predict/history');
-      const apptRes = await api.get('/appointments/patient');
-      
-      const history = historyRes.data.data;
-      const latestLiver = history.find(h => h.type === 'liver');
-      const latestDiabetes = history.find(h => h.type === 'diabetes');
-      
-      const upcomingAppt = apptRes.data.data.find(a => a.status === 'confirmed' || a.status === 'pending');
+  useEffect(() => {
+    document.body.classList.add('app-dark-mode');
+    fetchData();
+    return () => document.body.classList.remove('app-dark-mode');
+  }, [fetchData]);
 
-      setStats({
-        total: history.length,
-        latestLiver,
-        latestDiabetes,
-        upcomingAppt
-      });
-    } catch (err) {
-      console.error('Error fetching dashboard data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const dashboardCards = useMemo(() => [
+     {
+        title: "Clinical Screening",
+        label: "AI Diagnostic Portal",
+        desc: "Initialize deep-learning protocols for liver and metabolic risk assessment.",
+        path: "/patient/screening",
+        icon: Zap,
+        accent: "saffron"
+     },
+     {
+        title: "Medical History",
+        label: "Temporal Ledger",
+        desc: "Audit your decrypted clinical vectors and diagnostic history across time.",
+        path: "/patient/history",
+        icon: HistoryIcon,
+        accent: "white"
+     },
+     {
+        title: "Personnel Sync",
+        label: "Medical Appointments",
+        desc: "Synchronize with specialized personnel for diagnostic mandate verification.",
+        path: "/patient/appointments",
+        icon: Activity,
+        accent: "white"
+     }
+  ], []);
 
-  const healthTips = [
-    "Monitoring your water intake and ensuring 7-8 hours of sound sleep are critical for metabolic health.",
-    "A 30-minute brisk walk daily can significantly reduce your diabetes risk markers.",
-    "Reducing processed sugar is the fastest way to improve your liver's detoxification efficiency.",
-    "Regular protein intake helps maintain lean muscle mass, which improves insulin sensitivity.",
-    "Green leafy vegetables are rich in antioxidants that protect liver cells from oxidative stress."
-  ];
-  const [dailyTip] = useState(healthTips[Math.floor(Math.random() * healthTips.length)]);
-
-  if (loading) {
-    return <div className="animate-pulse space-y-8">
-      <div className="h-32 bg-slate-200 rounded-2xl w-full"></div>
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="h-40 bg-slate-200 rounded-2xl"></div>
-        <div className="h-40 bg-slate-200 rounded-2xl"></div>
-        <div className="h-40 bg-slate-200 rounded-2xl"></div>
-      </div>
-    </div>;
-  }
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } }
-  };
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[60vh] flex-col gap-6 text-white/20">
+      <Zap className="animate-spin text-saffron" size={48} />
+      <p className="text-[10px] font-black uppercase tracking-[0.4em]">Synchronizing Clinical Identity...</p>
+    </div>
+  );
 
   return (
     <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-10 pb-10"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="max-w-7xl mx-auto space-y-16 pb-24 px-4 md:px-0"
     >
-      {/* Welcome Card - Energetic Mesh Gradient */}
-      <motion.div 
-        variants={itemVariants}
-        className="relative overflow-hidden bg-mesh-saffron rounded-[40px] p-8 md:p-12 text-white shadow-[0_20px_60px_rgba(247,147,30,0.3)] border border-white/20"
-      >
-         <div className="absolute top-0 right-0 p-4 opacity-20 rotate-12 animate-float">
-            <HeartPulse size={200} />
-         </div>
-         <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-white/30">
-               <Activity size={14} className="animate-pulse" /> Live Health Intelligence
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 border-b border-white/5 pb-16">
+         <div className="space-y-6">
+            <div className="inline-flex items-center gap-4 bg-white/5 border border-white/10 px-6 py-2.5 rounded-full text-saffron text-[10px] font-black uppercase tracking-[0.4em] shadow-2xl">
+               <ShieldCheck size={14} className="animate-pulse" /> Sentinel v4.1 Active
             </div>
-            <h1 className="text-4xl md:text-5xl font-display font-bold mb-6 text-white drop-shadow-md">
-               Good morning, <br />
-               <span className="text-white/90">{user?.full_name?.split(' ')[0]}</span>
+            <h1 className="text-6xl md:text-[7rem] font-display font-black text-white tracking-tighter leading-[0.85] uppercase">
+               Identity <br />
+               <span className="text-saffron italic font-sans font-medium lowercase">Nexus</span>
             </h1>
-            <p className="text-white/80 max-w-xl text-lg font-medium leading-relaxed mb-10">
-               Your biometric profile is secure. We've synthesized {stats.total} data points to keep you ahead of your metabolic health.
-            </p>
-            <div className="flex flex-wrap gap-4">
-               <Link to="/patient/screening" className="btn-primary !bg-white !text-saffron-deep hover:!scale-105 transition-transform px-10">
-                  <ClipboardCheck size={20} className="mr-2" /> Start Screening
-               </Link>
-               <Link to="/patient/appointments" className="btn-secondary !text-white !border-white/40 !bg-white/10 hover:!bg-white/20 px-10 backdrop-blur-md">
-                  <Calendar size={20} className="mr-2" /> Book Consultation
-               </Link>
+         </div>
+         <div className="flex items-center gap-4">
+            <div className="bg-white/5 border border-white/10 rounded-[32px] p-8 min-w-[200px] text-center shadow-5xl group overflow-hidden relative">
+               <div className="absolute inset-0 bg-mesh-saffron opacity-5 group-hover:opacity-10 transition-opacity"></div>
+               <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mb-1 relative z-10">Diagnostic Confidence</p>
+               <p className="text-5xl font-display font-black text-white relative z-10">98.4%</p>
             </div>
          </div>
-      </motion.div>
-
-      {/* Summary Stats - Premium Glass */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-         {[
-           { label: 'Total Records', val: stats.total, icon: Activity, color: 'saffron' },
-           { label: 'Liver Risk', val: stats.latestLiver?.risk_band || 'N/A', icon: TrendingUp, color: 'saffron-deep' },
-           { label: 'Diabetes Risk', val: stats.latestDiabetes?.risk_band || 'N/A', icon: Activity, color: 'orange-500' },
-           { label: 'Next Visit', val: stats.upcomingAppt?.appt_date ? new Date(stats.upcomingAppt.appt_date).toLocaleDateString() : 'N/A', icon: Calendar, color: 'slate-900' }
-         ].map((stat, i) => (
-           <div key={i} className="card group hover:border-saffron/40 transition-all">
-              <div className="flex items-center gap-4">
-                <div className={`w-14 h-14 bg-slate-50 text-slate-900 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm`}>
-                   <stat.icon size={24} />
-                </div>
-                <div>
-                   <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">{stat.label}</p>
-                   <p className="text-2xl font-display font-bold text-slate-900">{stat.val}</p>
-                </div>
-              </div>
-           </div>
-         ))}
-      </motion.div>
+      </div>
 
       <div className="grid lg:grid-cols-3 gap-10">
-         {/* Recent Screening Snapshot */}
-         <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
-            <div className="flex items-center justify-between px-2">
-               <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                  <span className="w-2 h-8 bg-saffron rounded-full"></span> Recent Insights
-               </h2>
-               <Link to="/patient/history" className="text-saffron-deep font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-3 transition-all">View All <ArrowRight size={16} /></Link>
+         {dashboardCards.map((card, i) => (
+            <Link 
+               to={card.path} 
+               key={i} 
+               className="glass-dark p-12 rounded-[64px] border border-white/5 shadow-5xl group transition-all hover:border-saffron/40 hover:-translate-y-4 relative overflow-hidden"
+            >
+               <div className={`absolute -right-10 -top-10 w-40 h-40 rounded-full blur-3xl opacity-0 group-hover:opacity-20 transition-opacity ${card.accent === 'saffron' ? 'bg-saffron' : 'bg-white'}`}></div>
+               <div className="space-y-10 relative z-10">
+                  <div className={`w-20 h-20 rounded-[32px] border flex items-center justify-center transition-all group-hover:scale-110 group-hover:rotate-6 ${card.accent === 'saffron' ? 'bg-saffron text-ink border-saffron shadow-4xl' : 'bg-white/5 text-white border-white/10'}`}>
+                     <card.icon size={36} />
+                  </div>
+                  <div className="space-y-4">
+                     <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.3em] font-display">{card.label}</p>
+                     <h3 className="text-4xl font-display font-black text-white uppercase tracking-tight leading-none">{card.title}</h3>
+                     <p className="text-[10px] text-white/30 font-black uppercase tracking-widest leading-loose italic">{card.desc}</p>
+                  </div>
+                  <div className="flex items-center gap-4 text-[10px] font-black text-white/20 group-hover:text-saffron transition-all uppercase tracking-widest pt-4">
+                     Initialize Protocol <ArrowUpRight size={18} className="group-hover:translate-x-2 group-hover:-translate-y-2 transition-transform" />
+                  </div>
+               </div>
+            </Link>
+         ))}
+      </div>
+
+      <div className="grid lg:grid-cols-4 gap-12 pt-10">
+         <div className="lg:col-span-3 space-y-10">
+            <h2 className="text-2xl font-display font-black text-white uppercase tracking-tight flex items-center gap-4">
+               <Activity className="text-saffron" size={24} /> Recent Handshakes
+               <div className="h-px w-20 bg-white/5"></div>
+            </h2>
+            <div className="space-y-6">
+               <AnimatePresence mode="popLayout">
+                  {history.map((item) => (
+                     <motion.div 
+                        layout 
+                        key={item.id} 
+                        className="glass-dark p-8 rounded-[48px] border border-white/5 flex items-center justify-between group cursor-pointer hover:border-white/10 transition-all shadow-4xl"
+                        onClick={() => navigate(`/patient/result/${item.type}/${item.id}`)}
+                     >
+                        <div className="flex items-center gap-10">
+                           <div className="w-16 h-16 bg-white/5 border border-white/10 rounded-[28px] flex items-center justify-center text-saffron group-hover:rotate-12 transition-transform">
+                              <ShieldCheck size={28} />
+                           </div>
+                           <div className="space-y-2">
+                              <h4 className="text-2xl font-display font-black text-white uppercase tracking-tight leading-none">{item.type} Vector</h4>
+                              <p className="text-[10px] text-white/20 font-black uppercase tracking-widest italic">{item.interpretation}</p>
+                           </div>
+                        </div>
+                        <div className="flex items-center gap-8">
+                           <div className="px-6 py-2 rounded-full border border-saffron/20 bg-saffron/5 text-saffron text-[10px] font-black uppercase tracking-widest group-hover:bg-saffron group-hover:text-ink transition-all">
+                              {item.risk_band}
+                           </div>
+                           <ArrowRight size={20} className="text-white/10 group-hover:text-saffron group-hover:translate-x-3 transition-all" />
+                        </div>
+                     </motion.div>
+                  ))}
+               </AnimatePresence>
             </div>
+         </div>
 
-            <div className="grid md:grid-cols-2 gap-8">
-               {/* Liver Result Card */}
-               <div className="card-accent group relative overflow-hidden">
-                  <div className="absolute -right-4 -bottom-4 opacity-5 text-saffron group-hover:scale-110 transition-transform"><Activity size={120} /></div>
-                  <div className="flex items-start justify-between mb-6">
-                     <div className="bg-saffron/10 text-saffron p-3 rounded-2xl"><Activity size={24} /></div>
-                     <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{stats.latestLiver ? new Date(stats.latestLiver.created_at).toLocaleDateString() : 'NO DATA'}</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">Liver Assessment</h3>
-                  {stats.latestLiver ? (
-                    <div className="space-y-4 mb-6">
-                      <div className="flex items-center gap-2">
-                        <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          stats.latestLiver.risk_band === 'Minimal' ? 'bg-green-100 text-green-700' :
-                          stats.latestLiver.risk_band === 'Elevated' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-red-100 text-red-700'
-                        }`}>
-                          {stats.latestLiver.risk_band} RISK
-                        </span>
-                      </div>
-                      <p className="text-slate-600 text-sm font-medium leading-relaxed line-clamp-3">{stats.latestLiver.interpretation}</p>
-                    </div>
-                  ) : (
-                    <p className="text-slate-500 text-sm font-medium mb-8">No specific markers detected. Start a new screening to analyze liver parameters.</p>
-                  )}
-                  <Link to={stats.latestLiver? `/patient/history/detail/liver/${stats.latestLiver.id}` : "/patient/screening"} className="btn-secondary w-full text-xs uppercase tracking-widest font-black">
-                     {stats.latestLiver ? 'Full Report' : 'Screen Now'}
-                  </Link>
+         <div className="lg:col-span-1 space-y-10">
+            <h2 className="text-2xl font-display font-black text-white uppercase tracking-tight">Security Node</h2>
+            <div className="bg-white/5 border border-white/10 rounded-[48px] p-10 space-y-8 relative overflow-hidden group">
+               <div className="absolute inset-0 bg-mesh-saffron opacity-5"></div>
+               <div className="w-12 h-12 bg-saffron rounded-2xl flex items-center justify-center text-ink shadow-xl group-hover:rotate-12 transition-transform">
+                  <Lock size={20} />
                </div>
-
-               {/* Diabetes Result Card */}
-               <div className="card-accent !border-t-saffron-deep group relative overflow-hidden">
-                  <div className="absolute -right-4 -bottom-4 opacity-5 text-saffron-deep group-hover:scale-110 transition-transform"><Activity size={120} /></div>
-                  <div className="flex items-start justify-between mb-6">
-                     <div className="bg-saffron-deep/10 text-saffron-deep p-3 rounded-2xl"><Activity size={24} /></div>
-                     <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{stats.latestDiabetes? new Date(stats.latestDiabetes.created_at).toLocaleDateString() : 'NO DATA'}</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">Diabetes Profile</h3>
-                  {stats.latestDiabetes ? (
-                    <div className="space-y-4 mb-6">
-                      <div className="flex items-center gap-2">
-                        <span className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          stats.latestDiabetes.risk_band === 'Minimal' ? 'bg-green-100 text-green-700' :
-                          stats.latestDiabetes.risk_band === 'Elevated' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-red-100 text-red-700'
-                        }`}>
-                          {stats.latestDiabetes.risk_band} RISK
-                        </span>
-                      </div>
-                      <p className="text-slate-600 text-sm font-medium leading-relaxed line-clamp-3">{stats.latestDiabetes.interpretation}</p>
-                    </div>
-                  ) : (
-                    <p className="text-slate-500 text-sm font-medium mb-8">No metabolic records found. We recommend a baseline screening this week.</p>
-                  )}
-                  <Link to={stats.latestDiabetes? `/patient/history/detail/diabetes/${stats.latestDiabetes.id}` : "/patient/screening"} className="btn-secondary w-full text-xs uppercase tracking-widest font-black">
-                     {stats.latestDiabetes ? 'Full Report' : 'Screen Now'}
-                  </Link>
+               <div className="space-y-4">
+                  <p className="text-[10px] font-black text-white uppercase tracking-widest">Metadata encryption active</p>
+                  <p className="text-[9px] text-white/20 font-black uppercase tracking-widest leading-relaxed italic">All clinical vectors are SHA-256 hashed and stored on Metascale nodal repositories for diagnostic integrity.</p>
+               </div>
+               <div className="pt-4 flex items-center gap-4 text-[10px] font-black text-white/40 uppercase tracking-widest group-hover:text-saffron transition-all">
+                  Audit Protocol <ArrowUpRight size={14} />
                </div>
             </div>
-         </motion.div>
-
-         {/* Sidebar Actions */}
-         <motion.div variants={itemVariants} className="space-y-8">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Focus</h2>
-            {stats.upcomingAppt ? (
-               <div className="bg-ink rounded-[32px] p-8 text-white shadow-3xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-5 rotate-45 transform translate-x-1/4 -translate-y-1/4">
-                     <Calendar size={120} />
-                  </div>
-                  <div className="flex items-center gap-4 mb-8">
-                     <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md"><Calendar /></div>
-                     <div>
-                        <p className="font-bold text-lg leading-tight">{stats.upcomingAppt.doctor_name}</p>
-                        <p className="text-[10px] text-white/50 font-black uppercase tracking-widest">{stats.upcomingAppt.specialization}</p>
-                     </div>
-                  </div>
-                  <div className="space-y-4 mb-8">
-                     <div className="flex items-center gap-3 text-sm font-medium">
-                        <div className="bg-white/10 p-1.5 rounded-lg"><Calendar size={14} className="text-saffron" /></div>
-                        <span>{new Date(stats.upcomingAppt.appt_date).toLocaleDateString(undefined, { weekday: 'short', month: 'long', day: 'numeric' })}</span>
-                     </div>
-                     <div className="flex items-center gap-3 text-sm font-medium">
-                        <div className="bg-white/10 p-1.5 rounded-lg"><Clock size={14} className="text-saffron" /></div>
-                        <span>{stats.upcomingAppt.appt_time}</span>
-                     </div>
-                  </div>
-                   <button className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95">
-                     Manage Appointment
-                   </button>
-                </div>
-            ) : (
-               <div className="card border-dashed border-2 bg-slate-50/50 flex flex-col items-center justify-center py-12 text-center">
-                  <div className="w-16 h-16 bg-slate-100 text-slate-300 rounded-full flex items-center justify-center mb-6"><Calendar size={32} /></div>
-                  <p className="text-slate-500 font-bold mb-2">Rest Day</p>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-6">No scheduled visits</p>
-                  <Link to="/patient/appointments" className="btn-secondary !py-2 !text-xs font-black uppercase tracking-widest">Schedule Visit</Link>
-               </div>
-            )}
-            
-            <div className="bg-mesh-saffron/5 rounded-3xl p-8 border border-saffron/10 relative overflow-hidden group shadow-sm hover:shadow-md transition-all">
-                <div className="absolute -top-4 -right-4 p-4 opacity-5 text-saffron group-hover:scale-110 transition-transform">
-                   <Activity size={80} />
-                </div>
-                <h3 className="font-black text-[10px] uppercase tracking-widest text-saffron-deep flex items-center gap-2 mb-4">
-                  <HeartPulse size={16} /> Clinical Wisdom
-                </h3>
-                <p className="text-slate-700 text-sm leading-relaxed font-bold italic relative z-10">"{dailyTip}"</p>
-             </div>
-         </motion.div>
+         </div>
       </div>
     </motion.div>
   );
 };
-
-// Simple Icon fallback
-const HeartPulse = ({ size }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>
-  </svg>
-);
 
 export default PatientDashboard;

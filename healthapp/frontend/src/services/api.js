@@ -1,9 +1,22 @@
 import axios from 'axios';
 
+const getBaseURL = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  
+  // Dynamic local network fallback: If on a mobile device/local IP, 
+  // we need to talk to the laptop's IP, not 'localhost'.
+  const { hostname } = window.location;
+  if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+    return `http://${hostname}:5000/api`;
+  }
+  
+  return 'http://localhost:5000/api';
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: getBaseURL(),
   withCredentials: true,
-  timeout: 15000, // 15s timeout for production stability
+  timeout: 20000, // Increased to 20s for mobile network latency
   headers: {
     'Content-Type': 'application/json',
   },
