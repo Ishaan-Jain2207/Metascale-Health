@@ -30,9 +30,9 @@ const PatientList = () => {
         } else {
           setError(res.data.message);
         }
-      } catch {
+      } catch (error) {
         console.error('Error fetching patients');
-      } finally {
+    } finally {
         setLoading(false);
       }
     };

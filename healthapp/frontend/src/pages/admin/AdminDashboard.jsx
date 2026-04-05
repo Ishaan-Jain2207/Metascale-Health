@@ -25,8 +25,8 @@ const AdminDashboard = () => {
     try {
       const res = await api.get('/admin/analytics');
       setAnalytics(res.data.data);
-    } catch (err) {
-      console.error('Error fetching admin analytics:', err);
+    } catch (error) {
+      console.error('Error fetching data');
     } finally {
       setLoading(false);
     }

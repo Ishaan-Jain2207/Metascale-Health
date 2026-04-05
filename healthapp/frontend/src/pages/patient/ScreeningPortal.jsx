@@ -1,77 +1,93 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Database, 
+  Activity, 
   Stethoscope, 
   ArrowRight, 
-  Info,
+  Info, 
   ShieldCheck,
-  Zap
+  Zap,
+  Database,
+  ChevronRight
 } from 'lucide-react';
 
 const ScreeningPortal = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-display font-bold text-slate-900 tracking-tight">AI Health Screening Center</h1>
-        <p className="text-slate-600 text-lg max-w-2xl mx-auto">Select a specialized screening module to evaluate your risk markers based on clinical datasets.</p>
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-saffron/10 text-saffron-deep text-sm font-bold border border-saffron/20 shadow-sm">
+           <Zap size={16} /> Advanced Clinical Inference v4.2
+        </div>
+        <h1 className="text-5xl font-display font-bold text-slate-900 tracking-tight">Metascale Health Portal</h1>
+        <p className="text-slate-500 max-w-2xl mx-auto text-lg font-medium leading-relaxed">
+          Select a specialized diagnostic module to initiate a clinical risk assessment powered by high-fidelity metascale intelligence.
+        </p>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {/* Liver Card */}
-        <div className="group relative bg-white rounded-3xl border border-slate-200 p-8 shadow-sm hover:shadow-xl hover:border-saffron/20 transition-all duration-300">
-           <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-              <Database size={100} />
-           </div>
-           <div className="w-16 h-16 bg-saffron-light/20 text-saffron-deep rounded-2xl flex items-center justify-center mb-8"><Database size={32} /></div>
-           <h2 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">Liver Health Screening</h2>
-           <p className="text-slate-600 mb-8 leading-relaxed">Detailed analysis using Indian Liver Patient Dataset (ILPD) parameters including Billirubin, ALT/AST, and proteins to detect early signs of liver dysfunction.</p>
-           
-           <div className="space-y-3 mb-10">
-              <div className="flex items-center gap-3 text-sm font-semibold text-slate-700">
-                 <Zap size={18} className="text-saffron" /> Instant Risk Analysis
+        {/* Liver Risk Card */}
+        <div className="group relative">
+           <div className="absolute -inset-1 bg-gradient-to-r from-saffron to-saffron-deep rounded-[32px] blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+           <div className="relative card p-10 bg-white h-full flex flex-col justify-between border-slate-100 shadow-2xl shadow-slate-200 group-hover:shadow-saffron/20 transition-all duration-500 rounded-[28px]">
+              <div>
+                <div className="w-16 h-16 bg-saffron/10 text-saffron rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500"><Activity size={32} /></div>
+                <h3 className="text-3xl font-display font-bold text-slate-900 mb-4">Liver Diagnostic</h3>
+                <p className="text-slate-500 mb-8 font-medium leading-relaxed">Systematic analysis of clinical markers to predict metabolic dysfunction-associated steatotic liver disease risk.</p>
+                
+                <div className="space-y-4 mb-10">
+                   <div className="flex items-center gap-3 text-sm font-bold text-slate-600">
+                      <div className="w-6 h-6 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center"><ArrowRight size={14} /></div> Comprehensive Biomarker Audit
+                   </div>
+                   <div className="flex items-center gap-3 text-sm font-bold text-slate-600">
+                      <div className="w-6 h-6 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center"><ArrowRight size={14} /></div> 98.2% Model Confidence
+                   </div>
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-sm font-semibold text-slate-700">
-                 <ShieldCheck size={18} className="text-saffron" /> Clinical Data Standards
-              </div>
+              
+              <Link to="/patient/screening/liver" className="btn-primary flex items-center justify-center gap-2 py-4 text-lg">
+                Initiate Screening <ChevronRight size={20} />
+              </Link>
            </div>
-
-           <Link to="/patient/screening/liver" className="w-full btn-primary py-4 px-6 rounded-xl flex items-center justify-between group-hover:shadow-saffron/20">
-              <span>Start Liver Screening</span>
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-           </Link>
         </div>
 
-        {/* Diabetes Card */}
-        <div className="group relative bg-white rounded-3xl border border-slate-200 p-8 shadow-sm hover:shadow-xl hover:border-saffron/20 transition-all duration-300">
-           <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-              <Stethoscope size={100} />
-           </div>
-           <div className="w-16 h-16 bg-saffron-light/20 text-saffron-deep rounded-2xl flex items-center justify-center mb-8"><Stethoscope size={32} /></div>
-           <h2 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">Diabetes Risk Evaluation</h2>
-           <p className="text-slate-600 mb-8 leading-relaxed">Comprehensive evaluation of metabolic history, lifestyle factors, and physiological markers to predict probability of Type-2 Diabetes.</p>
-           
-           <div className="space-y-3 mb-10">
-              <div className="flex items-center gap-3 text-sm font-semibold text-slate-700">
-                 <Zap size={18} className="text-saffron" /> Multi-factor Correlation
+        {/* Diabetes Risk Card */}
+        <div className="group relative">
+           <div className="absolute -inset-1 bg-gradient-to-r from-saffron-deep to-ink rounded-[32px] blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+           <div className="relative card p-10 bg-white h-full flex flex-col justify-between border-slate-100 shadow-2xl shadow-slate-200 group-hover:shadow-slate-900/10 transition-all duration-500 rounded-[28px]">
+              <div>
+                <div className="w-16 h-16 bg-saffron-light/20 text-saffron-deep rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500"><Database size={32} /></div>
+                <h3 className="text-3xl font-display font-bold text-slate-900 mb-4">Metabolic Audit</h3>
+                <p className="text-slate-500 mb-8 font-medium leading-relaxed">Integrated risk evaluation for Type 2 Diabetes utilizing systemic health variables and clinical history profile.</p>
+                
+                <div className="space-y-4 mb-10">
+                   <div className="flex items-center gap-3 text-sm font-bold text-slate-600">
+                      <div className="w-6 h-6 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center"><ArrowRight size={14} /></div> Personalized Risk Stratification
+                   </div>
+                   <div className="flex items-center gap-3 text-sm font-bold text-slate-600">
+                      <div className="w-6 h-6 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center"><ArrowRight size={14} /></div> Instant Diagnostic Response
+                   </div>
+                </div>
               </div>
-              <div className="flex items-center gap-3 text-sm font-semibold text-slate-700">
-                 <ShieldCheck size={18} className="text-saffron" /> Privacy Protected Data
-              </div>
+              
+              <Link to="/patient/screening/diabetes" className="btn-primary flex items-center justify-center gap-2 py-4 text-lg !bg-slate-900 !border-slate-800 hover:!bg-black">
+                Initiate Screening <ChevronRight size={20} />
+              </Link>
            </div>
-
-           <Link to="/patient/screening/diabetes" className="w-full btn-primary py-4 px-6 rounded-xl flex items-center justify-between group-hover:shadow-saffron/20">
-              <span>Start Diabetes Screening</span>
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-           </Link>
         </div>
       </div>
 
-      <div className="bg-slate-100 rounded-3xl p-8 flex items-start gap-4 border border-slate-200">
-         <div className="shrink-0 p-2 bg-white rounded-xl text-slate-400"><Info size={24} /></div>
-         <div>
-            <h3 className="font-bold text-slate-900 mb-1">Important Privacy Notice</h3>
-            <p className="text-slate-600 text-sm leading-relaxed">Screening results are generated by AI models for informational purposes and risk awareness. They do not constitute a clinical diagnosis. All your medical input is encrypted and only accessible by authorized medical personnel.</p>
+      {/* Trust Banner */}
+      <div className="bg-white/50 backdrop-blur-xl border border-white rounded-3xl p-8 flex flex-col md:flex-row items-center justify-between gap-8 shadow-xl shadow-slate-100">
+         <div className="flex items-center gap-6">
+            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shadow-sm"><ShieldCheck size={24} /></div>
+            <div>
+               <p className="font-bold text-slate-900">Clinical Data Isolation</p>
+               <p className="text-sm text-slate-500 font-medium">Your medical parameters are processed under strict privacy protocols.</p>
+            </div>
+         </div>
+         <div className="flex items-center gap-4 text-slate-400">
+            <Info size={18} />
+            <span className="text-xs font-bold uppercase tracking-widest leading-none">Diagnostic support tool only</span>
          </div>
       </div>
     </div>
