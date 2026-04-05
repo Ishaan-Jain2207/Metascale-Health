@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { Mail, Lock, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const LoginPage = () => {
   const location = useLocation();
@@ -21,7 +19,9 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const res = await login(email, password);
+      const cleanEmail = email.toLowerCase().trim();
+      const cleanPassword = password.trim();
+      const res = await login(cleanEmail, cleanPassword);
       if (res.success) {
         const role = res.data.user.role;
         if (role === 'patient') navigate('/patient/dashboard');
@@ -38,27 +38,74 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
+      {/* Signature Background Restoration with Dynamic Blobs */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#ffb472] via-[#f7f2ff] to-white opacity-40"></div>
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            rotate: [0, 90, 0],
+            opacity: [0.1, 0.2, 0.1]
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-20 -right-20 w-[600px] h-[600px] bg-saffron-light blur-[120px] rounded-full"
+        ></motion.div>
+        <motion.div 
+          animate={{ 
+            y: [0, 50, 0],
+            opacity: [0.1, 0.15, 0.1]
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-20 -left-20 w-[500px] h-[500px] bg-lavender-light/30 blur-[100px] rounded-full"
+        ></motion.div>
+      </div>
+
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20, duration: 0.8 }}
+        className="w-full max-w-md relative z-10"
+      >
         <div className="text-center mb-8">
-          <Link to="/" className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-white via-saffron-light to-saffron-deep shadow-lg ring-2 ring-white/60 flex-shrink-0"></div>
-            <div>
-                <div className="font-bold text-[13px] uppercase tracking-[0.1em] text-slate-900 leading-none mb-1 font-mono">Metascale Health</div>
-                <div className="text-[10px] text-saffron-deep/80 font-bold uppercase tracking-tight">Clinical Portal</div>
+          <Link to="/" className="inline-flex items-center justify-center gap-3 mb-8 group">
+            <motion.div 
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white via-saffron-light to-saffron-deep shadow-[0_8px_30px_rgb(247,147,30,0.2)] ring-1 ring-white/60 flex-shrink-0 flex items-center justify-center"
+            >
+               <div className="w-6 h-6 bg-white/20 rounded-lg backdrop-blur-sm"></div>
+            </motion.div>
+            <div className="text-left">
+                <div className="font-black text-[15px] uppercase tracking-[0.2em] text-slate-900 leading-none mb-1 font-mono">Metascale</div>
+                <div className="text-[10px] text-saffron-deep font-black uppercase tracking-[0.15em] opacity-80">Clinical Intelligence</div>
             </div>
           </Link>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2 tracking-tight">
-            {isDoctorMode ? 'Doctor Login' : 'Welcome Back'}
-          </h1>
-          <p className="text-slate-600">
+          <motion.h1 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-4xl font-black text-slate-900 mb-2 tracking-tight"
+          >
+            {isDoctorMode ? 'Doctor Portal' : 'Welcome Back'}
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-slate-500 font-medium tracking-tight"
+          >
             {isDoctorMode 
-              ? 'Access clinical patient records and health screenings.' 
-              : 'Access your personalized health dashboard and history.'}
-          </p>
+              ? 'Secured gateway for healthcare professionals.' 
+              : 'Sign in to access your clinical health profile.'}
+          </motion.p>
         </div>
 
-        <div className="card shadow-xl border-white ring-1 ring-slate-200">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="backdrop-blur-2xl bg-white/40 p-8 rounded-[40px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-white/60 ring-1 ring-black/5"
+        >
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg text-sm flex items-start gap-2 animate-shake">
@@ -67,58 +114,83 @@ const LoginPage = () => {
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+              className="space-y-2"
+            >
+              <label className="block text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Email Terminal</label>
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-saffron-deep transition-colors" size={18} />
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron transition-all outline-none" 
-                  placeholder="name@example.com"
+                  className="w-full pl-12 pr-4 py-4 bg-white/60 border-0 rounded-2xl ring-1 ring-black/5 focus:ring-2 focus:ring-saffron/40 transition-all outline-none font-medium placeholder:text-slate-300" 
+                  placeholder="name@clinical.com"
                   required
                 />
               </div>
-            </div>
+            </motion.div>
 
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide">Password</label>
-                <Link to="/forgot-password" size="sm" className="text-sm font-semibold text-saffron-deep hover:text-saffron">Forgot?</Link>
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+              className="space-y-2"
+            >
+              <div className="flex items-center justify-between ml-1">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Security Key</label>
+                <Link to="/forgot-password" size="sm" className="text-[10px] font-black text-saffron-deep hover:text-saffron uppercase tracking-widest">Recovery?</Link>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-saffron-deep transition-colors" size={18} />
                 <input 
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron transition-all outline-none" 
+                  className="w-full pl-12 pr-4 py-4 bg-white/60 border-0 rounded-2xl ring-1 ring-black/5 focus:ring-2 focus:ring-saffron/40 transition-all outline-none font-medium placeholder:text-slate-300" 
                   placeholder="••••••••"
                   required
                 />
               </div>
-            </div>
+            </motion.div>
 
-            <button 
+            <motion.button 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, type: "spring" }}
+              whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(247,147,30,0.3)" }}
+              whileTap={{ scale: 0.95 }}
               type="submit" 
               disabled={loading}
-              className="w-full btn-primary py-4 text-lg font-bold flex items-center justify-center gap-2 group shadow-saffron/20"
+              className="w-full btn-primary py-4 text-sm font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 group"
             >
-              {loading ? <Loader2 className="animate-spin" /> : 'Sign In'}
-              {!loading && <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />}
-            </button>
+              {loading ? <Loader2 className="animate-spin" /> : 'Authenticate'}
+              {!loading && <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />}
+            </motion.button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <p className="text-slate-600 font-medium">New to Metascale? <Link to="/register" className="text-saffron-deep font-bold hover:underline">Create an account</Link></p>
-          </div>
-        </div>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="mt-10 pt-6 border-t border-black/5 text-center"
+          >
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">New to Metascale? <Link to="/register" className="text-saffron-deep font-black hover:underline underline-offset-4">Join Database</Link></p>
+          </motion.div>
+        </motion.div>
         
-        <div className="mt-8 text-center">
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Secured by Industry Standard Encryption</p>
-        </div>
-      </div>
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="mt-8 text-center"
+        >
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">End-to-End Encrypted Handshake</p>
+        </motion.div>
+      </motion.div>
     </div>
   );
 };

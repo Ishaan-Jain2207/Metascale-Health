@@ -17,17 +17,21 @@ exports.registerUser = async (req, res, next) => {
       specialization, hospital, license_number, 
       medical_council, years_of_experience, qualification 
     } = req.body;
+
+    const cleanEmail = email?.toLowerCase().trim();
+    const cleanPassword = password?.trim();
+    const cleanName = full_name?.trim();
     
     // Validate role (whitelist only patient and doctor for public registration)
     const validRoles = ['patient', 'doctor'];
     const assignedRole = validRoles.includes(role) ? role : 'patient';
 
     // Check duplicate
-    const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+    const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [cleanEmail]);
     if (existing.length) return sendError(res, 'Email already registered', 409);
 
     const salt = await bcrypt.genSalt(12);
-    const hash = await bcrypt.hash(password, salt);
+    const hash = await bcrypt.hash(cleanPassword, salt);
 
     const [result] = await pool.query(
       `INSERT INTO users (
@@ -37,7 +41,7 @@ exports.registerUser = async (req, res, next) => {
       )
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        full_name, email, hash, assignedRole, age || null, gender || null, phone || '', 
+        cleanName, cleanEmail, hash, assignedRole, age || null, gender || null, phone?.trim() || '', 
         specialization || '', hospital || '', license_number || '', 
         medical_council || '', years_of_experience || 0, qualification || '',
         assignedRole === 'doctor' ? 1 : 0
@@ -78,10 +82,12 @@ exports.login = async (req, res, next) => {
     }
 
     const { email, password } = req.body;
+    const cleanEmail = email?.toLowerCase().trim();
+    const cleanPassword = password?.trim();
 
     const [rows] = await pool.query(
       'SELECT id, full_name, email, password_hash, role, is_active, age, gender, phone FROM users WHERE email = ?',
-      [email]
+      [cleanEmail]
     );
 
     if (!rows.length) return sendError(res, 'Invalid credentials', 401);
@@ -89,7 +95,7 @@ exports.login = async (req, res, next) => {
     const user = rows[0];
     if (!user.is_active) return sendError(res, 'Account has been deactivated', 401);
 
-    const match = await bcrypt.compare(password, user.password_hash);
+    const match = await bcrypt.compare(cleanPassword, user.password_hash);
     if (!match) return sendError(res, 'Invalid credentials', 401);
 
     // Update last_login
