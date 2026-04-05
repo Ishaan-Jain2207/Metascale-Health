@@ -11,12 +11,19 @@ import {
   Calendar,
   ClipboardList,
   Info,
-  ChevronRight
+  ChevronRight,
+  Activity,
+  Loader2
 } from 'lucide-react';
+import api from '../../services/api';
 
 const PredictionResult = () => {
   const location = useLocation();
-  const { result, type } = location.state || {};
+  const { result } = location.state || {}; // Using destructuring as per original
+  const type = location.state?.type;
+  const [aiInsights, setAiInsights] = React.useState('');
+  const [loadingAi, setLoadingAi] = React.useState(false);
+  const [aiError, setAiError] = React.useState('');
 
   if (!result) {
     return (
@@ -55,6 +62,46 @@ const PredictionResult = () => {
     window.print();
   };
 
+  const handleGenerateAI = async () => {
+    setLoadingAi(true);
+    setAiError('');
+    try {
+       const res = await api.post('/predict/explain', {
+          type,
+          data: result.features || {},
+          result: {
+             riskBand: result.riskBand,
+             interpretation: result.interpretation,
+             confidence: result.confidence
+          }
+       });
+       setAiInsights(res.data.data.explanation);
+    } catch (err) {
+      console.error('AI Error:', err);
+      setAiError('Failed to generate clinical AI review. Please try again later.');
+    } finally {
+       setLoadingAi(false);
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Metascale Health - ${type.toUpperCase()} Screening Report`,
+          text: `My ${type} screening result is ${result.riskBand}. View clinical details on the platform.`,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log('Share failed', err);
+      }
+    } else {
+      // Fallback: Copy to clipboard
+      navigator.clipboard.writeText(window.location.href);
+      alert('Report link copied to clipboard!');
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500 print:p-0">
       <div className="flex items-center justify-between print:hidden">
@@ -62,11 +109,14 @@ const PredictionResult = () => {
           <ArrowLeft size={18} /> Return to Dashboard
         </Link>
         <div className="flex items-center gap-3">
-          <button onClick={handlePrint} className="btn-secondary flex items-center gap-2 px-4 py-2 text-sm">
+          <button onClick={handleShare} className="btn-secondary flex items-center gap-2 px-4 py-2 text-sm">
+             <Share2 size={16} /> Share
+          </button>
+          <button onClick={handlePrint} className="btn-secondary flex items-center gap-2 px-4 py-2 text-sm !border-slate-300">
              <Printer size={16} /> Print Report
           </button>
-          <button className="btn-primary flex items-center gap-2 px-4 py-2 text-xs !bg-saffron !border-saffron-deep hover:!bg-saffron-deep shadow-md">
-             <Download size={16} /> Download PDF Report
+          <button onClick={handlePrint} className="btn-primary flex items-center gap-2 px-4 py-2 text-xs !bg-saffron !border-saffron-deep hover:!bg-saffron-deep shadow-md">
+             <Download size={16} /> Download PDF
           </button>
         </div>
       </div>
@@ -129,6 +179,48 @@ const PredictionResult = () => {
                </div>
             </div>
 
+            {/* AI Clinical Insights Section */}
+            <div className="space-y-6 pt-6 border-t border-slate-100">
+               <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                     <Activity size={20} className="text-saffron-deep" /> AI Clinical Insights Review
+                  </h3>
+                  {!aiInsights && !loadingAi && (
+                    <button 
+                      onClick={handleGenerateAI}
+                      className="text-xs font-bold font-sans uppercase tracking-widest text-primary-600 bg-primary-50 px-4 py-2.5 rounded-xl hover:bg-primary-100 transition-all shadow-sm active:scale-95"
+                    >
+                       Generate Detailed AI Review
+                    </button>
+                  )}
+               </div>
+
+               {loadingAi ? (
+                 <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 animate-pulse flex flex-col items-center justify-center space-y-4">
+                    <Loader2 className="animate-spin text-saffron" size={32} />
+                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Synthesizing Patient Profile Analysis...</p>
+                 </div>
+               ) : aiError ? (
+                 <div className="p-6 bg-red-50 rounded-2xl border border-red-100 text-red-600 text-sm font-medium flex items-center gap-3">
+                    <AlertTriangle size={18} /> {aiError}
+                 </div>
+               ) : aiInsights ? (
+                 <div className="prose prose-slate max-w-none bg-slate-900 text-slate-100 p-8 rounded-3xl border border-slate-800 shadow-xl font-medium leading-relaxed animate-in fade-in zoom-in-95 duration-500">
+                    <div className="flex items-center gap-2 text-saffron text-xs font-black uppercase tracking-widest mb-6">
+                       <CheckCircle2 size={14} /> AI Report Ready
+                    </div>
+                    <pre className="whitespace-pre-wrap font-sans text-slate-200">
+                       {aiInsights}
+                    </pre>
+                 </div>
+               ) : (
+                 <div className="bg-slate-50 rounded-2xl p-10 border border-slate-100 border-dashed text-center">
+                    <p className="text-slate-500 font-medium mb-1">Detailed AI analysis is available for this screening.</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Calculates clinical observations based on your specific biomarkers.</p>
+                 </div>
+               )}
+            </div>
+
             {/* Disclaimer */}
             <div className="flex items-start gap-4 p-6 bg-saffron/5 rounded-2xl border border-saffron/20 text-slate-700">
                <Info className="shrink-0 mt-0.5 text-saffron-deep" size={20} />
@@ -142,7 +234,11 @@ const PredictionResult = () => {
       {/* Footer Actions */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between py-6 print:hidden">
          <div className="flex items-center gap-6">
-            <Link to="/patient/appointments" className="flex items-center gap-2 text-saffron font-bold hover:underline">
+            <Link 
+              to="/patient/appointments" 
+              state={{ prefill: { type, risk: result.riskBand } }}
+              className="flex items-center gap-2 text-saffron font-bold hover:underline"
+            >
                Schedule Consultation <ChevronRight size={16} />
             </Link>
             <Link to="/patient/history" className="flex items-center gap-2 text-slate-600 font-bold hover:underline">

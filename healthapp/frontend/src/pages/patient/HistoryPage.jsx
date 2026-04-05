@@ -34,8 +34,9 @@ const HistoryPage = () => {
       } else {
         setError(res.data.message);
       }
-    } catch {
-      console.error('Error fetching history');
+    } catch (err) {
+      console.error('Fetch result error:', err);
+      setError('Failed to fetch prediction details.');
     } finally {
       setLoading(false);
     }

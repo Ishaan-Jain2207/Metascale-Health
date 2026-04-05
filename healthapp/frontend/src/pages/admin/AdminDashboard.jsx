@@ -6,7 +6,6 @@ import {
   Activity, 
   TrendingUp, 
   ArrowUpRight, 
-  ArrowDownRight,
   ShieldCheck,
   Globe,
   Loader2,
@@ -26,8 +25,8 @@ const AdminDashboard = () => {
     try {
       const res = await api.get('/admin/analytics');
       setAnalytics(res.data.data);
-    } catch {
-      console.error('Failed to load portal personnel.');
+    } catch (err) {
+      console.error('Error fetching admin analytics:', err);
     } finally {
       setLoading(false);
     }
