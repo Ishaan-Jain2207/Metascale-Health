@@ -38,20 +38,22 @@ const AppLayout = ({ children }) => {
       { name: 'Dashboard', path: '/doctor/dashboard', icon: LayoutDashboard },
       { name: 'Patients', path: '/doctor/patients', icon: Users },
       { name: 'Schedule', path: '/doctor/appointments', icon: CalendarCheck },
+      { name: 'Profile', path: '/doctor/profile', icon: UserCircle },
     ],
     admin: [
       { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
       { name: 'Doctors', path: '/admin/doctors', icon: Stethoscope },
       { name: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
+      { name: 'Profile', path: '/admin/profile', icon: UserCircle },
     ]
   };
 
   const navItems = menuItems[user?.role] || [];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar for Desktop */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform transition-transform duration-200 ease-in-out lg:relative lg:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+    <div className="min-h-screen bg-slate-50 flex overflow-x-hidden">
+      {/* Sidebar for Desktop & Tablet */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="h-full flex flex-col">
           <div className="p-6 flex items-center gap-3 border-b border-slate-800">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white via-saffron-light to-saffron-deep shadow-lg ring-2 ring-white/20 flex-shrink-0"></div>
@@ -89,10 +91,11 @@ const AppLayout = ({ children }) => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-40">
           <button 
-            className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+            className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg active:scale-95 transition-transform"
             onClick={() => setIsSidebarOpen(true)}
+            aria-label="Open Menu"
           >
             <Menu size={24} />
           </button>
@@ -113,7 +116,7 @@ const AppLayout = ({ children }) => {
         </header>
 
         {/* Dynamic Page Content */}
-        <main className="flex-1 p-4 lg:p-8 overflow-auto">
+        <main className="flex-1 p-4 md:p-8 overflow-x-hidden overflow-y-auto">
           {children}
         </main>
       </div>
@@ -121,7 +124,7 @@ const AppLayout = ({ children }) => {
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-40 md:hidden animate-in fade-in duration-300"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}

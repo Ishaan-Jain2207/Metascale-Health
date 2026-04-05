@@ -61,3 +61,23 @@ exports.approveDoctor = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.rejectDoctor = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await pool.query("UPDATE users SET is_approved = 0, is_active = 0 WHERE id = ? AND role = 'doctor'", [id]);
+    return sendSuccess(res, {}, 'Doctor application rejected');
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.revokeApproval = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await pool.query("UPDATE users SET is_approved = 0 WHERE id = ? AND role = 'doctor'", [id]);
+    return sendSuccess(res, {}, 'Doctor approval revoked');
+  } catch (err) {
+    next(err);
+  }
+};

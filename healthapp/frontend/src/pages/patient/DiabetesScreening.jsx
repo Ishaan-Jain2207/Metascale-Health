@@ -7,9 +7,13 @@ import {
   CheckCircle2, 
   Info,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Activity,
+  Zap,
+  Globe
 } from 'lucide-react';
 import api from '../../services/api';
+import { motion } from 'framer-motion';
 
 const DiabetesScreening = () => {
   const navigate = useNavigate();
@@ -45,7 +49,8 @@ const DiabetesScreening = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Map exact age to categories expected by the prediction service
+    setLoading(true);
+    
     const ageGroup = 
       formData.age < 40 ? 'below 40' :
       formData.age <= 49 ? '40-49' :
@@ -70,190 +75,172 @@ const DiabetesScreening = () => {
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } }
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-center justify-between mb-8">
-        <button onClick={() => navigate('/patient/screening')} className="flex items-center gap-2 text-slate-500 font-bold hover:text-saffron-deep transition-colors">
-          <ArrowLeft size={20} /> Back to Screening Portal
-        </button>
-        <div className="flex items-center gap-2 text-saffron-deep font-bold">
-           <Stethoscope size={20} /> Diabetes Risk Module
-        </div>
-      </div>
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="max-w-5xl mx-auto space-y-10 pb-16"
+    >
+      {/* Header Mini-Hero */}
+      <motion.div 
+        variants={itemVariants}
+        className="relative overflow-hidden bg-mesh-saffron rounded-[40px] p-8 md:p-12 text-white shadow-3xl border border-white/20"
+      >
+         <div className="absolute top-0 right-0 p-4 opacity-10 rotate-12 animate-float">
+            <Stethoscope size={240} />
+         </div>
+         <div className="relative z-10">
+            <button 
+              onClick={() => navigate('/patient/screening')} 
+              className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-white/20 hover:bg-white/20 transition-all"
+            >
+               <ArrowLeft size={14} /> Back to Screening Portal
+            </button>
+            <h1 className="text-4xl md:text-5xl font-display font-bold mb-4 drop-shadow-md text-white">
+               Metabolic <br />
+               <span className="text-white/80 italic font-sans font-medium">Risk Analysis</span>
+            </h1>
+            <p className="text-white/70 max-w-lg text-lg font-medium leading-relaxed">
+               Analyze your systemic health parameters to detect early-stage metabolic variations.
+            </p>
+         </div>
+      </motion.div>
 
-      <div className="card shadow-xl border-white ring-1 ring-slate-200 p-8 lg:p-12">
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">Diabetes Risk Evaluation</h1>
-          <p className="text-slate-600 max-w-xl mx-auto font-medium">Complete this detailed lifestyle and clinical history form to evaluate your diabetes risk profile.</p>
-        </div>
-
+      <motion.div variants={itemVariants} className="card !bg-white/40 backdrop-blur-3xl border border-white/60 shadow-3xl p-8 md:p-14 rounded-[48px] relative overflow-hidden">
         {error && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-start gap-4">
+          <div className="mb-10 p-6 bg-red-50/50 backdrop-blur-sm border border-red-100 text-red-600 rounded-[24px] flex items-start gap-4">
             <AlertCircle className="shrink-0 mt-0.5" />
-            <p className="font-bold">{error}</p>
+            <p className="font-bold text-sm">{error}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-12">
-          {/* Section 1: Demographics & Physiological */}
-          <div className="space-y-8">
-             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-saffron" /> Demographics & Physiological
-             </h3>
-             <div className="grid md:grid-cols-3 gap-6">
-                 <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700 uppercase">Age (Years)</label>
-                    <input 
-                      type="number" 
-                      name="age" 
-                      value={formData.age} 
-                      onChange={handleChange} 
-                      required 
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron outline-none" 
-                      placeholder="e.g. 45" 
-                    />
-                 </div>
-                <div className="space-y-2">
-                   <label className="text-sm font-bold text-slate-700 uppercase">Gender</label>
-                   <select name="gender" value={formData.gender} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none">
-                      <option value="">Select</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
-                   </select>
+          {/* Section 1: Clinical & Demo */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="space-y-8">
+              <div className="flex items-center gap-3 mb-4">
+                 <div className="w-10 h-10 bg-saffron/10 text-saffron-deep rounded-xl flex items-center justify-center font-bold">01</div>
+                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Clinical Baseline</h3>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Age</label>
+                  <input type="number" name="age" value={formData.age} onChange={handleChange} required className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium" />
                 </div>
-                <div className="space-y-2">
-                   <label className="text-sm font-bold text-slate-700 uppercase">BMI</label>
-                   <input type="number" step="0.1" name="bmi" value={formData.bmi} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 24.5" />
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Gender</label>
+                  <select name="gender" value={formData.gender} onChange={handleChange} required className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium">
+                    <option value="">Select</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
                 </div>
-             </div>
-             
-             <div className="grid md:grid-cols-2 gap-8 bg-slate-50 rounded-2xl p-6">
-                <div className="space-y-4">
-                   <label className="flex items-center gap-3 cursor-pointer group">
-                      <input type="checkbox" name="familyDiabetes" checked={formData.familyDiabetes} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep border-slate-300" />
-                      <span className="text-sm font-bold text-slate-700 group-hover:text-saffron-deep transition-colors">Family History of Diabetes</span>
-                   </label>
-                   <label className="flex items-center gap-3 cursor-pointer group">
-                      <input type="checkbox" name="highBP" checked={formData.highBP} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep border-slate-300" />
-                      <span className="text-sm font-bold text-slate-700 group-hover:text-saffron-deep transition-colors">History of High Blood Pressure</span>
-                   </label>
-                </div>
-                <div className="space-y-4">
-                   <label className="flex items-center gap-3 cursor-pointer group">
-                      <input type="checkbox" name="prediabetes" checked={formData.prediabetes} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep border-slate-300" />
-                      <span className="text-sm font-bold text-slate-700 group-hover:text-saffron-deep transition-colors">Previous Prediabetes Diagnosis</span>
-                   </label>
-                   <label className="flex items-center gap-3 cursor-pointer group">
-                      <input type="checkbox" name="regularMedicine" checked={formData.regularMedicine} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep border-slate-300" />
-                      <span className="text-sm font-bold text-slate-700 group-hover:text-saffron-deep transition-colors">Taking Regular Medication</span>
-                   </label>
-                </div>
-             </div>
+              </div>
+              <div className="space-y-3">
+                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">BMI (Index Value)</label>
+                 <input type="number" step="0.1" name="bmi" value={formData.bmi} onChange={handleChange} required className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium" />
+              </div>
+            </div>
+
+            <div className="space-y-6 pt-12">
+               {[
+                 { name: 'familyDiabetes', label: 'Genetic Predisposition (Family)' },
+                 { name: 'highBP', label: 'History of Hypertension' },
+                 { name: 'prediabetes', label: 'Prior Metabolic Diagnosis' },
+                 { name: 'regularMedicine', label: 'Maintenance Medication Usage' }
+               ].map((field) => (
+                 <label key={field.name} className="flex items-center gap-4 cursor-pointer group bg-slate-50/50 p-4 rounded-2xl border border-slate-100 hover:bg-white transition-all">
+                    <input type="checkbox" name={field.name} checked={formData[field.name]} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep border-slate-300" />
+                    <span className="text-xs font-black text-slate-600 uppercase tracking-widest group-hover:text-saffron-deep transition-colors">{field.label}</span>
+                 </label>
+               ))}
+            </div>
           </div>
 
-          {/* Section 2: Lifestyle & Habits */}
-          <div className="space-y-8">
-             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-saffron" /> Lifestyle & Habituation
-             </h3>
-             <div className="grid md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                   <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Physical Activity</label>
-                      <select name="physicallyActive" value={formData.physicallyActive} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none font-medium">
-                         <option value="none">None / Sedentary</option>
-                         <option value="lt30">Less than 30 mins/day</option>
-                         <option value="30-60">30-60 mins/day</option>
-                         <option value="gt60">More than 1 hour/day</option>
-                      </select>
-                   </div>
-                   <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Sleep Duration (Hours)</label>
-                      <input type="number" name="sleepHours" value={formData.sleepHours} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 7" />
-                   </div>
-                   <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Sound Sleep Duration</label>
-                      <input type="number" name="soundSleep" value={formData.soundSleep} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 5" />
-                   </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8 border-t border-slate-100">
+            {/* Lifestyle */}
+            <div className="space-y-8">
+              <div className="flex items-center gap-3 mb-4">
+                 <div className="w-10 h-10 bg-saffron/10 text-saffron-deep rounded-xl flex items-center justify-center font-bold">02</div>
+                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Lifestyle Vector</h3>
+              </div>
+              <div className="space-y-3">
+                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Physical Activity</label>
+                 <select name="physicallyActive" value={formData.physicallyActive} onChange={handleChange} className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium font-sans">
+                    <option value="none">Sedentary Profile</option>
+                    <option value="lt30">&lt; 30 mins Maintenance</option>
+                    <option value="30-60">High Physical Activity</option>
+                    <option value="gt60">Athlete / Peak Activity</option>
+                 </select>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Sleep (Hrs)</label>
+                  <input type="number" name="sleepHours" value={formData.sleepHours} onChange={handleChange} required className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium" />
                 </div>
-                <div className="space-y-6">
-                   <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Junk Food Frequency</label>
-                      <select name="junkFood" value={formData.junkFood} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none font-medium">
-                         <option value="rarely">Rarely</option>
-                         <option value="occasionally">Occasionally (1-2 times/week)</option>
-                         <option value="often">Often (3-4 times/week)</option>
-                         <option value="veryOften">Daily / Very Often</option>
-                      </select>
-                   </div>
-                   <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Stress Levels</label>
-                      <select name="stress" value={formData.stress} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none font-medium">
-                         <option value="none">Minimal Stress</option>
-                         <option value="sometimes">Sometimes Stressed</option>
-                         <option value="veryOften">Frequently Stressed</option>
-                         <option value="always">Always Stressed</option>
-                      </select>
-                   </div>
-                   <div className="flex gap-8 pt-4">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                         <input type="checkbox" name="smoking" checked={formData.smoking} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep-600" />
-                         <span className="text-sm font-bold text-slate-700">Smoker</span>
-                      </label>
-                      <label className="flex items-center gap-3 cursor-pointer">
-                         <input type="checkbox" name="alcohol" checked={formData.alcohol} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep-600" />
-                         <span className="text-sm font-bold text-slate-700">Consumer Alcohol</span>
-                      </label>
-                   </div>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Dietary Pattern</label>
+                  <select name="junkFood" value={formData.junkFood} onChange={handleChange} className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium">
+                     <option value="rarely">Clean / Controlled</option>
+                     <option value="occasionally">Moderate Processed</option>
+                     <option value="often">High Processed Exposure</option>
+                  </select>
                 </div>
-             </div>
-          </div>
+              </div>
+            </div>
 
-          {/* Section 3: Metabolic Indicators */}
-          <div className="space-y-8">
-             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2">
-                <CheckCircle2 size={14} className="text-saffron" /> Metabolic & Critical Indicators
-             </h3>
-             <div className="grid md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                   <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Blood Pressure Level</label>
-                      <select name="bpLevel" value={formData.bpLevel} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none font-medium">
-                         <option value="low">Low BP</option>
-                         <option value="normal">Normal BP</option>
-                         <option value="high">High BP</option>
-                      </select>
-                   </div>
-                   <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Urination Frequency</label>
-                      <select name="urinationFreq" value={formData.urinationFreq} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none font-medium">
-                         <option value="notMuch">Normal Frequency</option>
-                         <option value="quiteOften">High Frequency (Nocturia)</option>
-                      </select>
-                   </div>
-                </div>
-                <div className="space-y-2">
-                   <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Pregnancies (If Applicable)</label>
-                   <input type="number" name="pregnancies" value={formData.pregnancies} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="0" />
-                   <p className="text-xs text-slate-400 font-medium">Leave 0 if not applicable.</p>
-                </div>
-             </div>
-          </div>
-
-          <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
-             <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 md:max-w-md">
-                <Info size={18} className="text-slate-400 mt-1 shrink-0" />
-                <p className="text-xs text-slate-500 font-medium leading-relaxed">Early detection of diabetes can prevent long-term complications. Please ensure honest reporting of lifestyle factors.</p>
-             </div>
-             <button type="submit" disabled={loading} className="btn-primary w-full md:w-auto px-10 py-4 text-lg font-bold flex items-center justify-center gap-2">
-                {loading ? <Loader2 className="animate-spin" /> : 'Calculate Diabetes Risk'}
-                {!loading && <CheckCircle2 size={20} />}
-             </button>
+            {/* Metabolic Indicators */}
+            <div className="space-y-8">
+               <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-saffron/10 text-saffron-deep rounded-xl flex items-center justify-center font-bold">03</div>
+                  <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Risk Indicators</h3>
+               </div>
+               <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Systemic BP</label>
+                     <select name="bpLevel" value={formData.bpLevel} onChange={handleChange} className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium font-sans">
+                        <option value="low">Hypotensive</option>
+                        <option value="normal">Normotensive</option>
+                        <option value="high">Hypertensive</option>
+                     </select>
+                  </div>
+                  <div className="space-y-3">
+                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Urination Index</label>
+                     <select name="urinationFreq" value={formData.urinationFreq} onChange={handleChange} className="w-full px-5 py-4 bg-white/50 border border-slate-200 rounded-[20px] focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep outline-none transition-all font-medium font-sans">
+                        <option value="notMuch">Normal Range</option>
+                        <option value="quiteOften">Frequency Deviation</option>
+                     </select>
+                  </div>
+               </div>
+               <div className="pt-2">
+                  <button 
+                    type="submit" 
+                    disabled={loading} 
+                    className="w-full py-6 rounded-[24px] bg-mesh-saffron text-white font-display font-black text-lg uppercase tracking-widest shadow-3xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
+                  >
+                     {loading ? <Loader2 className="animate-spin" /> : <Zap size={24} />}
+                     {loading ? 'Analyzing Vector...' : 'Execute Risk Analysis'}
+                  </button>
+               </div>
+            </div>
           </div>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

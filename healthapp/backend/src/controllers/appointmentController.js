@@ -5,11 +5,22 @@ const { sendSuccess, sendError } = require('../utils/apiResponse');
 exports.bookAppointment = async (req, res, next) => {
   try {
     const { doctor_id, appt_date, appt_time, reason, type } = req.body;
+    const patient_id = req.user.id;
+
+    // 1. Check for Double Booking
+    const [existing] = await pool.query(
+      "SELECT id FROM appointments WHERE doctor_id = ? AND appt_date = ? AND appt_time = ? AND status != 'cancelled'",
+      [doctor_id, appt_date, appt_time]
+    );
+
+    if (existing.length > 0) {
+      return sendError(res, 'This clinical slot is already reserved. Please select another time.', 409);
+    }
 
     const [result] = await pool.query(
       `INSERT INTO appointments (patient_id, doctor_id, appt_date, appt_time, reason, type, status)
        VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-      [req.user.id, doctor_id, appt_date, appt_time, reason, type || 'in-person']
+      [patient_id, doctor_id, appt_date, appt_time, reason, type || 'in-person']
     );
 
     return sendSuccess(res, { id: result.insertId }, 'Appointment booked successfully', 201);
@@ -62,6 +73,22 @@ exports.updateStatus = async (req, res, next) => {
     );
 
     return sendSuccess(res, {}, 'Appointment status updated');
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── CANCEL APPOINTMENT (PATIENT) ──────────────────────────────────────
+exports.cancelAppointment = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const patient_id = req.user.id;
+
+    const [appt] = await pool.query("SELECT * FROM appointments WHERE id = ? AND patient_id = ?", [id, patient_id]);
+    if (!appt.length) return sendError(res, 'Appointment not found or unauthorized', 404);
+
+    await pool.query("UPDATE appointments SET status = 'cancelled' WHERE id = ?", [id]);
+    return sendSuccess(res, {}, 'Appointment cancelled successfully');
   } catch (err) {
     next(err);
   }

@@ -15,6 +15,9 @@
   --radius-3xl: 22px;
   --radius-2xl: 16px;
   --radius-xl: 10px;
+
+  --color-indigo-clinical: #3b306b;
+  --color-lavender-clinical: #8b79d2;
 }
 
 @layer base {
@@ -41,10 +44,30 @@
   }
 
   .card {
-    @apply bg-white/95 backdrop-blur-xl border border-slate-200/60 shadow-xl rounded-3xl p-8;
-    -webkit-backdrop-filter: blur(16px);
-    backdrop-filter: blur(16px);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    @apply bg-white/80 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-[32px] p-8;
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .glass-premium {
+    @apply bg-white/10 backdrop-blur-3xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.1)];
+    -webkit-backdrop-filter: blur(40px);
+    backdrop-filter: blur(40px);
+  }
+
+  .bg-mesh-saffron {
+    background: radial-gradient(at top left, var(--color-saffron) 0%, transparent 80%),
+                radial-gradient(at bottom right, var(--color-saffron-deep) 0%, transparent 80%),
+                radial-gradient(at top right, #ffae42 0%, transparent 60%);
+    background-color: #f7931e;
+  }
+
+  .bg-mesh-clinical {
+    background: radial-gradient(at top left, var(--color-indigo-clinical) 0%, transparent 80%),
+                radial-gradient(at bottom right, #513f9c 0%, transparent 80%),
+                radial-gradient(at top right, var(--color-lavender-clinical) 0%, transparent 60%);
+    background-color: #433582;
   }
 
   /* Symmetrical accent cards for professional look */
@@ -133,9 +156,13 @@
     to { transform: translateX(200%) rotate(45deg); }
   }
 
-  .btn-primary {
-    position: relative;
-    overflow: hidden;
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
   }
 }
 
