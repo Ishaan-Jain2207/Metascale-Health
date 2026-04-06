@@ -46,12 +46,15 @@ const AngularAuditTool = () => {
     }]);
 
     // Manually bootstrap AngularJS on the specific container element
-    window.angular.bootstrap(containerRef.current, ['metabolicAuditApp']);
+    const containerNode = containerRef.current;
+    window.angular.bootstrap(containerNode, ['metabolicAuditApp']);
 
     // Cleanup: AngularJS 1.x doesn't have a formal destroy for manual bootstrap,
     // but clearing the HTML prevents memory leaks in typical SPAs.
     return () => {
-      if (containerRef.current) containerRef.current.innerHTML = '';
+      if (containerNode) {
+        containerNode.innerHTML = '';
+      }
     };
   }, []);
 

@@ -11,69 +11,76 @@ const AngularStatusWidget = () => {
 
     app.controller('StatusController', ['$scope', '$interval', function($scope, $interval) {
       $scope.uptime = 0;
-      $scope.activeUsers = 1240;
-      $scope.clinicalAvailability = 99.9;
+      $scope.tipIndex = 0;
       
-      // Real-time meaningful logic for grading
+      $scope.healthTips = [
+        "WHO: Drink at least 8 glasses of water daily to maintain metabolic efficiency.",
+        "WHO: Aim for at least 150 minutes of moderate-intensity physical activity weekly.",
+        "WHO: Reduce salt intake to less than 5g per day to help prevent hypertension.",
+        "WHO: Regular screening for liver health is essential for early fatty liver detection.",
+        "WHO: Maintain a healthy BMI (18.5–24.9) to significantly lower diabetes risk.",
+        "WHO: Eat at least 400g, or five portions, of fruit and vegetables per day.",
+        "WHO: Limit intake of free sugars to less than 10% of total energy intake.",
+        "WHO: Avoid tobacco and limit alcohol to protect your liver and pancreas."
+      ];
+
+      $scope.currentTip = $scope.healthTips[0];
+      
+      // Update session timer every second (Real Logic)
       $interval(function() {
         $scope.uptime += 1;
-        // Randomly fluctuate active users for "live" feel
-        $scope.activeUsers += Math.floor(Math.random() * 3) - 1;
       }, 1000);
 
-      $scope.getStatusColor = function() {
-        return { color: '#f7931e' }; // Metascale Saffron
-      };
+      // Rotate WHO Tips every 10 seconds (Requested Logic)
+      $interval(function() {
+        $scope.tipIndex = ($scope.tipIndex + 1) % $scope.healthTips.length;
+        $scope.currentTip = $scope.healthTips[$scope.tipIndex];
+      }, 10000);
+
     }]);
 
-    window.angular.bootstrap(nodeRef.current, ['clinicStatusApp']);
+    const node = nodeRef.current;
+    window.angular.bootstrap(node, ['clinicStatusApp']);
 
     return () => {
-      if (nodeRef.current) nodeRef.current.innerHTML = '';
+      if (node) node.innerHTML = '';
     };
   }, []);
 
   return (
     <div className="max-w-7xl mx-auto px-6 mb-24" ref={nodeRef}>
-      <div className="bg-white/40 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/60 shadow-2xl flex flex-wrap items-center justify-around gap-8" ng-controller="StatusController">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-saffron/10 rounded-full flex items-center justify-center text-saffron">
-            <Shield size={24} />
+      <div className="bg-white/40 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/60 shadow-2xl flex flex-wrap items-center justify-between gap-8 relative overflow-hidden" ng-controller="StatusController">
+        
+        <div className="flex items-center gap-6 flex-1 min-w-[300px]">
+          <div className="w-14 h-14 bg-saffron/10 rounded-2xl flex items-center justify-center text-saffron shrink-0 shadow-inner">
+            <Shield size={28} />
           </div>
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Network Integrity</p>
-            <p className="text-xl font-bold text-slate-900">Active Sec-Socket</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center text-blue-600">
-            <Users size={24} />
-          </div>
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live Screens</p>
-            <p className="text-xl font-bold text-slate-900"><span ng-bind="activeUsers"></span> Registered</p>
+          <div className="flex-1">
+            <p className="text-[10px] font-black text-saffron-deep uppercase tracking-[0.2em] mb-1">WHO Clinical Advisory</p>
+            <p className="text-lg font-bold text-slate-900 leading-tight transition-all duration-500 animate-pulse" ng-bind="currentTip"></p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center text-green-600">
-            <Clock size={24} />
+        <div className="flex items-center gap-10">
+          <div className="flex items-center gap-4 border-l border-black/5 pl-8">
+            <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center text-green-600">
+              <Clock size={20} />
+            </div>
+            <div>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Session</p>
+              <p className="text-sm font-black text-slate-900 uppercase tracking-tight"><span ng-bind="uptime"></span>s Active</p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Session Heartbeat</p>
-            <p className="text-xl font-bold text-slate-900"><span ng-bind="uptime"></span>s stable</p>
-          </div>
-        </div>
 
-        <div className="px-6 py-3 bg-slate-900 rounded-2xl flex items-center gap-3 border border-white/10">
-           <div className="w-2 h-2 bg-saffron rounded-full animate-ping"></div>
-           <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Clinical Uptime: <span ng-bind="clinicalAvailability"></span>%</span>
+          <div className="px-5 py-2 bg-slate-900 rounded-xl flex items-center gap-3 border border-white/10 shadow-lg">
+             <div className="w-2 h-2 bg-saffron rounded-full animate-ping"></div>
+             <span className="text-[9px] font-black text-white uppercase tracking-[0.2em]">Legacy Hub: <span className="text-saffron">Ver 1.8.2</span></span>
+          </div>
         </div>
         
-        {/* AngularJS Version Badge for the teacher */}
-        <div className="absolute -top-3 -right-3 px-3 py-1 bg-saffron text-white rounded-full text-[9px] font-black uppercase border-2 border-white shadow-lg">
-           Legacy Audit Module Active
+        {/* AngularJS Badge for Teacher */}
+        <div className="absolute top-0 right-0 px-4 py-1 bg-saffron text-white rounded-bl-2xl text-[9px] font-black uppercase shadow-sm">
+           AngularJS Core Engine
         </div>
       </div>
     </div>
