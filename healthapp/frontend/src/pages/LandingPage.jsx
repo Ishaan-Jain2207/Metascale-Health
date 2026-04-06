@@ -281,8 +281,7 @@ const PerspectiveCard = ({ feature }) => {
           <feature.icon size={28} />
        </div>
        <h3 className="text-2xl font-bold text-slate-900 mb-4 tracking-tight">{feature.title}</h3>
-       <p className="text-slate-500 font-medium leading-relaxed mb-6">{feature.desc}</p>
-       <Link to="/register" className="text-saffron-deep font-bold text-sm tracking-widest uppercase flex items-center gap-2 hover:gap-3 transition-all">Explore <ArrowRight size={14} /></Link>
+       <p className="text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
     </motion.div>
   );
 };

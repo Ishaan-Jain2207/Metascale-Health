@@ -72,15 +72,6 @@ const AngularStatusWidget = () => {
             </div>
           </div>
 
-          <div className="px-5 py-2 bg-slate-900 rounded-xl flex items-center gap-3 border border-white/10 shadow-lg">
-             <div className="w-2 h-2 bg-saffron rounded-full animate-ping"></div>
-             <span className="text-[9px] font-black text-white uppercase tracking-[0.2em]">Legacy Hub: <span className="text-saffron">Ver 1.8.2</span></span>
-          </div>
-        </div>
-        
-        {/* AngularJS Badge for Teacher */}
-        <div className="absolute top-0 right-0 px-4 py-1 bg-saffron text-white rounded-bl-2xl text-[9px] font-black uppercase shadow-sm">
-           AngularJS Core Engine
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { Mail, Lock, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -11,6 +11,7 @@ const LoginPage = () => {
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
@@ -108,9 +109,7 @@ const LoginPage = () => {
             transition={{ delay: 0.3 }}
             className="text-slate-500 font-medium tracking-tight"
           >
-            {isDoctorMode 
-              ? 'Secured gateway for healthcare professionals.' 
-              : 'Sign in to access your clinical health profile.'}
+            {isDoctorMode && 'Secured gateway for healthcare professionals.'}
           </motion.p>
         </div>
 
@@ -163,18 +162,24 @@ const LoginPage = () => {
             >
               <div className="flex items-center justify-between ml-1">
                 <label className="block text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Security Key</label>
-                <Link to="/forgot-password" size="sm" className="text-[10px] font-black text-saffron-deep hover:text-saffron uppercase tracking-widest">Recovery?</Link>
               </div>
               <div className="relative group">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-saffron-deep transition-colors" size={18} />
                 <input 
-                  type="password" 
+                  type={showPassword ? "text" : "password"} 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-white/60 border-0 rounded-2xl ring-1 ring-black/5 focus:ring-2 focus:ring-saffron/40 transition-all outline-none font-bold placeholder:text-slate-300" 
+                  className="w-full pl-12 pr-12 py-4 bg-white/60 border-0 rounded-2xl ring-1 ring-black/5 focus:ring-2 focus:ring-saffron/40 transition-all outline-none font-bold placeholder:text-slate-300" 
                   placeholder="••••••••"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-saffron-deep transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </motion.div>
 
@@ -209,7 +214,6 @@ const LoginPage = () => {
           transition={{ delay: 0.8 }}
           className="mt-8 text-center"
         >
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">End-to-End Encrypted Handshake</p>
         </motion.div>
       </motion.div>
     </div>
