@@ -1,41 +1,58 @@
--- ──────────────────────────────────────────
--- USERS (patients + doctors)
--- ──────────────────────────────────────────
+-- ─────────────────────────────────────────────────────────────────────────────
+-- SCHEMA DEFINITION: METASCALE HEALTH DATABASE
+-- This file defines the core clinical data structures for the Metascale application.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- ─── 1. USERS TABLE ──────────────────────────────────────────────────────────
+-- Stores unified profile data for Patients, Doctors, and Administrators.
+-- Logic: Roles are partitioned via ENUM to maintain strict RBAC integrity.
+-- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS users (
-  id            INT AUTO_INCREMENT PRIMARY KEY,
-  full_name     VARCHAR(120) NOT NULL,
-  email         VARCHAR(180) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL,
-  role          ENUM('patient','doctor','admin') NOT NULL DEFAULT 'patient',
-  age           INT,
-  gender        ENUM('male','female','other') DEFAULT NULL,
-  phone         VARCHAR(20)  DEFAULT '',
-  blood_group   VARCHAR(10)  DEFAULT '',
-  address       TEXT,
-  -- medical background (patients)
+  id            INT AUTO_INCREMENT PRIMARY KEY, -- Primary unique identifier
+  full_name     VARCHAR(120) NOT NULL,          -- User's legal clinical identity
+  email         VARCHAR(180) NOT NULL UNIQUE,   -- Authentication & communication key
+  password_hash VARCHAR(255) NOT NULL,          -- Argon2/Bcrypt secured credential
+  role          ENUM('patient','doctor','admin') NOT NULL DEFAULT 'patient', -- RBAC pivot
+  
+  -- Demographics & Contact
+  age           INT,                            -- Clinical age marker
+  gender        ENUM('male','female','other') DEFAULT NULL, -- Bio-marker for risk models
+  phone         VARCHAR(20)  DEFAULT '',        -- Emergency/Follow-up contact
+  blood_group   VARCHAR(10)  DEFAULT '',        -- Clinical blood classification
+  address       TEXT,                           -- Physical logistics data
+  
+  -- Clinical Profiles (Specific to Patients)
+  -- Binary flags for rapid screening risk stratification
   has_hypertension         TINYINT(1) DEFAULT 0,
   has_diabetes             TINYINT(1) DEFAULT 0,
   has_liver_condition      TINYINT(1) DEFAULT 0,
   family_history_diabetes  TINYINT(1) DEFAULT 0,
-  current_medications      TEXT,
-  -- doctor-specific
-  specialization   VARCHAR(120) DEFAULT '',
-  hospital         VARCHAR(180) DEFAULT '',
-  license_number   VARCHAR(80)  DEFAULT '',
-  is_approved      TINYINT(1)  DEFAULT 1,
-  -- common
-  is_active   TINYINT(1) DEFAULT 1,
-  last_login  DATETIME   DEFAULT NULL,
-  created_at  DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at  DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  current_medications      TEXT,               -- Descriptive history of active drugs
+  
+  -- Professional Credentials (Specific to Doctors)
+  specialization      VARCHAR(120) DEFAULT '',  -- Domain expertise (e.g. Hepatology)
+  hospital            VARCHAR(180) DEFAULT '',  -- Primary clinical base
+  license_number      VARCHAR(80)  DEFAULT '',  -- Verified regulatory ID
+  medical_council     VARCHAR(120) DEFAULT '',  -- Registered governing body
+  years_of_experience INT          DEFAULT 0,   -- Clinical seniority marker
+  qualification       VARCHAR(120) DEFAULT '',  -- Degree/Certifications (MD, MBBS)
+  is_approved         TINYINT(1)   DEFAULT 1,   -- Administrative verification flag
+  
+  -- System Lifecycle Markers
+  is_active   TINYINT(1) DEFAULT 1,             -- Soft-deletion/Suspension flag
+  last_login  DATETIME   DEFAULT NULL,          -- Analytics for engagement
+  created_at  DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Audit: Creation
+  updated_at  DATETIME   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP -- Audit: Last Change
 );
 
--- ──────────────────────────────────────────
--- LIVER SCREENINGS
--- ──────────────────────────────────────────
+-- ─── 2. LIVER SCREENING DATA ──────────────────────────────────────────────────
+-- Logic: Stores feature vectors and generated risk interpretations for liver health.
+-- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS liver_screenings (
   id                          INT AUTO_INCREMENT PRIMARY KEY,
-  user_id                     INT NOT NULL,
+  user_id                     INT NOT NULL,     -- Foreign Key reference to Patient
+  
+  -- Biophysical Input Parameters
   age                         INT,
   gender                      VARCHAR(10),
   total_bilirubin             DECIMAL(8,3),
@@ -46,30 +63,37 @@ CREATE TABLE IF NOT EXISTS liver_screenings (
   total_proteins              DECIMAL(8,3),
   albumin                     DECIMAL(8,3),
   albumin_globulin_ratio      DECIMAL(8,3),
-  alcohol_pattern             VARCHAR(30),
+  
+  -- Contextual Health Variables
+  alcohol_pattern             VARCHAR(30),      -- Behavioral marker
   prior_liver_diagnosis       TINYINT(1) DEFAULT 0,
   liver_test_result           VARCHAR(30),
-  -- prediction output
-  prediction       VARCHAR(30),
-  confidence       DECIMAL(5,4),
-  risk_band        VARCHAR(30),
-  interpretation   TEXT,
-  recommendations  TEXT,
-  -- doctor review
-  doctor_id        INT DEFAULT NULL,
-  doctor_comment   TEXT,
-  doctor_flag      ENUM('normal','watch','urgent','') DEFAULT '',
-  is_reviewed      TINYINT(1) DEFAULT 0,
+  
+  -- Prediction Metadata (Generated by Metascale AI)
+  prediction       VARCHAR(30),                 -- Binary classification (Risk/No Risk)
+  confidence       DECIMAL(5,4),                -- Probabilistic certainty (0-1)
+  risk_band        VARCHAR(30),                 -- Stratified band (Minimal, Elevated, etc)
+  interpretation   TEXT,                        -- Clinical narrative summary
+  recommendations  TEXT,                        -- Structured JSON array of advice
+  
+  -- Clinical Review Layer (Generated by Doctors)
+  doctor_id        INT DEFAULT NULL,            -- Reviewing Specialist
+  doctor_comment   TEXT,                        -- Specialist's medical observation
+  doctor_flag      ENUM('normal','watch','urgent','') DEFAULT '', -- Priority flag
+  is_reviewed      TINYINT(1) DEFAULT 0,        -- Review status bit
   created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- ──────────────────────────────────────────
--- DIABETES SCREENINGS
--- ──────────────────────────────────────────
+-- ─── 3. DIABETES SCREENING DATA ────────────────────────────────────────────────
+-- Logic: Stores multi-factor metabolic variables for T2D risk analysis.
+-- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS diabetes_screenings (
   id                  INT AUTO_INCREMENT PRIMARY KEY,
   user_id             INT NOT NULL,
+  
+  -- Risk Factor Matrix
   age_group           VARCHAR(20),
   gender              VARCHAR(10),
   family_diabetes     TINYINT(1) DEFAULT 0,
@@ -87,43 +111,47 @@ CREATE TABLE IF NOT EXISTS diabetes_screenings (
   pregnancies         INT DEFAULT 0,
   prediabetes         TINYINT(1) DEFAULT 0,
   urination_freq      VARCHAR(20),
-  -- prediction output
+  
+  -- Prediction Payload
   prediction       VARCHAR(30),
   confidence       DECIMAL(5,4),
   risk_band        VARCHAR(30),
   interpretation   TEXT,
   recommendations  TEXT,
-  -- doctor review
+  
+  -- Clinical Review Layer
   doctor_id        INT DEFAULT NULL,
   doctor_comment   TEXT,
   doctor_flag      ENUM('normal','watch','urgent','') DEFAULT '',
   is_reviewed      TINYINT(1) DEFAULT 0,
   created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- ──────────────────────────────────────────
--- APPOINTMENTS
--- ──────────────────────────────────────────
+-- ─── 4. APPOINTMENT SCHEDULING ────────────────────────────────────────────────
+-- Orchestrates the clinical link between Patients and Specialists.
+-- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS appointments (
   id            INT AUTO_INCREMENT PRIMARY KEY,
   patient_id    INT NOT NULL,
   doctor_id     INT NOT NULL,
-  appt_date     DATE NOT NULL,
-  appt_time     VARCHAR(20) NOT NULL,
-  reason        TEXT,
+  appt_date     DATE NOT NULL,                  -- Scheduled YYYY-MM-DD
+  appt_time     VARCHAR(20) NOT NULL,           -- Time component (8am - 10pm)
+  reason        TEXT,                           -- Patient's visit intent
   type          ENUM('in-person','video','phone') DEFAULT 'in-person',
   status        ENUM('pending','confirmed','completed','cancelled') DEFAULT 'pending',
-  notes         TEXT,
-  doctor_notes  TEXT,
+  notes         TEXT,                           -- Common notes
+  doctor_notes  TEXT,                           -- Sensitive clinical notes
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  
   FOREIGN KEY (patient_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (doctor_id)  REFERENCES users(id) ON DELETE CASCADE
 );
 
--- ──────────────────────────────────────────
--- NOTIFICATIONS
--- ──────────────────────────────────────────
+-- ─── 5. NOTIFICATION SYSTEM ─────────────────────────────────────────────────
+-- Async communication channel for clinical alerts.
+-- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS notifications (
   id          INT AUTO_INCREMENT PRIMARY KEY,
   user_id     INT NOT NULL,
@@ -132,20 +160,17 @@ CREATE TABLE IF NOT EXISTS notifications (
   type        ENUM('info','warning','success','alert') DEFAULT 'info',
   is_read     TINYINT(1) DEFAULT 0,
   created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- ──────────────────────────────────────────
--- SEED DATA
--- ──────────────────────────────────────────
--- Default admin: admin@metascale.health / Admin@1234
+-- ─── 6. SEED DATA ───────────────────────────────────────────────────────────
+-- Initial critical accounts for system administration.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- Default Root Admin: admin@metascale.health / Admin@1234
 INSERT IGNORE INTO users (full_name, email, password_hash, role, is_approved)
 VALUES ('Admin', 'admin@metascale.health',
   '$2a$12$Bv5hC3UxoVjL1SQvVe0hJe6lI.4TDo8Xv4zWYN4sLs8C3EqNlSM6m',
   'admin', 1);
 
--- Default doctor: doctor@metascale.health / Doctor@1234
-INSERT IGNORE INTO users (full_name, email, password_hash, role, specialization, hospital, is_approved)
-VALUES ('Dr. Priya Sharma', 'doctor@metascale.health',
-  '$2a$12$WXyLuCozg.NXlHk7w8Db0.pF/nKSPy3dHAmJlXERzCZ.A5JI7YWxm',
-  'doctor', 'Hepatology & Endocrinology', 'AIIMS Delhi', 1);

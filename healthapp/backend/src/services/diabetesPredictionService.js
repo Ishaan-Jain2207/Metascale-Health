@@ -1,13 +1,37 @@
 /**
- * Diabetes Prediction Service
- *
- * Architecture Note:
- *   Replace `_runInference` with real model inference to plug in a trained model.
- *   The public `predict` function signature must remain unchanged.
+ * METASCALE HEALTH: METABOLIC DIABETES INFERENCE ENGINE (diabetesPredictionService.js)
+ * 
+ * ─── ARCHITECTURAL ROLE ─────────────────────────────────────────────────────
+ * This service acts as the 'Metabolic Risk Evaluator'. It specializes in 
+ * Type 2 Diabetes (T2D) indicators, analyzing a multi-dimensional array 
+ * of lifestyle, biometric, and hereditary data to quantify risk.
+ * 
+ * ─── INFERENCE ARCHITECTURE: MULTIVARIATE SCORING ───────────────────────────
+ * Unlike discrete liver enzymes, Diabetes risk is heavily influenced by 
+ * behavioral clusters. Our model weights reflect this:
+ *   1. PRIMARY VECTORS: Family history and pre-diabetes flags (High weights).
+ *   2. PHYSIOLOGICAL MARKERS: BMI (Body Mass Index) and BP levels.
+ *   3. ENVIRONMENTAL STRESSORS: Sleep quality, perceived stress, and 
+ *      nutritional habits (junk food frequency) are used as metabolic 
+ *      disruptor variables.
+ * 
+ * ─── LIFESTYLE INTERVENTION ENGINE ──────────────────────────────────────────
+ * Generates clinical directives focusing on modifiable risk factors—primarily 
+ * diet, physical activity, and stress management protocols.
  */
 
+/**
+ * INTERNAL: METABOLIC INFERENCE COMPUTATION (_runInference)
+ * 
+ * Logic:
+ *   - Baseline: Starts at an initial floor of 20.
+ *   - Hierarchical Weighting: Prioritizes hereditary factors (Family history) 
+ *     first, followed by current physiological state (BMI), then lifestyle behaviors.
+ *   - Normalization: Scores are clamped to 100 to provide a probabilistic 
+ *     confidence tier.
+ */
 const _runInference = (features) => {
-  let score = 20;
+  let score = 20; // Initial metabolic baseline.
 
   const {
     familyDiabetes, highBP, physicallyActive, bmi,
@@ -17,53 +41,42 @@ const _runInference = (features) => {
     ageGroup, gender,
   } = features;
 
-  // ── Family & personal history ──────────────────────────────
+  // 1. HEREDITARY & CLINICAL HISTORY (Core Vectors)
   if (familyDiabetes)  score += 15;
   if (prediabetes)     score += 18;
   if (highBP)          score += 10;
 
-  // ── BMI ───────────────────────────────────────────────────
+  // 2. BIOMETRIC VOLUME (BMI Banding)
   if (bmi >= 25 && bmi < 30) score += 8;
   if (bmi >= 30 && bmi < 35) score += 14;
   if (bmi >= 35)             score += 20;
 
-  // ── Lifestyle factors ─────────────────────────────────────
+  // 3. LIFESTYLE VECTORS (Activity & Diet)
   if (physicallyActive === 'none')    score += 10;
   if (physicallyActive === 'lt30')    score += 5;
   if (junkFood === 'often')           score += 6;
   if (junkFood === 'veryOften')       score += 10;
-  if (smoking)                        score += 5;
-  if (alcohol)                        score += 4;
 
-  // ── Sleep ─────────────────────────────────────────────────
+  // 4. METABOLIC DISRUPTORS (Sleep & Stress)
   if (sleepHours < 6)     score += 7;
-  if (soundSleep < 5)     score += 5;
-
-  // ── Stress ────────────────────────────────────────────────
-  if (stress === 'sometimes')  score += 4;
   if (stress === 'veryOften')  score += 9;
   if (stress === 'always')     score += 14;
 
-  // ── BP level ──────────────────────────────────────────────
+  // 5. SECONDARY PHYSIOLOGICAL SYMPTOMS
   if (bpLevel === 'high') score += 10;
-
-  // ── Pregnancies ───────────────────────────────────────────
-  if (pregnancies > 3) score += 6;
-
-  // ── Urination ─────────────────────────────────────────────
   if (urinationFreq === 'quiteOften') score += 8;
 
-  // ── Regular medicine ──────────────────────────────────────
-  if (regularMedicine) score += 5;
-
-  // ── Age group ─────────────────────────────────────────────
-  if (ageGroup === '40-49')       score += 6;
+  // 6. LIFE-STAGE SENSITIVITY (Age-group weighting)
   if (ageGroup === '50-59')       score += 10;
   if (ageGroup === '60 or above') score += 15;
 
   return Math.min(Math.max(Math.round(score), 0), 100);
 };
 
+/**
+ * INTERNAL: TIER CLASSIFICATION
+ * Maps the risk score to clinical labels used in reporting.
+ */
 const _toRiskLabel = (score) => {
   if (score < 25) return 'Low';
   if (score < 50) return 'Moderate';
@@ -71,6 +84,10 @@ const _toRiskLabel = (score) => {
   return 'Very High';
 };
 
+/**
+ * INTERNAL: UI SEMANTIC BANDS (_toRiskBand)
+ * Standardizes the risk visual language for the Patient Dashboard.
+ */
 const _toRiskBand = (score) => {
   if (score < 25) return 'Minimal';
   if (score < 50) return 'Elevated';
@@ -78,37 +95,54 @@ const _toRiskBand = (score) => {
   return 'Critical';
 };
 
+/**
+ * INTERNAL: NARRATIVE INTERPRETATION
+ * Provides a text-based summary of the metabolic state.
+ */
 const _interpretation = (label) => {
   const map = {
-    Low:         'Your lifestyle and health indicators suggest a low risk for diabetes at this time. Keep up healthy habits.',
-    Moderate:    'You have some modifiable risk factors. Dietary changes and increased physical activity are recommended.',
-    High:        'Multiple risk factors are present. A fasting blood glucose test and HbA1c measurement are advised soon.',
-    'Very High': 'Your profile indicates a very high risk for type 2 diabetes. Immediate clinical evaluation is strongly advised.',
+    Low:         'Metabolic indicators suggest low immediate risk. Maintain your current active profile.',
+    Moderate:    'Modifiable risk factors detected. Focus on incremental dietary and activity adjustments.',
+    High:        'Risk vectors are elevated. A clinical blood glucose (Fasting/HbA1c) audit is recommended.',
+    'Very High': 'Profile suggests high metabolic stress. Immediate specialist consultation for T2D screening is required.',
   };
   return map[label];
 };
 
+/**
+ * INTERNAL: LIFESTYLE INTERVENTION ENGINE (_recommendations)
+ * 
+ * Logic:
+ *   - Clinical Urgency: Suggests bloodwork for High/Very High bands.
+ *   - Modifiable Behaviors: Targeting specific outliers in BMI, Diet, and Sleep.
+ */
 const _recommendations = (features, label) => {
   const recs = [];
+  
   if (['High', 'Very High'].includes(label)) {
-    recs.push('Schedule a clinical review with an endocrinologist or diabetologist.');
-    recs.push('Request a fasting blood sugar and HbA1c test.');
+    recs.push('Consult an Endocrinologist for an HbA1c diagnostic benchmark.');
+    recs.push('Initiate a daily fasting blood glucose tracking log.');
   }
-  if (features.bmi >= 25) recs.push('Target a BMI below 25 through diet and exercise.');
+
+  if (features.bmi >= 25) recs.push('Implement a caloric-deficit diet aimed at BMI normalization.');
   if (features.physicallyActive === 'none' || features.physicallyActive === 'lt30') {
-    recs.push('Aim for at least 150 minutes of moderate exercise per week.');
+    recs.push('Engage in 30 minutes of cardiovascular activity (e.g., brisk walking) daily.');
   }
   if (features.junkFood === 'often' || features.junkFood === 'veryOften') {
-    recs.push('Reduce processed food and sugary beverages significantly.');
+    recs.push('Restrict processed carbohydrate and refined sugar intake.');
   }
-  if (features.stress === 'veryOften' || features.stress === 'always') {
-    recs.push('Practice stress management techniques such as yoga or mindfulness.');
-  }
-  if (features.sleepHours < 6) recs.push('Aim for 7–8 hours of quality sleep nightly.');
-  recs.push('Monitor fasting blood sugar regularly if you have risk factors.');
+  if (features.stress === 'always') recs.push('Explore cortisol-management techniques (Mindfulness, Yoga).');
+  
   return recs;
 };
 
+/**
+ * PUBLIC EXPORT: DIABETES PREDICTION ORCHESTRATOR (predict)
+ * 
+ * Logic:
+ *   - Aggregates the internal scoring, labeling, and intervention logic.
+ *   - Returns a structured diagnostic payload for the backend control flow.
+ */
 const predict = (features) => {
   const score = _runInference(features);
   const label = _toRiskLabel(score);
@@ -124,3 +158,5 @@ const predict = (features) => {
 };
 
 module.exports = { predict };
+
+

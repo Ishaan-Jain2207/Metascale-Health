@@ -1,35 +1,90 @@
+/**
+ * METASCALE HEALTH: APPOINTMENT & RESOURCE ORCHESTRATOR (appointmentController.js)
+ * 
+ * ─── ARCHITECTURAL ROLE ─────────────────────────────────────────────────────
+ * This controller manages the 'Temporal Logistics' of the Clinical OS. 
+ * It ensures that patient-doctor encounters are scheduled within strict 
+ * clinical boundaries and that medical resource (specialist time) is 
+ * allocated without collisions.
+ * 
+ * ─── CLINICAL PROTOCOLS ─────────────────────────────────────────────────────
+ *   1. TEMPORAL BOUNDARIES: Appointments must occur within clinical hours 
+ *      (08:00 - 22:00) and within a specific calendar horizon (Today -> Year End).
+ *   2. CONFLICT RESOLUTION: The system performs a pre-flight check to 
+ *      guarantee a specialist isn't double-booked for the same temporal coordinate.
+ *   3. LIFECYCLE TRANSITIONS: Consultations follow a linear state machine:
+ *      PENDING (Request) -> CONFIRMED (Scheduled) -> COMPLETED (Post-Review).
+ */
+
 const { pool } = require('../config/db');
 const { sendSuccess, sendError } = require('../utils/apiResponse');
 
-// ─── BOOK APPOINTMENT ──────────────────────────────────────────────────
+/**
+ * CONSULTATION RESERVATION (bookAppointment)
+ * 
+ * Logic:
+ *   - Identity Extraction: Identifies the requesting patient from the JWT context.
+ *   - Temporal Guard 1 (Hours): Strips the timestamp and verifies it falls 
+ *     within the 08:00-22:00 clinical window.
+ *   - Temporal Guard 2 (Horizon): Normalizes 'today' to T00:00:00 and 
+ *     verifies the date is neither in the past nor beyond the current year.
+ *   - Collision Guard: Queries the 'appointments' ledger for existing 
+ *     non-cancelled sessions for that doctor/date/time combination.
+ */
 exports.bookAppointment = async (req, res, next) => {
   try {
     const { doctor_id, appt_date, appt_time, reason, type } = req.body;
-    const patient_id = req.user.id;
+    const patient_id = req.user.id; // Authorized identity from 'protect' middleware.
 
-    // 1. Check for Double Booking
+    // ─── STAGE 1: CLINICAL TIME VALIDATION ────────────────────────────────────
+    // Extraction: Splitting HH:MM to perform granular integer comparison.
+    const [hours, minutes] = appt_time.split(':').map(Number);
+    if (hours < 8 || (hours >= 22 && minutes > 0) || hours > 22) {
+      return sendError(res, 'Temporal Violation: Clinical hours are restricted to 08:00 - 22:00.', 400);
+    }
+
+    // ─── STAGE 2: TEMPORAL HORIZON VALIDATION ─────────────────────────────────
+    const requestedDate = new Date(appt_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Ground zero for date comparison.
+    
+    const yearEnd = new Date(today.getFullYear(), 11, 31);
+    yearEnd.setHours(23, 59, 59, 999);
+
+    if (requestedDate < today || requestedDate > yearEnd) {
+      return sendError(res, 'Protocol Deviation: Appointments must be within the current calendar year.', 400);
+    }
+
+    // ─── STAGE 3: RESOURCE COLLISION CHECK ────────────────────────────────────
+    // Logic: We must ensure the 'Clinical Specialist' (Doctor) is available.
+    // We ignore 'cancelled' sessions as they represent vacated slots.
     const [existing] = await pool.query(
       "SELECT id FROM appointments WHERE doctor_id = ? AND appt_date = ? AND appt_time = ? AND status != 'cancelled'",
       [doctor_id, appt_date, appt_time]
     );
 
     if (existing.length > 0) {
-      return sendError(res, 'This clinical slot is already reserved. Please select another time.', 409);
+      return sendError(res, 'Resource Collision: specialist is already engaged at this coordinate.', 409);
     }
 
+    // ─── STAGE 4: REPOSITORY COMMIT ───────────────────────────────────────────
     const [result] = await pool.query(
       `INSERT INTO appointments (patient_id, doctor_id, appt_date, appt_time, reason, type, status)
        VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
       [patient_id, doctor_id, appt_date, appt_time, reason, type || 'in-person']
     );
 
-    return sendSuccess(res, { id: result.insertId }, 'Appointment booked successfully', 201);
+    return sendSuccess(res, { id: result.insertId }, 'Consultation request synchronized for specialist review.', 201);
   } catch (err) {
-    next(err);
+    next(err); // Hands off to global errorMiddleware.js
   }
 };
 
-// ─── GET PATIENT APPOINTMENTS ──────────────────────────────────────────
+/**
+ * PATIENT ROSTER RETRIEVAL (getPatientAppointments)
+ * Logic: Retrieves the longitudinal history of consultations for a patient.
+ * Join Logic: Hydrates the doctor's name and specialization from the 'users' ledger.
+ */
 exports.getPatientAppointments = async (req, res, next) => {
   try {
     const [rows] = await pool.query(
@@ -39,13 +94,17 @@ exports.getPatientAppointments = async (req, res, next) => {
        WHERE a.patient_id = ? ORDER BY a.appt_date DESC, a.appt_time DESC`,
       [req.user.id]
     );
-    return sendSuccess(res, rows);
+    return sendSuccess(res, rows, 'Patient consultation history retrieved.');
   } catch (err) {
     next(err);
   }
 };
 
-// ─── GET DOCTOR APPOINTMENTS ───────────────────────────────────────────
+/**
+ * DOCTOR PRACTICE ROSTER (getDoctorAppointments)
+ * Logic: Provides the healthcare professional with their active patient list.
+ * Data Context: Includes age and gender (demographics) for clinical preparation.
+ */
 exports.getDoctorAppointments = async (req, res, next) => {
   try {
     const [rows] = await pool.query(
@@ -55,13 +114,20 @@ exports.getDoctorAppointments = async (req, res, next) => {
        WHERE a.doctor_id = ? ORDER BY a.appt_date DESC, a.appt_time DESC`,
       [req.user.id]
     );
-    return sendSuccess(res, rows);
+    return sendSuccess(res, rows, 'Doctor practice roster synchronized.');
   } catch (err) {
     next(err);
   }
 };
 
-// ─── UPDATE APPOINTMENT STATUS ─────────────────────────────────────────
+/**
+ * CLINICAL STATE TRANSITION (updateStatus)
+ * 
+ * Logic:
+ *   - Progression: Moves a session from 'pending' to 'confirmed' or 'completed'.
+ *   - Medical Record Commit: Allows the doctor to append 'doctor_notes' (Clinical Observations).
+ *   - Persistence: Utilizes COALESCE to prevent accidental erasure of existing notes.
+ */
 exports.updateStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -72,24 +138,32 @@ exports.updateStatus = async (req, res, next) => {
       [status, doctor_notes, id]
     );
 
-    return sendSuccess(res, {}, 'Appointment status updated');
+    return sendSuccess(res, {}, 'Consultation state mutation successful.');
   } catch (err) {
     next(err);
   }
 };
 
-// ─── CANCEL APPOINTMENT (PATIENT) ──────────────────────────────────────
+/**
+ * SESSION CANCELLATION (cancelAppointment)
+ * Logic: Empowers the patient to retract a clinical request.
+ * Authorization: Verifies the 'patient_id' matches the session identity.
+ */
 exports.cancelAppointment = async (req, res, next) => {
   try {
     const { id } = req.params;
     const patient_id = req.user.id;
 
+    // GUARD: Prevents cross-identity record mutation.
     const [appt] = await pool.query("SELECT * FROM appointments WHERE id = ? AND patient_id = ?", [id, patient_id]);
-    if (!appt.length) return sendError(res, 'Appointment not found or unauthorized', 404);
+    if (!appt.length) return sendError(res, 'Authorization Error: Record mismatch or access denied.', 404);
 
     await pool.query("UPDATE appointments SET status = 'cancelled' WHERE id = ?", [id]);
-    return sendSuccess(res, {}, 'Appointment cancelled successfully');
+    return sendSuccess(res, {}, 'Appointment successfully vacated.');
   } catch (err) {
     next(err);
   }
 };
+
+
+

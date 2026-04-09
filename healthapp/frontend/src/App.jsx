@@ -1,15 +1,23 @@
+/**
+ * METASCALE HEALTH: MAIN FRONTEND ORCHESTRATOR
+ * Purpose: Defines the global application structure, routing tables, and security boundaries.
+ * Architecture Logic: 
+ *   - Utilizes 'AuthProvider' to maintain a persistent security context.
+ *   - Implements 'ProtectedRoute' wrappers to enforce Role-Based Access Control (RBAC).
+ *   - Maps virtual routes to specialized clinical portals (Patient, Doctor, Admin).
+ */
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthProvider';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import AppLayout from './layouts/AppLayout';
 
-// Auth Pages
-import LandingPage from './pages/LandingPage';
+// ─── AUTHENTICATION PORTAL ────────────────────────────────────────────────
+import LandingPage from './pages/landing/LandingPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 
-// Patient Pages
+// ─── PATIENT PORTAL PORTFOLIO ───────────────────────────────────────────
 import PatientDashboard from './pages/patient/PatientDashboard';
 import ScreeningPortal from './pages/patient/ScreeningPortal';
 import LiverScreening from './pages/patient/LiverScreening';
@@ -17,15 +25,15 @@ import DiabetesScreening from './pages/patient/DiabetesScreening';
 import PredictionResult from './pages/patient/PredictionResult';
 import HistoryPage from './pages/patient/HistoryPage';
 import PatientAppointments from './pages/patient/PatientAppointments';
-import ProfilePage from './pages/patient/ProfilePage';
+import ProfilePage from './pages/shared/ProfilePage';
 
-// Doctor Pages
+// ─── CLINICAL (DOCTOR) PORTAL PORTFOLIO ─────────────────────────────────
 import DoctorDashboard from './pages/doctor/DoctorDashboard';
 import PatientList from './pages/doctor/PatientList';
 import PatientDetail from './pages/doctor/PatientDetail';
 import DoctorAppointments from './pages/doctor/DoctorAppointments';
 
-// Admin Pages
+// ─── SYSTEM ADMINISTRATION PORTFOLIO ────────────────────────────────────
 import AdminDashboard from './pages/admin/AdminDashboard';
 import DoctorManagement from './pages/admin/DoctorManagement';
 
@@ -34,12 +42,18 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Public Routes */}
+          {/* 
+            PUBLIC BOUNDARY
+            Logic: Open routes accessible to all identities, including visitors.
+          */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Patient Routes */}
+          {/* 
+            PATIENT BOUNDARY (RBAC: PATIENT)
+            Security Logic: Requires authenticated 'patient' role context.
+          */}
           <Route element={<ProtectedRoute allowedRoles={['patient']} />}>
             <Route path="/patient/dashboard" element={<AppLayout><PatientDashboard /></AppLayout>} />
             <Route path="/patient/screening" element={<AppLayout><ScreeningPortal /></AppLayout>} />
@@ -52,7 +66,10 @@ function App() {
             <Route path="/patient/profile" element={<AppLayout><ProfilePage /></AppLayout>} />
           </Route>
 
-          {/* Doctor Routes */}
+          {/* 
+            CLINICAL BOUNDARY (RBAC: DOCTOR)
+            Security Logic: Restricted to verified healthcare practitioners.
+          */}
           <Route element={<ProtectedRoute allowedRoles={['doctor']} />}>
             <Route path="/doctor/dashboard" element={<AppLayout><DoctorDashboard /></AppLayout>} />
             <Route path="/doctor/patients" element={<AppLayout><PatientList /></AppLayout>} />
@@ -62,7 +79,10 @@ function App() {
             <Route path="/doctor/profile" element={<AppLayout><ProfilePage /></AppLayout>} />
           </Route>
 
-          {/* Admin Routes */}
+          {/* 
+            ADMINISTRATIVE BOUNDARY (RBAC: ADMIN)
+            Security Logic: System-level governance and diagnostic oversight.
+          */}
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
             <Route path="/admin/dashboard" element={<AppLayout><AdminDashboard /></AppLayout>} />
             <Route path="/admin/doctors" element={<AppLayout><DoctorManagement /></AppLayout>} />
@@ -70,7 +90,10 @@ function App() {
             <Route path="/admin/profile" element={<AppLayout><ProfilePage /></AppLayout>} />
           </Route>
 
-          {/* Fallback */}
+          {/* 
+            SYSTEM FALLBACK
+            Logic: Silently redirects undefined routes to the clinical landing page.
+          */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
@@ -79,3 +102,4 @@ function App() {
 }
 
 export default App;
+

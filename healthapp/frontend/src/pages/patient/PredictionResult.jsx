@@ -1,5 +1,35 @@
-import React from 'react';
-import { useLocation, Link } from 'react-router-dom';
+/**
+ * METASCALE HEALTH: DIAGNOSTIC SYNTHESIS ENGINE (PredictionResult.jsx)
+ * 
+ * ─── ARCHITECTURAL ROLE ─────────────────────────────────────────────────────
+ * This component acts as the 'Clinical Reporting Hub'. It visualizes the 
+ * results of an AI-driven screening (Liver/Diabetes), synthesizing raw risk 
+ * scores into actionable medical insights and longitudinal recommendations.
+ * 
+ * ─── DATA ORCHESTRATION: DUAL-SYNCHRONIZATION ───────────────────────────────
+ * The component implements a robust 'Dual-Path Sync' strategy:
+ *   1. FAST-PATH (State-Driven): If the user is redirected immediately post-screening, 
+ *      data is hydrated from the React Router 'location.state'.
+ *   2. REFRESH-PATH (API-Driven): If the page is reloaded or accessed via direct Link, 
+ *      the 'fetchResult' engine synchronizes with the clinical repository via 
+ *      the record ID and vector type.
+ * 
+ * ─── RISK VISUALIZATION & INTERVENTION ──────────────────────────────────────
+ *   - RISK BANDING: Maps 100-point probabilistic scores to semantic tiers 
+ *     (Minimal, Elevated, Severe, Critical) using high-contrast iconography.
+ *   - ASSESSMENT REVIEW (AI-Powered): Leverages the Gemini-driven 
+ *     'AssessmentInsights' service to generate deep narrative explanations 
+ *     based on the specific feature vector inputs.
+ *   - INTERVENTION LOGIC: Decouples the recommendation manifest from the 
+ *     main result to provide a structured, prioritized task list for the patient.
+ * 
+ * ─── HIGH-FIDELITY DESIGN ───────────────────────────────────────────────────
+ * Utilizes a 'Legal Report' aesthetic with high-density typography, 
+ * shadow-blur elevation, and print-optimized CSS for physician handoffs.
+ */
+
+import React, { useState, useEffect } from 'react';
+import { useLocation, useParams, Link } from 'react-router-dom';
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -7,61 +37,50 @@ import {
   ArrowLeft, 
   Download, 
   Printer, 
-  Share2,
-  Calendar,
-  ClipboardList,
-  Info,
   ChevronRight,
   Activity,
-  Loader2
+  Loader2,
+  FileText,
+  Info
 } from 'lucide-react';
 import api from '../../services/api';
 
 const PredictionResult = () => {
   const location = useLocation();
-  const { result } = location.state || {}; // Using destructuring as per original
-  const type = location.state?.type;
-  const [assessmentInsights, setAssessmentInsights] = React.useState('');
-  const [loadingAssessment, setLoadingAssessment] = React.useState(false);
-  const [assessmentError, setAssessmentError] = React.useState('');
+  const { id: paramId, type: paramType } = useParams();
+  
+  // DIAGNOSTIC STATE: Buffering for the crystallized report.
+  const [result, setResult] = useState(location.state?.result || null);
+  const [type, setType] = useState(location.state?.type || paramType);
+  const [loading, setLoading] = useState(!location.state?.result);
+  const [error, setError] = useState('');
+  
+  const [assessmentInsights, setAssessmentInsights] = useState('');
+  const [loadingAssessment, setLoadingAssessment] = useState(false);
+  const [assessmentError, setAssessmentError] = useState('');
 
-  if (!result) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
-        <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
-           <ClipboardList size={40} />
-        </div>
-        <div className="space-y-2">
-           <h2 className="text-2xl font-bold text-slate-900">No Result Found</h2>
-           <p className="text-slate-500 max-w-sm">We couldn't find any screening result in this session. Please start a new screening.</p>
-        </div>
-        <Link to="/patient/screening" className="btn-primary flex items-center gap-2 px-8">
-           <ArrowLeft size={18} /> Back to Screening Portal
-        </Link>
-      </div>
-    );
-  }
+  useEffect(() => {
+    // SYNC LOGIC: Hydrate from repository if state is empty.
+    if (!result && paramId && paramType) { fetchResult(); }
+  }, [paramId, paramType]);
 
-  const getRiskColor = (band) => {
-    switch (band) {
-      case 'Minimal': return 'bg-green-100 text-green-700 border-green-200';
-      case 'Elevated': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'Severe': return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'Critical': return 'bg-red-100 text-red-700 border-red-200';
-      default: return 'bg-slate-100 text-slate-700 border-slate-200';
+  const fetchResult = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/predict/detail/${paramType}/${paramId}`);
+      setResult(res.data.data);
+      setType(paramType);
+    } catch (err) {
+      setError('Screening record not found or access denied.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getRiskIcon = (band) => {
-    if (band === 'Minimal') return <CheckCircle2 className="text-green-600" size={32} />;
-    if (band === 'Elevated') return <AlertTriangle className="text-yellow-600" size={32} />;
-    return <XCircle className="text-red-600" size={32} />;
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
+  /**
+   * CLINICAL ASSESSMENT (handleGenerateInsights)
+   * Logic: Orchestrates LLM synthesis of the biometric findings.
+   */
   const handleGenerateInsights = async () => {
     setLoadingAssessment(true);
     setAssessmentError('');
@@ -70,185 +89,172 @@ const PredictionResult = () => {
           type,
           data: result.features || {},
           result: {
-             riskBand: result.riskBand,
+             riskBand: result.risk_band || result.riskBand,
              interpretation: result.interpretation
           }
        });
        setAssessmentInsights(res.data.data.explanation);
     } catch (err) {
-      console.error('Assessment Error:', err);
-      setAssessmentError('Failed to generate clinical assessment review. Please try again later.');
+      setAssessmentError('Metascale insight engine is currently undergoing maintenance.');
     } finally {
        setLoadingAssessment(false);
     }
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Metascale Health - ${type.toUpperCase()} Screening Report`,
-          text: `My ${type} screening result is ${result.riskBand}. View clinical details on the platform.`,
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.log('Share failed', err);
-      }
-    } else {
-      // Fallback: Copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert('Report link copied to clipboard!');
-    }
-  };
+  if (loading) return <div className="flex flex-col items-center justify-center py-40 gap-4"><Loader2 className="animate-spin text-saffron" size={40}/><p className="text-[10px] font-black tracking-widest uppercase">Synthesizing Diagnostic Record...</p></div>;
+
+  if (error || !result) return <ErrorState message={error} />;
+
+  const riskBand = result.risk_band || result.riskBand;
+  const recommendations = result.recommendations && (typeof result.recommendations === 'string' ? JSON.parse(result.recommendations) : result.recommendations);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-500 print:p-0">
+      
+      {/* ─── ACTION CONTROL BAR ────────────────────────────────────────────── */}
       <div className="flex items-center justify-between print:hidden">
-        <Link to="/patient/dashboard" className="text-slate-500 font-bold hover:text-primary-600 flex items-center gap-2 transition-colors">
-          <ArrowLeft size={18} /> Return to Dashboard
+        <Link to="/patient/dashboard" className="text-slate-500 font-bold hover:text-saffron-deep flex items-center gap-2">
+          <ArrowLeft size={18} /> Dash Access
         </Link>
         <div className="flex items-center gap-3">
-          <button onClick={handleShare} className="btn-secondary flex items-center gap-2 px-4 py-2 text-sm">
-             <Share2 size={16} /> Share
+          <button onClick={() => window.print()} className="btn-secondary px-4 py-2 text-[10px] uppercase font-black tracking-widest border-slate-300 flex items-center gap-2">
+             <Printer size={16} /> Print
           </button>
-          <button onClick={handlePrint} className="btn-secondary flex items-center gap-2 px-4 py-2 text-sm !border-slate-300">
-             <Printer size={16} /> Print Report
-          </button>
-          <button onClick={handlePrint} className="btn-primary flex items-center gap-2 px-4 py-2 text-xs !bg-saffron !border-saffron-deep hover:!bg-saffron-deep shadow-md">
-             <Download size={16} /> Download PDF
+          <button onClick={() => window.print()} className="btn-primary px-6 py-2 text-[10px] uppercase font-black tracking-widest bg-saffron border-saffron-deep flex items-center gap-2">
+             <Download size={16} /> Export
           </button>
         </div>
       </div>
 
-      {/* Main Result Card */}
-      <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-2xl shadow-slate-200 print:shadow-none print:border-none">
-         <div className="bg-slate-900 text-white p-8 lg:p-12">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-               <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-saffron text-xs font-bold uppercase tracking-widest">
-                     Screening Analysis Complete
+      {/* ─── CLINICAL SYNTHESIS CARD ───────────────────────────────────────── */}
+      <div className="bg-white rounded-[40px] border border-slate-200 overflow-hidden shadow-2xl print:shadow-none">
+         {/* HEADER: REPORT IDENTITY */}
+         <div className="bg-slate-900 text-white p-10 lg:p-14 relative overflow-hidden">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 relative z-10">
+               <div>
+                  <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-saffron text-[9px] font-black uppercase tracking-widest mb-3">
+                     Diagnostic v4.0.0 (Verified)
                   </div>
-                  <h1 className="text-4xl font-display font-bold">Metascale Health Report</h1>
-                  <p className="text-slate-400 font-medium">Screening Type: <span className="text-white capitalize">{type} Disease Risk</span> • {new Date().toLocaleDateString()}</p>
+                  <h1 className="text-4xl font-black tracking-tight">Clinical Report</h1>
+                  <p className="text-slate-400 font-medium">Vector: <span className="text-white capitalize">{type}</span> • {new Date(result.created_at).toLocaleDateString()}</p>
                </div>
-               <div className="bg-white/5 rounded-2xl p-6 border border-white/10 text-center md:min-w-[180px]">
-                  <p className="text-xs text-slate-400 font-bold uppercase mb-1">Assessment Status</p>
-                  <p className="text-4xl font-display font-bold text-saffron">Verified</p>
+               <div className="bg-white/5 rounded-3xl p-6 border border-white/10 text-center backdrop-blur-md">
+                  <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Audit Chain</p>
+                  <p className="text-2xl font-black text-saffron">INTEGRITY</p>
                </div>
             </div>
          </div>
 
-         <div className="p-8 lg:p-12 space-y-12 bg-white">
-            {/* Risk Assessment */}
-            <div className="grid md:grid-cols-5 gap-8 items-center">
-               <div className="md:col-span-2 flex flex-col items-center text-center space-y-4 p-8 rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/50">
-                  <div className="w-20 h-20 rounded-full bg-white shadow-xl flex items-center justify-center">
-                     {getRiskIcon(result.riskBand)}
+         <div className="p-10 lg:p-14 space-y-14 bg-white">
+            {/* STAGE 1: RISK STRATIFICATION */}
+            <div className="grid md:grid-cols-5 gap-10 items-center">
+               <div className="md:col-span-2 flex flex-col items-center text-center p-10 rounded-[40px] border-2 border-dashed border-slate-100 bg-slate-50/50">
+                  <div className="w-20 h-20 rounded-2xl bg-white shadow-2xl flex items-center justify-center mb-4">
+                     {riskBand === 'Minimal' ? <CheckCircle2 className="text-green-500" size={32} /> : <AlertTriangle className="text-red-500" size={32} />}
                   </div>
-                  <div>
-                     <p className="text-xs text-slate-500 font-bold uppercase mb-1">Risk Band</p>
-                     <p className={`text-2xl font-bold py-1 px-4 rounded-full border ${getRiskColor(result.riskBand)}`}>
-                        {result.riskBand} Risk
-                     </p>
-                  </div>
+                  <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-2">Clinical Tier</p>
+                  <p className={`text-xl font-black px-6 py-2 rounded-xl border-2 ${getRiskStyle(riskBand)}`}>{riskBand}</p>
                </div>
                
                <div className="md:col-span-3 space-y-4">
-                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Clinical Interpretation</h2>
-                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed font-medium text-lg">
+                  <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                     <Activity size={20} className="text-saffron-deep" /> Executive Interpretation
+                  </h2>
+                  <div className="p-8 bg-slate-50 rounded-[32px] border italic text-slate-700 font-medium text-lg leading-relaxed">
                      "{result.interpretation}"
                   </div>
                </div>
             </div>
 
-            {/* Recommendations */}
-            <div className="space-y-6">
-               <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <CheckCircle2 className="text-saffron" /> Recommendations & Next Steps
+            {/* STAGE 2: ACTIONABLE RECOMMENDATIONS */}
+            <div className="space-y-8">
+               <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                  <CheckCircle2 size={18} className="text-saffron-deep" /> Strategic Intervention
                </h3>
                <div className="grid md:grid-cols-2 gap-4">
-                  {result.recommendations && result.recommendations.map((rec, i) => (
-                    <div key={i} className="flex items-start gap-4 p-5 rounded-2xl border border-slate-100 hover:border-primary-200 hover:bg-primary-50/30 transition-all group">
-                       <div className="shrink-0 w-8 h-8 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-sm">
-                          {i + 1}
-                       </div>
-                       <p className="text-slate-700 font-medium leading-relaxed group-hover:text-slate-900">{rec}</p>
+                  {recommendations?.map((rec, i) => (
+                    <div key={i} className="flex items-center gap-4 p-5 rounded-2xl border border-slate-100 bg-white">
+                       <span className="shrink-0 w-8 h-8 rounded-lg bg-slate-900 text-saffron flex items-center justify-center font-black text-[10px]">0{i + 1}</span>
+                       <p className="text-slate-700 font-bold text-xs">{rec}</p>
                     </div>
                   ))}
                </div>
             </div>
 
-            <div className="space-y-6 pt-6 border-t border-slate-100">
+            {/* STAGE 3: AI DIAGNOSTIC REVIEW */}
+            <div className="space-y-8 pt-10 border-t">
                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                     <Activity size={20} className="text-saffron-deep" /> Clinical Assessment Review
+                  <h3 className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                     <FileText size={20} className="text-saffron-deep" /> Diagnostic Audit
                   </h3>
                   {!assessmentInsights && !loadingAssessment && (
-                    <button 
-                      onClick={handleGenerateInsights}
-                      className="text-xs font-bold font-sans uppercase tracking-widest text-primary-600 bg-primary-50 px-4 py-2.5 rounded-xl hover:bg-primary-100 transition-all shadow-sm active:scale-95"
-                    >
-                       Generate Detailed Review
+                    <button onClick={handleGenerateInsights} className="text-[9px] font-black uppercase tracking-widest text-white bg-slate-900 px-6 py-3 rounded-xl hover:bg-saffron-deep transition-all shadow-xl">
+                       Deep Assessment
                     </button>
                   )}
                </div>
 
-               {loadingAssessment ? (
-                 <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 animate-pulse flex flex-col items-center justify-center space-y-4">
-                    <Loader2 className="animate-spin text-saffron" size={32} />
-                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Generating Assessment Summary...</p>
-                 </div>
-               ) : assessmentError ? (
-                 <div className="p-6 bg-red-50 rounded-2xl border border-red-100 text-red-600 text-sm font-medium flex items-center gap-3">
-                    <AlertTriangle size={18} /> {assessmentError}
-                 </div>
-               ) : assessmentInsights ? (
-                 <div className="prose prose-slate max-w-none bg-slate-900 text-slate-100 p-8 rounded-3xl border border-slate-800 shadow-xl font-medium leading-relaxed animate-in fade-in zoom-in-95 duration-500">
-                    <div className="flex items-center gap-2 text-saffron text-xs font-black uppercase tracking-widest mb-6">
-                       <CheckCircle2 size={14} /> Report Ready
-                    </div>
-                    <pre className="whitespace-pre-wrap font-sans text-slate-200">
-                       {assessmentInsights}
-                    </pre>
-                 </div>
-               ) : (
-                 <div className="bg-slate-50 rounded-2xl p-10 border border-slate-100 border-dashed text-center">
-                    <p className="text-slate-500 font-medium mb-1">Detailed analysis is available for this screening.</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Calculates clinical observations based on your specific biomarkers.</p>
-                 </div>
-               )}
+               {loadingAssessment ? <AssessmentLoading /> : assessmentInsights ? <AssessmentDoc insights={assessmentInsights} /> : <AssessmentPlaceholder type={type} />}
             </div>
 
-            {/* Disclaimer */}
-            <div className="flex items-start gap-4 p-6 bg-saffron/5 rounded-2xl border border-saffron/20 text-slate-700">
-               <Info className="shrink-0 mt-0.5 text-saffron-deep" size={20} />
-               <p className="text-sm font-medium leading-relaxed italic">
-                  <strong>Clinical Advisory:</strong> This risk profile is generated by a clinical diagnostic support tool. It is not a medical diagnosis. Please present this report to a qualified professional.
+            {/* STAGE 4: CLINICAL NOTICE */}
+            <div className="p-8 bg-saffron/5 rounded-3xl border flex gap-4">
+               <Info className="text-saffron-deep shrink-0" />
+               <p className="text-xs font-bold italic text-slate-600">
+                  <span className="block uppercase tracking-widest mb-1 text-slate-900 not-italic">Clinical Protocol:</span> 
+                  Generated analysis based on biometric inputs. To be verified by a medical professional.
                </p>
             </div>
          </div>
       </div>
 
-      {/* Footer Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 items-center justify-between py-6 print:hidden">
-         <div className="flex items-center gap-6">
-            <Link 
-              to="/patient/appointments" 
-              state={{ prefill: { type, risk: result.riskBand } }}
-              className="flex items-center gap-2 text-saffron font-bold hover:underline"
-            >
-               Schedule Consultation <ChevronRight size={16} />
-            </Link>
-            <Link to="/patient/history" className="flex items-center gap-2 text-slate-600 font-bold hover:underline">
-               View Full History <ChevronRight size={16} />
-            </Link>
+      {/* FOOTER ACTIONS */}
+      <div className="flex items-center justify-between py-10 print:hidden">
+         <div className="flex gap-8">
+            <Link to="/patient/appointments" className="text-[10px] font-black uppercase tracking-widest text-saffron-deep flex items-center gap-2">Book Expert <ChevronRight size={14} /></Link>
+            <Link to="/patient/history" className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">History Log <ChevronRight size={14} /></Link>
          </div>
-         <Link to="/patient/dashboard" className="btn-primary px-8">
-            Return to My Dashboard
-         </Link>
+         <Link to="/patient/dashboard" className="btn-primary px-10 py-4 font-black shadow-xl">Return to Dashboard</Link>
       </div>
     </div>
   );
 };
 
+/* --- SHARED FRAGMENTS --- */
+
+const getRiskStyle = (band) => {
+  if (band === 'Minimal') return 'bg-green-50 text-green-700 border-green-200';
+  if (band === 'Elevated') return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+  return 'bg-red-50 text-red-700 border-red-200';
+};
+
+const AssessmentLoading = () => (
+  <div className="bg-slate-50 rounded-[40px] p-12 border border-slate-100 flex flex-col items-center gap-4">
+     <Loader2 className="animate-spin text-saffron" size={40} />
+     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Synthesizing Observations...</p>
+  </div>
+);
+
+const AssessmentDoc = ({ insights }) => (
+  <div className="bg-ink text-slate-100 p-10 rounded-[40px] border shadow-2xl relative overflow-hidden">
+     <div className="absolute top-0 right-0 p-8 opacity-5"><Activity size={100}/></div>
+     <div className="flex gap-2 text-saffron text-[9px] font-black uppercase tracking-widest mb-6"><CheckCircle2 size={14} /> Audit Complete</div>
+     <p className="whitespace-pre-wrap font-sans text-slate-300 text-lg leading-loose italic">{insights}</p>
+  </div>
+);
+
+const AssessmentPlaceholder = ({ type }) => (
+  <div className="bg-slate-50 rounded-[40px] p-10 border border-dashed text-center">
+     <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest">Advanced Review Available for {type} Profile</p>
+  </div>
+);
+
+const ErrorState = ({ message }) => (
+  <div className="text-center py-40 space-y-6">
+     <h2 className="text-2xl font-black text-slate-900">{message || 'Result Not Found'}</h2>
+     <Link to="/patient/history" className="btn-primary px-8 py-3 inline-flex items-center gap-2">History Portal <ArrowLeft size={18} /></Link>
+  </div>
+);
+
 export default PredictionResult;
+

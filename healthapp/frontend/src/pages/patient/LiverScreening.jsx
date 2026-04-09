@@ -1,3 +1,33 @@
+/**
+ * METASCALE HEALTH: HEPATIC DIAGNOSTIC PROTOCOL (LiverScreening.jsx)
+ * 
+ * ─── ARCHITECTURAL ROLE ─────────────────────────────────────────────────────
+ * This component provides a specialized 'Clinical Interface' for hepatic 
+ * risk assessment. It is designed to capture a multi-dimensional array 
+ * of biomarkers required for accurate metabolic liver analysis.
+ * 
+ * ─── DATA COLLECTION: THE HEPATIC FEATURE VECTOR ────────────────────────────
+ * The form is partitioned into specialized physiological domains:
+ *   1. EXCRETORY MARKERS: Total/Direct Bilirubin (mg/dL)—indicator of 
+ *      filtration efficiency.
+ *   2. CELLULAR INTEGRITY: Alkaline Phosphotase (ALP), SGPT (ALT), and 
+ *      SGOT (AST) (U/L)—indicator of acute hepatocyte stress.
+ *   3. SYNTHESIS CAPACITY: Total Proteins and Albumin (g/dL)—indicator 
+ *      of long-term functional health.
+ *   4. LIFESTYLE CORRELATIONS: Alcohol patterns and prior clinical history.
+ * 
+ * ─── PROTOCOL FLOW & INFERENCE ──────────────────────────────────────────────
+ *   - FIELD ADAPTATION: Implements a 'Feature Binder' that synchronizes 
+ *     diverse inputs into a crystallized JSON payload.
+ *   - CLINICAL DISPATCH: Transmits the vector to the Backend Inference Kernel 
+ *     and routes the user to the 'PredictionResult' stage upon successful 
+ *     risk computation.
+ * 
+ * ─── AESTHETIC HIGH-FIDELITY ────────────────────────────────────────────────
+ * Utilizes a 'Clean-Room' layout with high-contrast grouping and 
+ * semantic checkmarks to ensure clarity during lab-data entry.
+ */
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -7,38 +37,35 @@ import {
   CheckCircle2, 
   Info,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Activity
 } from 'lucide-react';
 import api from '../../services/api';
 
 const LiverScreening = () => {
   const navigate = useNavigate();
+  
+  // CLINICAL STATE: Buffering for the full hepatic feature vector.
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    age: '',
-    gender: '',
-    totalBilirubin: '',
-    directBilirubin: '',
-    alkalinePhosphotase: '',
-    alamineAminotransferase: '',
-    aspartateAminotransferase: '',
-    totalProteins: '',
-    albumin: '',
-    albuminGlobulinRatio: '',
-    alcoholPattern: 'none',
-    priorLiverDiagnosis: false,
-    liverTestResult: 'notsure'
+    age: '', gender: '',
+    totalBilirubin: '', directBilirubin: '',
+    alkalinePhosphotase: '', alamineAminotransferase: '', aspartateAminotransferase: '',
+    totalProteins: '', albumin: '', albuminGlobulinRatio: '',
+    alcoholPattern: 'none', priorLiverDiagnosis: false, liverTestResult: 'notsure'
   });
 
+  // HANDLER: Orchestrates real-time state synchronization.
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value
-    });
+    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
   };
 
+  /**
+   * DIAGNOSTIC EXECUTION (handleSubmit)
+   * Logic: Dispatches vectors to the Inference Kernel.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -47,12 +74,14 @@ const LiverScreening = () => {
     try {
       const res = await api.post('/predict/liver', formData);
       if (res.data.success) {
-        navigate('/patient/screening/result', { state: { result: res.data.data, type: 'liver' } });
+        navigate('/patient/screening/result', { 
+          state: { result: res.data.data, type: 'liver' } 
+        });
       } else {
         setError(res.data.message);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit screening. Please try again.');
+       setError('Protocol Interrupted: Unable to reach inference kernel.');
     } finally {
       setLoading(false);
     }
@@ -60,134 +89,103 @@ const LiverScreening = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      
+      {/* NAVIGATION CHANNEL */}
       <div className="flex items-center justify-between mb-8">
-        <button onClick={() => navigate('/patient/screening')} className="flex items-center gap-2 text-slate-500 font-bold hover:text-saffron-deep transition-colors">
-          <ArrowLeft size={20} /> Back to Screening Portal
+        <button onClick={() => navigate('/patient/screening')} className="flex items-center gap-2 text-slate-500 font-bold hover:text-saffron-deep">
+          <ArrowLeft size={20} /> Portal Back
         </button>
-        <div className="flex items-center gap-2 text-saffron-deep font-bold">
-           <Database size={20} /> Liver Screening Module
+        <div className="flex items-center gap-2 text-saffron-deep font-black uppercase tracking-widest text-[10px]">
+           <Database size={20} /> Hepatic Module v2.0
         </div>
       </div>
 
-      <div className="card shadow-xl border-white ring-1 ring-slate-200 p-8 lg:p-12">
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">Liver Health Assessment</h1>
-          <p className="text-slate-600 max-w-xl mx-auto font-medium">Please enter your clinical parameters based on your most recent lab report for accurate screening.</p>
+      <div className="card shadow-2xl p-8 lg:p-14 bg-white rounded-[48px]">
+        {/* HEADER: CLINICAL CONTEXT */}
+        <div className="mb-14 text-center">
+          <div className="inline-block p-4 bg-saffron/10 text-saffron-deep rounded-[24px] mb-4">
+             <Activity size={40} />
+          </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Hepatic Audit</h1>
+          <p className="text-slate-500 max-w-xl mx-auto font-medium">Input parameters from your lab report for AI-Risk analysis.</p>
         </div>
 
         {error && (
-          <div className="mb-8 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-start gap-4">
-            <AlertCircle className="shrink-0 mt-0.5" />
-            <p className="font-bold">{error}</p>
+          <div className="mb-10 p-6 bg-red-50 text-red-600 rounded-[24px] flex items-center gap-4">
+            <AlertCircle /> <p className="font-bold">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-10">
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Basic Info Group */}
-            <div className="space-y-6">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2">Basic Demographics</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">AGE (YEARS)</label>
-                  <input type="number" name="age" value={formData.age} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 45" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">GENDER</label>
-                  <select name="gender" value={formData.gender} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none">
-                    <option value="">Select</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
+        <form onSubmit={handleSubmit} className="space-y-16">
+          <div className="grid md:grid-cols-2 gap-12">
+            {/* DOMAIN 1: DEMOGRAPHICS */}
+            <div className="space-y-10">
+              <SectionHeader title="Basic Demographics" />
+              <div className="grid grid-cols-2 gap-6">
+                <FormField label="Age (Yrs)"><input type="number" name="age" onChange={handleChange} required className="input-field" /></FormField>
+                <FormField label="Gender">
+                  <select name="gender" onChange={handleChange} required className="input-field">
+                    <option value="">Select</option><option value="male">Male</option><option value="female">Female</option>
                   </select>
-                </div>
+                </FormField>
               </div>
-              <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700">ALCOHOL CONSUMPTION PATTERN</label>
-                 <select name="alcoholPattern" value={formData.alcoholPattern} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none">
-                    <option value="none">Never</option>
-                    <option value="social">Occasional (Social)</option>
-                    <option value="regular">Regular (2-3 times/week)</option>
-                    <option value="heavy">Heavy (Daily)</option>
+              <FormField label="Alcohol Pattern">
+                 <select name="alcoholPattern" onChange={handleChange} className="input-field">
+                    <option value="none">Abstinent</option><option value="social">Social</option>
+                    <option value="regular">Regular</option><option value="heavy">Critical</option>
                  </select>
-              </div>
+              </FormField>
             </div>
 
-            {/* Bilirubin & Proteins Group */}
-            <div className="space-y-6">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2">Bilirubin & Proteins</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">TOTAL BILIRUBIN</label>
-                  <input type="number" step="0.01" name="totalBilirubin" value={formData.totalBilirubin} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="mg/dL" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">DIRECT BILIRUBIN</label>
-                  <input type="number" step="0.01" name="directBilirubin" value={formData.directBilirubin} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="mg/dL" />
-                </div>
+            {/* DOMAIN 2: BILIRUBIN & PROTEINS */}
+            <div className="space-y-10">
+              <SectionHeader title="Bilirubin & Proteins" />
+              <div className="grid grid-cols-2 gap-6">
+                <FormField label="Total Bilirubin"><input type="number" step="0.01" name="totalBilirubin" onChange={handleChange} required className="input-field" placeholder="mg/dL" /></FormField>
+                <FormField label="Direct Bilirubin"><input type="number" step="0.01" name="directBilirubin" onChange={handleChange} required className="input-field" placeholder="mg/dL" /></FormField>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                 <div className="space-y-2">
-                   <label className="text-sm font-bold text-slate-700">TOTAL PROTEINS</label>
-                   <input type="number" step="0.01" name="totalProteins" value={formData.totalProteins} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="g/dL" />
-                 </div>
-                 <div className="space-y-2">
-                   <label className="text-sm font-bold text-slate-700">ALBUMIN</label>
-                   <input type="number" step="0.01" name="albumin" value={formData.albumin} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="g/dL" />
-                 </div>
+              <div className="grid grid-cols-2 gap-6">
+                <FormField label="Total Proteins"><input type="number" step="0.01" name="totalProteins" onChange={handleChange} required className="input-field" placeholder="g/dL" /></FormField>
+                <FormField label="Albumin"><input type="number" step="0.01" name="albumin" onChange={handleChange} required className="input-field" placeholder="g/dL" /></FormField>
               </div>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Liver Enzymes Group */}
-            <div className="space-y-6">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2">Liver Enzymes (U/L)</h3>
-              <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">ALKALINE PHOSPHOTASE (ALP)</label>
-                  <input type="number" name="alkalinePhosphotase" value={formData.alkalinePhosphotase} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 110" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">SGPT / ALT</label>
-                  <input type="number" name="alamineAminotransferase" value={formData.alamineAminotransferase} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 35" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">SGOT / AST</label>
-                  <input type="number" name="aspartateAminotransferase" value={formData.aspartateAminotransferase} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 40" />
-                </div>
+          <div className="grid md:grid-cols-2 gap-12">
+            {/* DOMAIN 3: ENZYMES */}
+            <div className="space-y-10">
+              <SectionHeader title="Hepatic Enzymes (U/L)" />
+              <FormField label="ALP"><input type="number" name="alkalinePhosphotase" onChange={handleChange} required className="input-field" /></FormField>
+              <div className="grid grid-cols-2 gap-6">
+                <FormField label="SGPT/ALT"><input type="number" name="alamineAminotransferase" onChange={handleChange} required className="input-field" /></FormField>
+                <FormField label="SGOT/AST"><input type="number" name="aspartateAminotransferase" onChange={handleChange} required className="input-field" /></FormField>
               </div>
             </div>
 
-            {/* Other Metrics Group */}
-            <div className="space-y-6">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2">Ratios & History</h3>
-              <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">ALBUMIN / GLOBULIN RATIO</label>
-                  <input type="number" step="0.01" name="albuminGlobulinRatio" value={formData.albuminGlobulinRatio} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 0.90" />
-              </div>
-              <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 italic">ANY PRIOR LIVER DIAGNOSIS?</label>
-                  <div className="flex items-center gap-6 pt-2">
-                     <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
-                        <input type="radio" name="priorLiverDiagnosis" checked={formData.priorLiverDiagnosis === true} onChange={() => setFormData({...formData, priorLiverDiagnosis: true})} className="accent-saffron-deep w-4 h-4" /> Yes
-                     </label>
-                     <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
-                        <input type="radio" name="priorLiverDiagnosis" checked={formData.priorLiverDiagnosis === false} onChange={() => setFormData({...formData, priorLiverDiagnosis: false})} className="accent-saffron-deep w-4 h-4" /> No
-                     </label>
-                  </div>
-              </div>
+            {/* DOMAIN 4: RATIOS & HISTORY */}
+            <div className="space-y-10">
+              <SectionHeader title="Audit Markers" />
+              <FormField label="Albumin/Globulin Ratio"><input type="number" step="0.01" name="albuminGlobulinRatio" onChange={handleChange} required className="input-field" /></FormField>
+              <FormField label="Prior Liver Issue?">
+                <div className="flex gap-4 p-4 bg-slate-50 rounded-2xl">
+                  <label className="flex gap-2">
+                    <input type="radio" name="priorLiverDiagnosis" checked={formData.priorLiverDiagnosis} onChange={() => setFormData({...formData, priorLiverDiagnosis: true})} /> Yes
+                  </label>
+                  <label className="flex gap-2">
+                    <input type="radio" name="priorLiverDiagnosis" checked={!formData.priorLiverDiagnosis} onChange={() => setFormData({...formData, priorLiverDiagnosis: false})} /> No
+                  </label>
+                </div>
+              </FormField>
             </div>
           </div>
 
-          <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
-             <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 md:max-w-md">
-                <Info size={18} className="text-slate-400 mt-1 shrink-0" />
-                <p className="text-xs text-slate-500 font-medium leading-relaxed">Ensure all parameters are entered accurately as they significantly impact the clinical assessment result.</p>
+          <div className="pt-12 border-t flex flex-col md:flex-row items-center justify-between gap-8">
+             <div className="flex gap-4 bg-slate-50 p-6 rounded-3xl md:max-w-md">
+                <Info size={20} className="text-saffron-deep shrink-0" />
+                <p className="text-xs text-slate-500 italic">Parameters are cross-calibrated for MASLD risk analysis.</p>
              </div>
-             <button type="submit" disabled={loading} className="btn-primary w-full md:w-auto px-10 py-4 text-lg font-bold flex items-center justify-center gap-2">
-                {loading ? <Loader2 className="animate-spin" /> : 'Analyze Risk Indicators'}
-                {!loading && <CheckCircle2 size={20} />}
+             <button type="submit" disabled={loading} className="btn-primary px-14 py-5 font-black flex items-center gap-3">
+                {loading ? <Loader2 className="animate-spin" /> : <>Execute Analysis <ArrowRight size={20} /></>}
              </button>
           </div>
         </form>
@@ -196,4 +194,19 @@ const LiverScreening = () => {
   );
 };
 
+/* --- SHARED FORM FRAGMENTS --- */
+const FormField = ({ label, children }) => (
+  <div className="space-y-3">
+     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</label>
+     {children}
+  </div>
+);
+
+const SectionHeader = ({ title }) => (
+  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-3 flex items-center gap-2">
+     <CheckCircle2 size={14} className="text-saffron" /> {title}
+  </h3>
+);
+
 export default LiverScreening;
+

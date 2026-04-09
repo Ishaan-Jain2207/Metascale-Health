@@ -1,181 +1,269 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * METASCALE HEALTH: IDENTITY PERSISTENCE HUB (ProfilePage.jsx)
+ * 
+ * ─── ARCHITECTURAL ROLE ─────────────────────────────────────────────────────
+ * This component acts as the 'Single Source of Truth' for patient and doctor 
+ * identities. It manages the synchronization between the global AuthContext, 
+ * the local component state, and the persistent clinical repository.
+ * 
+ * ─── CLINICAL SYNCHRONIZATION LOGIC ─────────────────────────────────────────
+ * The profile is partitioned into three specialized domains:
+ *   1. IDENTITY CLUSTER: Name, Email (Immutable Clinical ID), and Account Type.
+ *   2. BIOMETRIC CLUSTER: Age and Biological Gender markers used to refine 
+ *      screening accuracy.
+ *   3. SECURITY DOMAIN: Hardened credential rotation (SHA-256 password sync).
+ * 
+ * ─── DATA PERSISTENCE FLOW ──────────────────────────────────────────────────
+ *   - HYDRATION: On mount, the component pulls current identity from 
+ *     the AuthContext.
+ *   - SYNCHRONIZATION: Dispatches PUT requests to the authorization endpoint 
+ *     and simultaneously updates the local browser storage via AuthContext 
+ *     to ensure zero-lag identity propagation.
+ * 
+ * ─── HIGH-FIDELITY DESIGN ───────────────────────────────────────────────────
+ * Utilizes a 'Glassmorphic Clinical' design with Framer Motion animations 
+ * (staggered entry), high-contrast accessibility (slate-900), and 
+ * semantic status indicators (Saffron fill).
+ */
+
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
+  Settings, 
+  Lock, 
+  Phone, 
   ShieldCheck, 
-  Award, 
-  Zap, 
-  ArrowLeft,
-  Lock,
+  Mail, 
+  Calendar, 
+  Camera, 
+  Star,
+  Zap,
   Loader2,
-  Save
+  CheckCircle2,
+  AlertCircle,
+  CircleUser as UserCircle
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-/* eslint-disable no-unused-vars */
-import { motion, AnimatePresence } from 'framer-motion';
-/* eslint-enable no-unused-vars */
 
 const ProfilePage = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const { user, updateUserInfo } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  
+  // ─── IDENTITY STATE ───────────────────────────────────────────────────────
+  const [profileData, setProfileData] = useState({
     full_name: user?.full_name || '',
     email: user?.email || '',
     age: user?.age || '',
-    gender: user?.gender || '',
-    license_number: user?.license_number || '',
-    medical_council: user?.medical_council || '',
-    years_of_experience: user?.years_of_experience || '',
-    qualification: user?.qualification || '',
-    specialization: user?.specialization || '',
-    hospital: user?.hospital || ''
+    gender: user?.gender || 'male',
+    specialization: user?.specialization || ''
   });
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  // ─── SECURITY STATE ───────────────────────────────────────────────────────
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
 
-  const handleSubmit = async (e) => {
+  /**
+   * IDENTITY SYNCHRONIZATION (handleProfileUpdate)
+   * Logic: Dispatches profile mutations to the clinical oracle.
+   */
+  const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage({ type: '', text: '' });
-
+    setError('');
+    setSuccess('');
     try {
-      await api.put('/auth/profile', formData);
-      setMessage({ type: 'success', text: 'Identity Vector Synchronized Successfully' });
-    } catch {
-      setMessage({ type: 'error', text: 'Synchronization Interrupted' });
+      const res = await api.put('/auth/profile', profileData);
+      if (res.data.success) {
+        updateUserInfo(res.data.data);
+        setSuccess('Clinical identity synchronized successfully.');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Synchronization protocol failure.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    document.body.classList.add('app-dark-mode');
-    return () => document.body.classList.remove('app-dark-mode');
-  }, []);
+  /**
+   * SECURITY HARDENING (handlePasswordChange)
+   * Logic: Rotates cryptographic access signatures.
+   */
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setError('Credential mismatch: Confirmation signature does not match.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await api.put('/auth/change-password', passwordData);
+      if (res.data.success) {
+        setSuccess('Security credentials rotated and hardened.');
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Access rotation protocol failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1 }
+  };
 
   return (
     <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="max-w-6xl mx-auto space-y-16 pb-24 px-4 md:px-0"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-12 pb-20 max-w-6xl mx-auto"
     >
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 border-b border-white/5 pb-10">
-         <div className="space-y-4">
-            <button 
-               onClick={() => navigate(-1)}
-               className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-white/20 hover:text-saffron transition-all"
-            >
-               <ArrowLeft size={14} className="group-hover:-translate-x-2 transition-transform" /> Temporal HUB
-            </button>
-            <h1 className="text-5xl md:text-8xl font-display font-black text-white tracking-tighter uppercase leading-none">
-               Clinical <br />
-               <span className="text-saffron italic font-sans font-medium lowercase">Identity</span>
-            </h1>
-         </div>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-16">
-         <div className="lg:col-span-1 space-y-10">
-            <div className="glass-dark p-12 rounded-[64px] border border-white/5 text-center space-y-8 relative overflow-hidden group">
-               <div className="absolute inset-0 bg-mesh-saffron opacity-5"></div>
-               <div className="w-32 h-32 bg-white/5 border border-white/10 rounded-[48px] mx-auto flex items-center justify-center text-saffron shadow-5xl group-hover:rotate-12 transition-transform relative z-10">
-                  <User size={64} />
-               </div>
-               <div className="space-y-2 relative z-10">
-                  <h3 className="text-3xl font-display font-black text-white uppercase tracking-tight">{user?.full_name}</h3>
-                  <p className="text-[10px] text-white/20 font-black uppercase tracking-[0.3em] font-display">{user?.role} Cluster</p>
-               </div>
-               <div className="pt-6 relative z-10">
-                  <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-saffron/5 border border-saffron/20 text-saffron text-[10px] font-black uppercase tracking-widest">
-                     <ShieldCheck size={14} /> Node: {user?.id}
-                  </div>
+      {/* IDENTITY HEADER */}
+      <motion.div variants={itemVariants} className="relative bg-slate-900 rounded-[48px] p-10 md:p-16 text-white shadow-2xl border border-white/5 overflow-hidden">
+         <div className="absolute -top-24 -left-24 w-64 h-64 bg-saffron/10 blur-[120px]"></div>
+         <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+            <div className="w-32 h-32 md:w-44 md:h-44 bg-white/10 rounded-[40px] flex items-center justify-center border border-white/20 shadow-2xl relative group overflow-hidden">
+               <span className="text-6xl font-black">{user?.full_name?.charAt(0)}</span>
+               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
+                  <Camera size={24} /> <span className="text-[10px] font-black uppercase mt-2">Edit</span>
                </div>
             </div>
-
-            <div className="p-10 rounded-[56px] bg-white/5 border border-white/5 space-y-6 grayscale transition-all hover:grayscale-0 cursor-default">
-               <div className="flex items-center gap-4 text-saffron">
-                  <Lock size={20} />
-                  <h4 className="text-[10px] font-black uppercase tracking-widest">Privacy Handshake</h4>
+            <div className="text-center md:text-left">
+               <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                  <Star size={14} className="text-saffron" /> Verified {user?.role}
                </div>
-               <p className="text-[9px] text-white/20 font-black uppercase tracking-widest leading-relaxed italic">Your clinical biovariables are cryptographically isolated from the public terminal.</p>
+               <h1 className="text-4xl md:text-6xl font-black tracking-tight">{user?.full_name}</h1>
+               <p className="text-white/40 font-medium text-lg mt-2 flex items-center justify-center md:justify-start gap-4 uppercase tracking-widest text-[9px]">
+                  <Mail size={16} /> {user?.email} • <Calendar size={16} /> Joined {new Date(user?.created_at).toLocaleDateString()}
+               </p>
             </div>
          </div>
+      </motion.div>
 
+      <AnimatePresence>
+        {(error || success) && (
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`p-6 rounded-[32px] border flex gap-4 ${error ? 'bg-red-50 border-red-100 text-red-600' : 'bg-green-50 border-green-100 text-green-600'}`}>
+             {error ? <AlertCircle /> : <CheckCircle2 />}
+             <p className="font-black uppercase tracking-widest text-xs">{error || success}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="grid lg:grid-cols-3 gap-12">
+         {/* SIDEBAR: NAVIGATION */}
+         <div className="lg:col-span-1 space-y-8">
+             <div className="bg-white rounded-[40px] p-8 shadow-2xl border border-slate-100">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Clinical Settings</h3>
+                <div className="space-y-4">
+                   <SidebarItem icon={<User size={18} />} label="Identity" active />
+                   <SidebarItem icon={<Phone size={18} />} label="Contact" />
+                   <SidebarItem icon={<Lock size={18} />} label="Security" />
+                   <SidebarItem icon={<Settings size={18} />} label="Preferences" />
+                </div>
+             </div>
+             <div className="bg-slate-900 rounded-[40px] p-10 text-white shadow-2xl relative overflow-hidden group">
+                <div className="absolute -bottom-10 -right-10 opacity-10 group-hover:rotate-12 transition-transform"><ShieldCheck size={200} /></div>
+                <h4 className="font-black text-2xl uppercase tracking-tighter mb-4">Secure Storage</h4>
+                <p className="text-white/70 text-xs italic mb-8">Metascale employs industry-standard encryption for diagnostic data integrity.</p>
+                <button className="bg-white text-slate-900 px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest">Privacy Policy</button>
+             </div>
+         </div>
+
+         {/* MAIN: CONFIGURATION FORMS */}
          <div className="lg:col-span-2 space-y-12">
-            <form onSubmit={handleSubmit} className="glass-dark p-10 md:p-16 rounded-[72px] border border-white/5 shadow-5xl space-y-12 relative overflow-hidden">
-               <div className="absolute top-0 right-0 w-40 h-40 bg-saffron/10 rounded-full -mr-20 -mt-20 blur-3xl opacity-40"></div>
-               
-               <AnimatePresence>
-                  {message.text && (
-                     <motion.div 
-                        initial={{ opacity: 0, y: -20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className={`p-6 rounded-[32px] text-[10px] font-black uppercase tracking-widest flex items-center gap-4 border ${message.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}
-                     >
-                        <Zap size={18} /> {message.text}
-                     </motion.div>
-                  )}
-               </AnimatePresence>
-
-               <div className="grid md:grid-cols-2 gap-10">
-                  <div className="space-y-4">
-                     <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-6">Legal Name</label>
-                     <input type="text" name="full_name" value={formData.full_name} onChange={handleChange} className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[32px] outline-none text-white font-medium shadow-inner" />
-                  </div>
-                  <div className="space-y-4">
-                     <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-6">Endpoint</label>
-                     <input type="email" name="email" value={formData.email} disabled className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[32px] outline-none text-white/40 font-medium shadow-inner cursor-not-allowed" />
-                  </div>
-                  <div className="space-y-4">
-                     <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-6">Cycle Age</label>
-                     <input type="number" name="age" value={formData.age} onChange={handleChange} className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[32px] outline-none text-white font-medium shadow-inner" />
-                  </div>
-                  <div className="space-y-4">
-                     <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-6">Identity Vector</label>
-                     <select name="gender" value={formData.gender} onChange={handleChange} className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[32px] outline-none text-white font-black text-[10px] uppercase tracking-widest shadow-inner appearance-none">
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Agnostic</option>
-                     </select>
-                  </div>
-               </div>
-
-               {user?.role === 'doctor' && (
-                  <div className="space-y-12 pt-12 border-t border-white/5">
-                     <h3 className="text-xl font-display font-black text-white uppercase tracking-tight flex items-center gap-4">
-                        <Award className="text-saffron" size={20} /> Professional Credentials
-                     </h3>
-                     <div className="grid md:grid-cols-2 gap-10">
+            <motion.section variants={itemVariants} className="space-y-6">
+               <h3 className="text-2xl font-black text-slate-900 flex items-center gap-4">Clinical Identity <div className="h-px flex-1 bg-slate-100"></div></h3>
+               <div className="bg-white p-10 rounded-[48px] shadow-2xl border border-slate-100">
+                  <form onSubmit={handleProfileUpdate} className="space-y-10">
+                     <div className="grid md:grid-cols-2 gap-8">
                         <div className="space-y-4">
-                           <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-6">License Protocol</label>
-                           <input type="text" name="license_number" value={formData.license_number} onChange={handleChange} className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[32px] outline-none text-white font-medium shadow-inner" />
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Legal Name</label>
+                           <input type="text" value={profileData.full_name} onChange={(e) => setProfileData({...profileData, full_name: e.target.value})} className="input-field" />
                         </div>
                         <div className="space-y-4">
-                           <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] ml-6">Specialization</label>
-                           <input type="text" name="specialization" value={formData.specialization} onChange={handleChange} className="w-full px-8 py-5 bg-white/5 border border-white/10 rounded-[32px] outline-none text-white font-medium shadow-inner" />
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Clinical ID (Email)</label>
+                           <input type="email" value={profileData.email} disabled className="input-field bg-slate-50 cursor-not-allowed text-slate-400" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-6">
+                           <div className="space-y-4">
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Age</label>
+                              <input type="number" value={profileData.age} onChange={(e) => setProfileData({...profileData, age: e.target.value})} className="input-field" />
+                           </div>
+                           <div className="space-y-4">
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bio Gender</label>
+                              <select value={profileData.gender} onChange={(e) => setProfileData({...profileData, gender: e.target.value})} className="input-field">
+                                 <option value="male">Male</option><option value="female">Female</option>
+                              </select>
+                           </div>
+                        </div>
+                        {user?.role === 'doctor' && (
+                           <div className="space-y-4">
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expertise</label>
+                              <input type="text" value={profileData.specialization} onChange={(e) => setProfileData({...profileData, specialization: e.target.value})} className="input-field" />
+                           </div>
+                        )}
+                     </div>
+                     <div className="flex justify-end pt-4">
+                        <button type="submit" disabled={loading} className="btn-primary px-12 py-5 font-black text-[10px] uppercase tracking-widest flex items-center gap-4">
+                           {loading ? <Loader2 className="animate-spin" /> : <Zap size={20} />} Sync Identity
+                        </button>
+                     </div>
+                  </form>
+               </div>
+            </motion.section>
+
+            <motion.section variants={itemVariants} className="space-y-6">
+               <h3 className="text-2xl font-black text-slate-900 flex items-center gap-4">Security Matrix <div className="h-px flex-1 bg-slate-100"></div></h3>
+               <div className="bg-slate-900 p-10 rounded-[48px] shadow-2xl border border-white/5 text-white">
+                  <form onSubmit={handlePasswordChange} className="space-y-10">
+                     <div className="space-y-4 max-w-sm">
+                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Current Signature</label>
+                        <input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})} required className="input-field bg-white/5 border-white/10 text-white" />
+                     </div>
+                     <div className="grid md:grid-cols-2 gap-8 border-t border-white/5 pt-10">
+                        <div className="space-y-4">
+                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">New Credential</label>
+                           <input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})} required className="input-field bg-white/5 border-white/10 text-white" />
+                        </div>
+                        <div className="space-y-4">
+                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Confirm Credential</label>
+                           <input type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})} required className="input-field bg-white/5 border-white/10 text-white" />
                         </div>
                      </div>
-                  </div>
-               )}
-
-               <button type="submit" disabled={loading} className="btn-primary w-full py-6 flex items-center justify-center gap-4 group">
-                  {loading ? <Loader2 className="animate-spin" size={24} /> : (
-                     <>
-                        Synchronize Core <Save size={20} className="group-hover:-translate-y-1 transition-transform" />
-                     </>
-                  )}
-               </button>
-            </form>
+                     <div className="flex justify-end pt-4">
+                        <button type="submit" disabled={loading} className="px-12 py-5 bg-white text-slate-900 rounded-[24px] font-black uppercase tracking-widest hover:bg-saffron hover:text-white transition-all">
+                           Update Security Matrix
+                        </button>
+                     </div>
+                  </form>
+               </div>
+            </motion.section>
          </div>
       </div>
     </motion.div>
   );
 };
+
+const SidebarItem = ({ icon, label, active }) => (
+  <button className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest ${active ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:bg-slate-50'}`}>
+     {icon} {label}
+  </button>
+);
 
 export default ProfilePage;
