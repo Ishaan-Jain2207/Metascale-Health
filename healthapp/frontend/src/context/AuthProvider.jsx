@@ -112,9 +112,17 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  /**
+   * IDENTITY REFRESH (updateUserInfo)
+   * Logic: Synchronizes the local memory state with updated clinical metadata.
+   */
+  const updateUserInfo = (newData) => {
+    setUser((prev) => ({ ...prev, ...newData }));
+  };
+
   // EXPOSURE: The Provider provides the identity interface to the tree.
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, register, checkUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, register, checkUser, updateUserInfo }}>
       {children}
     </AuthContext.Provider>
   );

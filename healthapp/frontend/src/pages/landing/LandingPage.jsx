@@ -33,8 +33,8 @@ import {
 } from 'lucide-react';
 import { useMotionValue, useTransform, useSpring, motion } from 'framer-motion';
 
-import { useRipple } from '../../hooks/useRipple';
-import { useParallaxDirective } from '../../hooks/useParallaxDirective';
+import useRipple from '../../hooks/useRipple';
+import useParallaxDirective from '../../hooks/useParallaxDirective';
 import AngularStatusWidget from '../../components/clinical/AngularStatusWidget';
 
 const LandingPage = () => {
