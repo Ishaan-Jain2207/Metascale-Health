@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { 
   Activity, 
   ClipboardCheck, 
@@ -11,12 +11,10 @@ import {
   Clock
 } from 'lucide-react';
 import api from '../../services/api';
-import { useAuth } from '../../hooks/useAuth';
-
+import { useAuth } from '../../context/AuthContext';
 
 const PatientDashboard = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [stats, setStats] = useState({
     total: 0,
     latestLiver: null,
@@ -53,15 +51,6 @@ const PatientDashboard = () => {
     }
   };
 
-  const healthTips = [
-    "Monitoring your water intake and ensuring 7-8 hours of sound sleep are critical for metabolic health.",
-    "A 30-minute brisk walk daily can significantly reduce your diabetes risk markers.",
-    "Reducing processed sugar is the fastest way to improve your liver's detoxification efficiency.",
-    "Regular protein intake helps maintain lean muscle mass, which improves insulin sensitivity.",
-    "Green leafy vegetables are rich in antioxidants that protect liver cells from oxidative stress."
-  ];
-  const [dailyTip] = useState(healthTips[Math.floor(Math.random() * healthTips.length)]);
-
   if (loading) {
     return <div className="animate-pulse space-y-8">
       <div className="h-32 bg-slate-200 rounded-2xl w-full"></div>
@@ -82,7 +71,7 @@ const PatientDashboard = () => {
          </div>
          <div className="relative z-10">
             <div className="inline-flex items-center gap-2 bg-saffron/20 text-saffron px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 border border-saffron/30">
-               <Activity size={14} /> Clinical Monitor
+               <Activity size={14} /> AI Health Monitor
             </div>
             <h1 className="text-4xl font-display font-bold mb-4 text-white">Welcome back, {user?.full_name?.split(' ')[0]}!</h1>
             <p className="text-slate-300 max-w-xl text-lg font-medium leading-relaxed">Your clinical data is being monitored. You have {stats.total} screening records in our secure vault.</p>
@@ -155,6 +144,7 @@ const PatientDashboard = () => {
                         }`}>
                           {stats.latestLiver.risk_band} RISK
                         </span>
+                        <span className="text-slate-400 text-xs font-medium">Confidence: {(stats.latestLiver.confidence * 100).toFixed(0)}%</span>
                       </div>
                       <p className="text-slate-600 text-sm line-clamp-2 mb-4">{stats.latestLiver.interpretation}</p>
                     </>
@@ -183,6 +173,7 @@ const PatientDashboard = () => {
                         }`}>
                           {stats.latestDiabetes.risk_band} RISK
                         </span>
+                        <span className="text-slate-400 text-xs font-medium">Confidence: {(stats.latestDiabetes.confidence * 100).toFixed(0)}%</span>
                       </div>
                       <p className="text-slate-600 text-sm line-clamp-2 mb-4">{stats.latestDiabetes.interpretation}</p>
                     </>
@@ -222,13 +213,8 @@ const PatientDashboard = () => {
                         <span className="capitalize">{stats.upcomingAppt.status}</span>
                      </div>
                   </div>
-                   <button 
-                     onClick={() => navigate('/patient/appointments')}
-                     className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-bold transition-colors"
-                   >
-                     Reschedule
-                   </button>
-                </div>
+                  <button className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-bold transition-colors">Reschedule</button>
+               </div>
             ) : (
                <div className="card bg-slate-100 border-dashed border-2 border-slate-300 flex flex-col items-center justify-center py-12 text-center">
                   <div className="w-12 h-12 bg-slate-200 text-slate-400 rounded-full flex items-center justify-center mb-4"><Calendar /></div>
@@ -237,15 +223,13 @@ const PatientDashboard = () => {
                </div>
             )}
             
-
-            
             <div className="bg-ink-mid/5 rounded-2xl p-6 border border-ink/10 relative overflow-hidden group">
                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
                   <Activity size={60} />
                </div>
-                <h3 className="font-bold text-ink flex items-center gap-2 mb-2"><CheckCircle2 size={18} className="text-saffron" /> Daily Health Tip</h3>
-                <p className="text-sm text-ink-mid leading-relaxed font-medium relative z-10">{dailyTip}</p>
-             </div>
+               <h3 className="font-bold text-ink flex items-center gap-2 mb-2"><CheckCircle2 size={18} className="text-saffron" /> Daily Health Tip</h3>
+               <p className="text-sm text-ink-mid leading-relaxed font-medium relative z-10">Monitoring your water intake and ensuring 7-8 hours of sound sleep are critical for both metabolic and liver health.</p>
+            </div>
          </div>
       </div>
     </div>

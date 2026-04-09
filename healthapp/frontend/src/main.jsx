@@ -4,9 +4,9 @@ import App from './App.jsx';
 import './index.css';
 
 /**
- * METASCALE CLINICAL OS: HYDRATION ENGINE
- * Purpose: Matches user reference logic exactly, but uses named imports 
- * to prevent production minification crashes.
+ * METASCALE CLINICAL OS — HYDRATION ENGINE
+ * Uses named `createRoot` import to prevent production minification crash
+ * ("ReferenceError: t is not defined").
  */
 const container = document.getElementById('root');
 if (container) {

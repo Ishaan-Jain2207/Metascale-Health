@@ -1,105 +1,71 @@
-/**
- * METASCALE HEALTH: IDENTITY PERSISTENCE HUB (ProfilePage.jsx)
- * 
- * ─── ARCHITECTURAL ROLE ─────────────────────────────────────────────────────
- * This component acts as the 'Single Source of Truth' for patient and doctor 
- * identities. It manages the synchronization between the global AuthContext, 
- * the local component state, and the persistent clinical repository.
- * 
- * ─── CLINICAL SYNCHRONIZATION LOGIC ─────────────────────────────────────────
- * The profile is partitioned into three specialized domains:
- *   1. IDENTITY CLUSTER: Name, Email (Immutable Clinical ID), and Account Type.
- *   2. BIOMETRIC CLUSTER: Age and Biological Gender markers used to refine 
- *      screening accuracy.
- *   3. SECURITY DOMAIN: Hardened credential rotation (SHA-256 password sync).
- * 
- * ─── DATA PERSISTENCE FLOW ──────────────────────────────────────────────────
- *   - HYDRATION: On mount, the component pulls current identity from 
- *     the AuthContext.
- *   - SYNCHRONIZATION: Dispatches PUT requests to the authorization endpoint 
- *     and simultaneously updates the local browser storage via AuthContext 
- *     to ensure zero-lag identity propagation.
- * 
- * ─── HIGH-FIDELITY DESIGN ───────────────────────────────────────────────────
- * Utilizes a 'Glassmorphic Clinical' design with Framer Motion animations 
- * (staggered entry), high-contrast accessibility (slate-900), and 
- * semantic status indicators (Saffron fill).
- */
-
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  User, 
-  Settings, 
-  Lock, 
-  Phone, 
-  ShieldCheck, 
+  UserCircle, 
   Mail, 
-  Calendar, 
-  Camera, 
-  Star,
-  Zap,
+  Phone, 
+  Lock, 
+  ShieldCheck, 
+  ArrowRight,
   Loader2,
-  CheckCircle2,
   AlertCircle,
-  CircleUser as UserCircle
+  CheckCircle2,
+  Calendar,
+  Settings,
+  Camera,
+  Fingerprint,
+  Zap,
+  Star
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../services/api';
+/* eslint-disable no-unused-vars */
+import { motion, AnimatePresence } from 'framer-motion';
+/* eslint-enable no-unused-vars */
 
 const ProfilePage = () => {
-  const { user, updateUserInfo } = useAuth();
+  const { user, setUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
-  // ─── IDENTITY STATE ───────────────────────────────────────────────────────
   const [profileData, setProfileData] = useState({
     full_name: user?.full_name || '',
     email: user?.email || '',
     age: user?.age || '',
-    gender: user?.gender || 'male',
+    gender: user?.gender || '',
+    phone: user?.phone || '',
+    hospital: user?.hospital || '',
     specialization: user?.specialization || ''
   });
 
-  // ─── SECURITY STATE ───────────────────────────────────────────────────────
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
 
-  /**
-   * IDENTITY SYNCHRONIZATION (handleProfileUpdate)
-   * Logic: Dispatches profile mutations to the clinical oracle.
-   */
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
     try {
-      const res = await api.put('/auth/profile', profileData);
+      const res = await api.put('/auth/update', profileData);
       if (res.data.success) {
-        updateUserInfo(res.data.data);
-        setSuccess('Clinical identity synchronized successfully.');
+        setUser(res.data.data);
+        setSuccess('Clinical profile synchronized successfully');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Synchronization protocol failure.');
+      setError(err.response?.data?.message || 'Synchronization failed.');
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * SECURITY HARDENING (handlePasswordChange)
-   * Logic: Rotates cryptographic access signatures.
-   */
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError('Credential mismatch: Confirmation signature does not match.');
-      return;
+      return setError('Credential parity failed: New passwords do not match');
     }
     setLoading(true);
     setError('');
@@ -107,11 +73,11 @@ const ProfilePage = () => {
     try {
       const res = await api.put('/auth/change-password', passwordData);
       if (res.data.success) {
-        setSuccess('Security credentials rotated and hardened.');
+        setSuccess('Security credentials updated');
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Access rotation protocol failed.');
+      setError(err.response?.data?.message || 'Credential update failed.');
     } finally {
       setLoading(false);
     }
@@ -124,7 +90,7 @@ const ProfilePage = () => {
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 }
+    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 100 } }
   };
 
   return (
@@ -134,94 +100,166 @@ const ProfilePage = () => {
       animate="visible"
       className="space-y-12 pb-20 max-w-6xl mx-auto"
     >
-      {/* IDENTITY HEADER */}
-      <motion.div variants={itemVariants} className="relative bg-slate-900 rounded-[48px] p-10 md:p-16 text-white shadow-2xl border border-white/5 overflow-hidden">
-         <div className="absolute -top-24 -left-24 w-64 h-64 bg-saffron/10 blur-[120px]"></div>
+      {/* Dynamic Profile Header */}
+      <motion.div 
+        variants={itemVariants}
+        className="relative overflow-hidden bg-slate-900 rounded-[48px] p-8 md:p-16 text-white shadow-3xl border border-white/5"
+      >
+         {/* Animated Background Mesh */}
+         <div className="absolute inset-0 bg-mesh-clinical opacity-30"></div>
+         <div className="absolute -top-24 -left-24 w-64 h-64 bg-saffron/20 blur-[120px] animate-pulse"></div>
+         
          <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
-            <div className="w-32 h-32 md:w-44 md:h-44 bg-white/10 rounded-[40px] flex items-center justify-center border border-white/20 shadow-2xl relative group overflow-hidden">
-               <span className="text-6xl font-black">{user?.full_name?.charAt(0)}</span>
-               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                  <Camera size={24} /> <span className="text-[10px] font-black uppercase mt-2">Edit</span>
+            <div className="relative group">
+               <div className="w-32 h-32 md:w-44 md:h-44 bg-white/10 backdrop-blur-3xl rounded-[40px] flex items-center justify-center border border-white/20 shadow-2xl overflow-hidden relative">
+                  {user?.full_name ? (
+                    <span className="text-6xl font-display font-black text-white group-hover:scale-110 transition-transform">
+                      {user.full_name.charAt(0)}
+                    </span>
+                  ) : <UserCircle size={80} />}
+                  
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-4 cursor-pointer">
+                     <Camera size={24} className="mb-2" />
+                     <span className="text-[10px] font-black uppercase tracking-widest text-center leading-tight">Update <br/> Identity</span>
+                  </div>
+               </div>
+               <div className="absolute -bottom-2 -right-2 bg-saffron w-10 h-10 rounded-2xl flex items-center justify-center shadow-xl border-4 border-slate-900">
+                  <ShieldCheck size={18} className="text-slate-900" />
                </div>
             </div>
-            <div className="text-center md:text-left">
-               <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
-                  <Star size={14} className="text-saffron" /> Verified {user?.role}
+
+            <div className="text-center md:text-left space-y-4">
+               <div>
+                  <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                    <Star size={14} className="text-saffronFill" /> Verified {user?.role} Profile
+                  </div>
+                  <h1 className="text-4xl md:text-6xl font-display font-bold tracking-tight text-white">{user?.full_name}</h1>
+                  <p className="text-white/40 font-medium text-lg mt-2 flex items-center justify-center md:justify-start gap-4 uppercase tracking-widest text-xs">
+                     <Mail size={16} className="text-saffron" /> {user?.email}
+                     <span className="w-1.5 h-1.5 rounded-full bg-white/10"></span>
+                     <Calendar size={16} className="text-saffron" /> Joined {new Date(user?.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                  </p>
                </div>
-               <h1 className="text-4xl md:text-6xl font-black tracking-tight">{user?.full_name}</h1>
-               <p className="text-white/40 font-medium text-lg mt-2 flex items-center justify-center md:justify-start gap-4 uppercase tracking-widest text-[9px]">
-                  <Mail size={16} /> {user?.email} • <Calendar size={16} /> Joined {new Date(user?.created_at).toLocaleDateString()}
-               </p>
             </div>
          </div>
       </motion.div>
 
       <AnimatePresence>
         {(error || success) && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`p-6 rounded-[32px] border flex gap-4 ${error ? 'bg-red-50 border-red-100 text-red-600' : 'bg-green-50 border-green-100 text-green-600'}`}>
-             {error ? <AlertCircle /> : <CheckCircle2 />}
-             <p className="font-black uppercase tracking-widest text-xs">{error || success}</p>
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className={`p-6 rounded-[32px] border backdrop-blur-xl flex items-center gap-6 shadow-2xl relative z-20 ${error ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'}`}
+          >
+             {error ? <AlertCircle size={28} /> : <CheckCircle2 size={28} />}
+             <p className="font-display font-black uppercase tracking-widest text-sm">{error || success}</p>
           </motion.div>
         )}
       </AnimatePresence>
 
       <div className="grid lg:grid-cols-3 gap-12">
-         {/* SIDEBAR: NAVIGATION */}
+         {/* Settings Sidebar */}
          <div className="lg:col-span-1 space-y-8">
-             <div className="bg-white rounded-[40px] p-8 shadow-2xl border border-slate-100">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Clinical Settings</h3>
-                <div className="space-y-4">
-                   <SidebarItem icon={<User size={18} />} label="Identity" active />
-                   <SidebarItem icon={<Phone size={18} />} label="Contact" />
-                   <SidebarItem icon={<Lock size={18} />} label="Security" />
-                   <SidebarItem icon={<Settings size={18} />} label="Preferences" />
+             <motion.div variants={itemVariants} className="card !bg-white/40 backdrop-blur-3xl border border-white/60 p-8 rounded-[40px] shadow-3xl">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 pl-1">Account Settings</h3>
+                <div className="space-y-2">
+                   {[
+                     { icon: <UserCircle size={18} />, label: 'Profile Details', active: true },
+                     { icon: <Phone size={18} />, label: 'Contact Info', active: false },
+                     { icon: <Lock size={18} />, label: 'Security & Password', active: false },
+                     { icon: <Settings size={18} />, label: 'Preferences', active: false }
+                   ].map((item) => (
+                     <button key={item.label} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest ${item.active ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:bg-slate-50'}`}>
+                        {item.icon}
+                        {item.label}
+                     </button>
+                   ))}
                 </div>
-             </div>
-             <div className="bg-slate-900 rounded-[40px] p-10 text-white shadow-2xl relative overflow-hidden group">
-                <div className="absolute -bottom-10 -right-10 opacity-10 group-hover:rotate-12 transition-transform"><ShieldCheck size={200} /></div>
-                <h4 className="font-black text-2xl uppercase tracking-tighter mb-4">Secure Storage</h4>
-                <p className="text-white/70 text-xs italic mb-8">Metascale employs industry-standard encryption for diagnostic data integrity.</p>
-                <button className="bg-white text-slate-900 px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest">Privacy Policy</button>
-             </div>
+             </motion.div>
+ 
+             <motion.div variants={itemVariants} className="bg-mesh-saffron rounded-[40px] p-10 text-white shadow-3xl relative overflow-hidden group">
+                <div className="absolute -bottom-10 -right-10 opacity-10 group-hover:rotate-12 transition-transform">
+                   <ShieldCheck size={200} />
+                </div>
+                <div className="relative z-10 space-y-6">
+                   <h4 className="font-display font-black text-2xl uppercase tracking-tighter leading-tight">Secure Clinical Storage</h4>
+                   <p className="text-white/70 text-xs font-medium leading-relaxed uppercase tracking-widest">Metascale employs industry-standard encryption for clinical data. Your information is protected and private.</p>
+                   <button className="bg-white text-saffron-deep px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:shadow-2xl transition-all active:scale-95">
+                      Privacy Policy
+                   </button>
+                </div>
+             </motion.div>
          </div>
 
-         {/* MAIN: CONFIGURATION FORMS */}
+         {/* Configuration Forms */}
          <div className="lg:col-span-2 space-y-12">
             <motion.section variants={itemVariants} className="space-y-6">
-               <h3 className="text-2xl font-black text-slate-900 flex items-center gap-4">Clinical Identity <div className="h-px flex-1 bg-slate-100"></div></h3>
-               <div className="bg-white p-10 rounded-[48px] shadow-2xl border border-slate-100">
+               <h3 className="text-2xl font-display font-black text-slate-900 uppercase tracking-tight flex items-center gap-4">
+                  Clinical Synchronization
+                  <div className="h-px flex-1 bg-slate-100"></div>
+               </h3>
+               <div className="card !bg-white/40 backdrop-blur-3xl border border-white/60 p-10 rounded-[48px] shadow-3xl">
                   <form onSubmit={handleProfileUpdate} className="space-y-10">
                      <div className="grid md:grid-cols-2 gap-8">
                         <div className="space-y-4">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Legal Name</label>
-                           <input type="text" value={profileData.full_name} onChange={(e) => setProfileData({...profileData, full_name: e.target.value})} className="input-field" />
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Full Legal Name</label>
+                           <input 
+                             type="text" 
+                             value={profileData.full_name}
+                             onChange={(e) => setProfileData({...profileData, full_name: e.target.value})}
+                             className="w-full px-6 py-5 bg-white border border-slate-100 rounded-[24px] outline-none focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep transition-all font-display font-black text-slate-700 tracking-tight"
+                           />
                         </div>
                         <div className="space-y-4">
-                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Clinical ID (Email)</label>
-                           <input type="email" value={profileData.email} disabled className="input-field bg-slate-50 cursor-not-allowed text-slate-400" />
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Clinical ID (Email)</label>
+                           <div className="relative">
+                              <input 
+                                type="email" 
+                                value={profileData.email} disabled
+                                className="w-full px-6 py-5 bg-slate-50 border border-slate-200 rounded-[24px] text-slate-400 font-medium cursor-not-allowed pr-14"
+                              />
+                              <Lock className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                           </div>
                         </div>
                         <div className="grid grid-cols-2 gap-6">
                            <div className="space-y-4">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Age</label>
-                              <input type="number" value={profileData.age} onChange={(e) => setProfileData({...profileData, age: e.target.value})} className="input-field" />
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Age Cluster</label>
+                              <input 
+                                type="number" 
+                                value={profileData.age}
+                                onChange={(e) => setProfileData({...profileData, age: e.target.value})}
+                                className="w-full px-6 py-5 bg-white border border-slate-100 rounded-[24px] outline-none transition-all font-medium"
+                              />
                            </div>
                            <div className="space-y-4">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bio Gender</label>
-                              <select value={profileData.gender} onChange={(e) => setProfileData({...profileData, gender: e.target.value})} className="input-field">
-                                 <option value="male">Male</option><option value="female">Female</option>
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Bio Gender</label>
+                              <select 
+                                value={profileData.gender}
+                                onChange={(e) => setProfileData({...profileData, gender: e.target.value})}
+                                className="w-full px-6 py-5 bg-white border border-slate-100 rounded-[24px] outline-none transition-all font-medium font-sans"
+                              >
+                                 <option value="male">Male</option>
+                                 <option value="female">Female</option>
                               </select>
                            </div>
                         </div>
                         {user?.role === 'doctor' && (
                            <div className="space-y-4">
-                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expertise</label>
-                              <input type="text" value={profileData.specialization} onChange={(e) => setProfileData({...profileData, specialization: e.target.value})} className="input-field" />
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Expert Domain</label>
+                              <input 
+                                type="text" 
+                                value={profileData.specialization}
+                                onChange={(e) => setProfileData({...profileData, specialization: e.target.value})}
+                                className="w-full px-6 py-5 bg-white border border-slate-100 rounded-[24px] outline-none focus:ring-4 focus:ring-saffron/10 focus:border-saffron-deep transition-all font-medium capitalize"
+                              />
                            </div>
                         )}
                      </div>
                      <div className="flex justify-end pt-4">
-                        <button type="submit" disabled={loading} className="btn-primary px-12 py-5 font-black text-[10px] uppercase tracking-widest flex items-center gap-4">
-                           {loading ? <Loader2 className="animate-spin" /> : <Zap size={20} />} Sync Identity
+                        <button type="submit" disabled={loading} className="bg-mesh-saffron text-white px-12 py-5 rounded-[24px] font-black uppercase tracking-[0.2em] shadow-3xl hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-4 disabled:opacity-50">
+                           {loading ? <Loader2 className="animate-spin" /> : <Zap size={20} />}
+                           {loading ? 'Syncing...' : 'Synchronize Identity'}
                         </button>
                      </div>
                   </form>
@@ -229,25 +267,48 @@ const ProfilePage = () => {
             </motion.section>
 
             <motion.section variants={itemVariants} className="space-y-6">
-               <h3 className="text-2xl font-black text-slate-900 flex items-center gap-4">Security Matrix <div className="h-px flex-1 bg-slate-100"></div></h3>
-               <div className="bg-slate-900 p-10 rounded-[48px] shadow-2xl border border-white/5 text-white">
-                  <form onSubmit={handlePasswordChange} className="space-y-10">
+               <h3 className="text-2xl font-display font-black text-slate-900 uppercase tracking-tight flex items-center gap-4">
+                  Security Hardening
+                  <div className="h-px flex-1 bg-slate-100"></div>
+               </h3>
+               <div className="card !bg-slate-900 border border-white/5 p-10 rounded-[48px] shadow-3xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-saffron/5 rounded-full -mr-32 -mt-32 group-hover:scale-150 transition-transform"></div>
+                  <form onSubmit={handlePasswordChange} className="space-y-10 relative z-10">
                      <div className="space-y-4 max-w-sm">
-                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Current Signature</label>
-                        <input type="password" value={passwordData.currentPassword} onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})} required className="input-field bg-white/5 border-white/10 text-white" />
+                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Current Password Signature</label>
+                        <input 
+                          type="password" 
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                          required
+                          className="w-full px-6 py-5 bg-white/5 border border-white/10 rounded-[24px] outline-none focus:ring-4 focus:ring-saffron/20 focus:border-saffron text-white transition-all"
+                        />
                      </div>
                      <div className="grid md:grid-cols-2 gap-8 border-t border-white/5 pt-10">
                         <div className="space-y-4">
-                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">New Credential</label>
-                           <input type="password" value={passwordData.newPassword} onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})} required className="input-field bg-white/5 border-white/10 text-white" />
+                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">New Credential Matrix</label>
+                           <input 
+                             type="password" 
+                             value={passwordData.newPassword}
+                             onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                             required minLength={6}
+                             className="w-full px-6 py-5 bg-white/5 border border-white/10 rounded-[24px] outline-none focus:ring-4 focus:ring-saffron/20 focus:border-saffron text-white transition-all"
+                           />
                         </div>
                         <div className="space-y-4">
-                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest">Confirm Credential</label>
-                           <input type="password" value={passwordData.confirmPassword} onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})} required className="input-field bg-white/5 border-white/10 text-white" />
+                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Confirm Credential Matrix</label>
+                           <input 
+                             type="password" 
+                             value={passwordData.confirmPassword}
+                             onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                             required
+                             className="w-full px-6 py-5 bg-white/5 border border-white/10 rounded-[24px] outline-none focus:ring-4 focus:ring-saffron/20 focus:border-saffron text-white transition-all"
+                           />
                         </div>
                      </div>
                      <div className="flex justify-end pt-4">
-                        <button type="submit" disabled={loading} className="px-12 py-5 bg-white text-slate-900 rounded-[24px] font-black uppercase tracking-widest hover:bg-saffron hover:text-white transition-all">
+                        <button type="submit" disabled={loading} className="group bg-white text-slate-900 px-12 py-5 rounded-[24px] font-black uppercase tracking-[0.2em] shadow-3xl hover:bg-saffron hover:text-white transition-all active:scale-95 disabled:bg-slate-700 flex items-center gap-4">
+                           {loading ? <Loader2 className="animate-spin" /> : <ShieldCheck size={20} className="group-hover:scale-110 mb-0.5" />}
                            Update Security Matrix
                         </button>
                      </div>
@@ -259,11 +320,5 @@ const ProfilePage = () => {
     </motion.div>
   );
 };
-
-const SidebarItem = ({ icon, label, active }) => (
-  <button className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest ${active ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:bg-slate-50'}`}>
-     {icon} {label}
-  </button>
-);
 
 export default ProfilePage;

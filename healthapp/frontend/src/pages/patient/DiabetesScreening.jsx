@@ -1,32 +1,3 @@
-/**
- * METASCALE HEALTH: METABOLIC AUDIT PROTOCOL (DiabetesScreening.jsx)
- * 
- * ─── ARCHITECTURAL ROLE ─────────────────────────────────────────────────────
- * This component acts as the 'Metabolic Profiler' for Type 2 Diabetes (T2D) 
- * risk assessment. Unlike discrete lab-based audits, this protocol 
- * synthesizes behavioral, physiological, and hereditary data clusters.
- * 
- * ─── DATA COLLECTION: THE METABOLIC FEATURE VECTOR ──────────────────────────
- * The audit captures a multi-dimensional array of indicators:
- *   1. ANTHROPOMETRY: BMI Index (kg/m²) and Age-Horizon weighting.
- *   2. HEREDITARY PERIMETER: Family diabetes history and prior high BP.
- *   3. LIFESTYLE CLUSTERS: Physical activity pulse, sleep hygiene (Sound/Total), 
- *      and junk food frequency (Metabolic strain).
- *   4. SYSTEMIC AUDIT: BP Level (Hypo/Normo/Hyper) and Urinary Frequency 
- *      (Polyuria marker).
- * 
- * ─── CLINICAL DISPATCH LOGIC ────────────────────────────────────────────────
- *   - FIELD BINDING: Synchronizes high-density selection matrices into a 
- *     normalized feature set.
- *   - INFERENCE ROUTING: Dispatches the crystallized profile to the Metabolic 
- *     Inference Kernel and transitions to the 'PredictionResult' stage for 
- *     diagnostic synthesis.
- * 
- * ─── HIGH-FIDELITY UX ───────────────────────────────────────────────────────
- * Implements a 'Diagnostic Clean-Room' design with grouped semantic 
- * sections and micro-interactions for high data-entry accuracy.
- */
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -42,28 +13,36 @@ import api from '../../services/api';
 
 const DiabetesScreening = () => {
   const navigate = useNavigate();
-  
-  // METABOLIC STATE: Buffering for the full T2D feature vector.
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
-    ageGroup: '', gender: '', familyDiabetes: false, highBP: false,
-    physicallyActive: 'none', bmi: '', smoking: false, alcohol: false,
-    sleepHours: '', soundSleep: '', regularMedicine: false,
-    junkFood: 'rarely', stress: 'none', bpLevel: 'normal',
-    pregnancies: 0, prediabetes: false, urinationFreq: 'notMuch'
+    ageGroup: '',
+    gender: '',
+    familyDiabetes: false,
+    highBP: false,
+    physicallyActive: 'none',
+    bmi: '',
+    smoking: false,
+    alcohol: false,
+    sleepHours: '',
+    soundSleep: '',
+    regularMedicine: false,
+    junkFood: 'rarely',
+    stress: 'none',
+    bpLevel: 'normal',
+    pregnancies: 0,
+    prediabetes: false,
+    urinationFreq: 'notMuch'
   });
 
-  // HANDLER: Orchestrates real-time state synchronization.
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value
+    });
   };
 
-  /**
-   * DIAGNOSTIC EXECUTION (handleSubmit)
-   * Logic: Dispatches vectors to the Metabolic Inference Kernel.
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -72,14 +51,12 @@ const DiabetesScreening = () => {
     try {
       const res = await api.post('/predict/diabetes', formData);
       if (res.data.success) {
-        navigate('/patient/screening/result', { 
-          state: { result: res.data.data, type: 'diabetes' } 
-        });
+        navigate('/patient/screening/result', { state: { result: res.data.data, type: 'diabetes' } });
       } else {
         setError(res.data.message);
       }
     } catch (err) {
-       setError('Protocol Interrupted: Unable to reach metabolic kernel.');
+      setError(err.response?.data?.message || 'Failed to submit screening. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -87,117 +64,181 @@ const DiabetesScreening = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
-      {/* NAVIGATION CHANNEL */}
       <div className="flex items-center justify-between mb-8">
-        <button onClick={() => navigate('/patient/screening')} className="flex items-center gap-2 text-slate-500 font-bold hover:text-saffron-deep">
-          <ArrowLeft size={20} /> Portal Back
+        <button onClick={() => navigate('/patient/screening')} className="flex items-center gap-2 text-slate-500 font-bold hover:text-saffron-deep transition-colors">
+          <ArrowLeft size={20} /> Back to Screening Portal
         </button>
-        <div className="flex items-center gap-2 text-saffron-deep font-black uppercase tracking-widest text-[10px]">
-           <Stethoscope size={20} /> Metabolic Module v2.0
+        <div className="flex items-center gap-2 text-saffron-deep font-bold">
+           <Stethoscope size={20} /> Diabetes Risk Module
         </div>
       </div>
 
-      <div className="card shadow-2xl p-8 lg:p-14 bg-white rounded-[48px]">
-        {/* HEADER: CLINICAL CONTEXT */}
-        <div className="mb-14 text-center">
-          <div className="inline-block p-4 bg-saffron/10 text-saffron-deep rounded-[24px] mb-4">
-             <Stethoscope size={40} />
-          </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Metabolic Audit</h1>
-          <p className="text-slate-500 max-w-xl mx-auto font-medium">Capture multi-factor biometric data for T2D risk stratification.</p>
+      <div className="card shadow-xl border-white ring-1 ring-slate-200 p-8 lg:p-12">
+        <div className="mb-10 text-center">
+          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">Diabetes Risk Evaluation</h1>
+          <p className="text-slate-600 max-w-xl mx-auto font-medium">Complete this detailed lifestyle and clinical history form to evaluate your diabetes risk profile.</p>
         </div>
 
         {error && (
-          <div className="mb-10 p-6 bg-red-50 text-red-600 rounded-[24px] flex items-center gap-4">
-            <AlertCircle /> <p className="font-bold">{error}</p>
+          <div className="mb-8 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-start gap-4">
+            <AlertCircle className="shrink-0 mt-0.5" />
+            <p className="font-bold">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-16">
-          {/* DOMAIN 1: PHYSIOLOGICAL BASELINE */}
-          <div className="space-y-10">
-             <SectionHeader title="Physiological Baseline" />
-             <div className="grid md:grid-cols-3 gap-8">
-                <FormField label="Age Horizon">
-                   <select name="ageGroup" onChange={handleChange} required className="input-field">
-                      <option value="">Select Level</option><option value="below 40">Below 40</option>
-                      <option value="40-49">40-49</option><option value="50-59">50-59</option><option value="60 or above">60+</option>
+        <form onSubmit={handleSubmit} className="space-y-12">
+          {/* Section 1: Demographics & Physiological */}
+          <div className="space-y-8">
+             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2">
+                <CheckCircle2 size={14} className="text-saffron" /> Demographics & Physiological
+             </h3>
+             <div className="grid md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                   <label className="text-sm font-bold text-slate-700 uppercase">Age Group</label>
+                   <select name="ageGroup" value={formData.ageGroup} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-saffron/20 focus:border-saffron outline-none">
+                      <option value="">Select</option>
+                      <option value="below 40">Below 40</option>
+                      <option value="40-49">40-49</option>
+                      <option value="50-59">50-59</option>
+                      <option value="60 or above">60 or above</option>
                    </select>
-                </FormField>
-                <FormField label="Gender">
-                   <select name="gender" onChange={handleChange} required className="input-field">
-                      <option value="">Select</option><option value="male">Male</option><option value="female">Female</option>
+                </div>
+                <div className="space-y-2">
+                   <label className="text-sm font-bold text-slate-700 uppercase">Gender</label>
+                   <select name="gender" value={formData.gender} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none">
+                      <option value="">Select</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
                    </select>
-                </FormField>
-                <FormField label="BMI Index"><input type="number" step="0.1" name="bmi" onChange={handleChange} required className="input-field" placeholder="kg/m²" /></FormField>
+                </div>
+                <div className="space-y-2">
+                   <label className="text-sm font-bold text-slate-700 uppercase">BMI</label>
+                   <input type="number" step="0.1" name="bmi" value={formData.bmi} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 24.5" />
+                </div>
              </div>
              
-             <div className="grid md:grid-cols-2 gap-6 bg-slate-50 p-8 rounded-[32px] italic">
-                <Checkbox name="familyDiabetes" checked={formData.familyDiabetes} onChange={handleChange} label="Hereditary History" />
-                <Checkbox name="highBP" checked={formData.highBP} onChange={handleChange} label="Hypertension History" />
-                <Checkbox name="prediabetes" checked={formData.prediabetes} onChange={handleChange} label="Prior Prediabetes" />
-                <Checkbox name="regularMedicine" checked={formData.regularMedicine} onChange={handleChange} label="Active Medication" />
+             <div className="grid md:grid-cols-2 gap-8 bg-slate-50 rounded-2xl p-6">
+                <div className="space-y-4">
+                   <label className="flex items-center gap-3 cursor-pointer group">
+                      <input type="checkbox" name="familyDiabetes" checked={formData.familyDiabetes} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep border-slate-300" />
+                      <span className="text-sm font-bold text-slate-700 group-hover:text-saffron-deep transition-colors">Family History of Diabetes</span>
+                   </label>
+                   <label className="flex items-center gap-3 cursor-pointer group">
+                      <input type="checkbox" name="highBP" checked={formData.highBP} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep border-slate-300" />
+                      <span className="text-sm font-bold text-slate-700 group-hover:text-saffron-deep transition-colors">History of High Blood Pressure</span>
+                   </label>
+                </div>
+                <div className="space-y-4">
+                   <label className="flex items-center gap-3 cursor-pointer group">
+                      <input type="checkbox" name="prediabetes" checked={formData.prediabetes} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep border-slate-300" />
+                      <span className="text-sm font-bold text-slate-700 group-hover:text-saffron-deep transition-colors">Previous Prediabetes Diagnosis</span>
+                   </label>
+                   <label className="flex items-center gap-3 cursor-pointer group">
+                      <input type="checkbox" name="regularMedicine" checked={formData.regularMedicine} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep border-slate-300" />
+                      <span className="text-sm font-bold text-slate-700 group-hover:text-saffron-deep transition-colors">Taking Regular Medication</span>
+                   </label>
+                </div>
              </div>
           </div>
 
-          {/* DOMAIN 2: HABITS & STRESS */}
-          <div className="space-y-10">
-             <SectionHeader title="Habitual Clusters" />
-             <div className="grid md:grid-cols-2 gap-10">
-                <div className="space-y-8">
-                   <FormField label="Physical Activity">
-                      <select name="physicallyActive" onChange={handleChange} className="input-field">
-                         <option value="none">Sedentary</option><option value="lt30">Low (&lt;30m)</option>
-                         <option value="30-60">Moderate</option><option value="gt60">Active</option>
+          {/* Section 2: Lifestyle & Habits */}
+          <div className="space-y-8">
+             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2">
+                <CheckCircle2 size={14} className="text-saffron" /> Lifestyle & Habituation
+             </h3>
+             <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                   <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Physical Activity</label>
+                      <select name="physicallyActive" value={formData.physicallyActive} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none font-medium">
+                         <option value="none">None / Sedentary</option>
+                         <option value="lt30">Less than 30 mins/day</option>
+                         <option value="30-60">30-60 mins/day</option>
+                         <option value="gt60">More than 1 hour/day</option>
                       </select>
-                   </FormField>
-                   <div className="grid grid-cols-2 gap-4">
-                      <FormField label="Sleep (H)"><input type="number" name="sleepHours" onChange={handleChange} required className="input-field" /></FormField>
-                      <FormField label="Deep Sleep (H)"><input type="number" name="soundSleep" onChange={handleChange} required className="input-field" /></FormField>
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Sleep Duration (Hours)</label>
+                      <input type="number" name="sleepHours" value={formData.sleepHours} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 7" />
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Sound Sleep Duration</label>
+                      <input type="number" name="soundSleep" value={formData.soundSleep} onChange={handleChange} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="e.g. 5" />
                    </div>
                 </div>
-                <div className="space-y-8">
-                   <FormField label="Nutritional Profile">
-                      <select name="junkFood" onChange={handleChange} className="input-field">
-                         <option value="rarely">Controlled</option><option value="occasionally">Occasional</option>
-                         <option value="often">High</option><option value="veryOften">Chronic</option>
+                <div className="space-y-6">
+                   <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Junk Food Frequency</label>
+                      <select name="junkFood" value={formData.junkFood} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none font-medium">
+                         <option value="rarely">Rarely</option>
+                         <option value="occasionally">Occasionally (1-2 times/week)</option>
+                         <option value="often">Often (3-4 times/week)</option>
+                         <option value="veryOften">Daily / Very Often</option>
                       </select>
-                   </FormField>
-                   <FormField label="Stress Indicator">
-                      <select name="stress" onChange={handleChange} className="input-field">
-                         <option value="none">Stabilized</option><option value="sometimes">Episodic</option>
-                         <option value="veryOften">High</option><option value="always">Chronic</option>
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Stress Levels</label>
+                      <select name="stress" value={formData.stress} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none font-medium">
+                         <option value="none">Minimal Stress</option>
+                         <option value="sometimes">Sometimes Stressed</option>
+                         <option value="veryOften">Frequently Stressed</option>
+                         <option value="always">Always Stressed</option>
                       </select>
-                   </FormField>
+                   </div>
+                   <div className="flex gap-8 pt-4">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                         <input type="checkbox" name="smoking" checked={formData.smoking} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep-600" />
+                         <span className="text-sm font-bold text-slate-700">Smoker</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                         <input type="checkbox" name="alcohol" checked={formData.alcohol} onChange={handleChange} className="w-5 h-5 rounded-md accent-saffron-deep-600" />
+                         <span className="text-sm font-bold text-slate-700">Consumer Alcohol</span>
+                      </label>
+                   </div>
                 </div>
              </div>
           </div>
 
-          {/* DOMAIN 3: CLINICAL RESPONSE */}
-          <div className="space-y-10">
-             <SectionHeader title="Clinical Response Markers" />
-             <div className="grid md:grid-cols-2 gap-10">
-                <FormField label="BP Level">
-                   <select name="bpLevel" onChange={handleChange} className="input-field">
-                      <option value="low">Hypotensive</option><option value="normal">Normal</option><option value="high">Hypertensive</option>
-                   </select>
-                </FormField>
-                <FormField label="Urinary Frequency">
-                   <select name="urinationFreq" onChange={handleChange} className="input-field">
-                      <option value="notMuch">Normative</option><option value="quiteOften">Hyper-frequent</option>
-                   </select>
-                </FormField>
+          {/* Section 3: Metabolic Indicators */}
+          <div className="space-y-8">
+             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-2 flex items-center gap-2">
+                <CheckCircle2 size={14} className="text-saffron" /> Metabolic & Critical Indicators
+             </h3>
+             <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                   <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Blood Pressure Level</label>
+                      <select name="bpLevel" value={formData.bpLevel} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none font-medium">
+                         <option value="low">Low BP</option>
+                         <option value="normal">Normal BP</option>
+                         <option value="high">High BP</option>
+                      </select>
+                   </div>
+                   <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Urination Frequency</label>
+                      <select name="urinationFreq" value={formData.urinationFreq} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none font-medium">
+                         <option value="notMuch">Normal Frequency</option>
+                         <option value="quiteOften">High Frequency (Nocturia)</option>
+                      </select>
+                   </div>
+                </div>
+                <div className="space-y-2">
+                   <label className="text-sm font-bold text-slate-700 uppercase tracking-wide">Pregnancies (If Applicable)</label>
+                   <input type="number" name="pregnancies" value={formData.pregnancies} onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-saffron/20 focus:border-saffron-deep outline-none" placeholder="0" />
+                   <p className="text-xs text-slate-400 font-medium">Leave 0 if not applicable.</p>
+                </div>
              </div>
           </div>
 
-          <div className="pt-12 border-t flex flex-col md:flex-row items-center justify-between gap-8">
-             <div className="flex gap-4 bg-slate-50 p-6 rounded-3xl md:max-w-md">
-                <Info size={20} className="text-saffron-deep shrink-0" />
-                <p className="text-xs text-slate-500 italic">Parameters are synthesized to calculate metabolic risk stratification.</p>
+          <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+             <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 md:max-w-md">
+                <Info size={18} className="text-slate-400 mt-1 shrink-0" />
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">Early detection of diabetes can prevent long-term complications. Please ensure honest reporting of lifestyle factors.</p>
              </div>
-             <button type="submit" disabled={loading} className="btn-primary px-14 py-5 font-black flex items-center gap-3">
-                {loading ? <Loader2 className="animate-spin" /> : <>Execute Diagnostic <ArrowRight size={20} /></>}
+             <button type="submit" disabled={loading} className="btn-primary w-full md:w-auto px-10 py-4 text-lg font-bold flex items-center justify-center gap-2">
+                {loading ? <Loader2 className="animate-spin" /> : 'Calculate Diabetes Risk'}
+                {!loading && <CheckCircle2 size={20} />}
              </button>
           </div>
         </form>
@@ -206,27 +247,4 @@ const DiabetesScreening = () => {
   );
 };
 
-/* --- SHARED FORM FRAGMENTS --- */
-const FormField = ({ label, children }) => (
-  <div className="space-y-3">
-     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</label>
-     {children}
-  </div>
-);
-
-const SectionHeader = ({ title }) => (
-  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b pb-3 flex items-center gap-2">
-     <CheckCircle2 size={14} className="text-saffron" /> {title}
-  </h3>
-);
-
-const Checkbox = ({ name, checked, onChange, label }) => (
-  <label className="flex items-center gap-3 cursor-pointer group py-1">
-     <input type="checkbox" name={name} checked={checked} onChange={onChange} className="w-5 h-5 rounded-lg accent-saffron-deep" />
-     <span className="text-sm font-bold text-slate-600 uppercase tracking-tight">{label}</span>
-  </label>
-);
-
 export default DiabetesScreening;
-
-

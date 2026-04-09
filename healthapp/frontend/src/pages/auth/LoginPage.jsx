@@ -1,43 +1,14 @@
-/**
- * METASCALE HEALTH: IDENTITY VERIFICATION GATEWAY (LoginPage.jsx)
- * 
- * ─── ARCHITECTURAL ROLE ─────────────────────────────────────────────────────
- * This component orchestrates the 'Secure Entry' into the Clinical OS. 
- * It serves as the primary barrier and verification conduit for all 
- * platform roles (Patients, Doctors, Admins).
- * 
- * ─── DESIGN HEURISTICS: ROLE-AWARE UI ───────────────────────────────────────
- *   1. CONTEXTUAL DETECTION: The portal uses 'location.state' to detect 
- *      the user's intent. If a user arrived via the 'Practitioner' link, 
- *      the UI pivots its visual language and labeling to match professional 
- *      expectations.
- *   2. CREDENTIAL HANDSHAKE: Logic is decoupled via the 'useAuth' hook. 
- *      The component only manages input buffering and visual feedback, 
- *      while the business logic of token exchange is delegated to the 
- *      AuthContext provider.
- *   3. FAULT FEEDBACK: Implements high-visibility, persistent error 
- *      messaging to ensure users understand the nature of identity 
- *      failure (e.g., Expiry vs Credentials).
- * 
- * ─── AESTHETIC ORCHESTRATION ────────────────────────────────────────────────
- * Utilizes Framer Motion for 'Organic Motion'—blurred, animated background 
- * nodes that create a premium, modern medical dashboard atmosphere.
- */
-
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Mail, Lock, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 
 const LoginPage = () => {
   const location = useLocation();
-  
-  // ROLE DETECTION: Pivot logic based on the user's navigational context.
   const isDoctorMode = location.state?.role === 'doctor';
-  const isAdminMode = location.state?.role === 'admin';
   
-  // LOCAL STATE: Manages the immediate UI lifecycle and input buffers.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -47,28 +18,16 @@ const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  /**
-   * IDENTITY DISPATCHER (handleSubmit)
-   * 
-   * Logic:
-   *   1. SANITIZATION: Normalizes identifiers (lowercase emails) before dispatch.
-   *   2. HANDSHAKE: Invokes the global 'login' action from AuthContext.
-   *   3. ROUTING: Redirects to the specialized dashboard home-node based 
-   *      on the successfully verified RBAC role.
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      const res = await login({ 
-        email: email.toLowerCase().trim(), 
-        password: password.trim() 
-      });
-      
+      const cleanEmail = email.toLowerCase().trim();
+      const cleanPassword = password.trim();
+      const res = await login({ email: cleanEmail, password: cleanPassword });
       if (res.success) {
-        // Clinical Routing Dispatch
         const role = res.data.user.role;
         if (role === 'patient') navigate('/patient/dashboard');
         else if (role === 'doctor') navigate('/doctor/dashboard');
@@ -77,129 +36,188 @@ const LoginPage = () => {
         setError(res.message);
       }
     } catch (err) {
-      setError('Identity service unreachable. Please retry.');
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-white">
-      {/* 
-        AESTHETIC FOUNDATION
-        Animated background nodes using SVG filters and blur to create depth.
-      */}
+    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
+      {/* Signature Background Restoration with Dynamic Blobs */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#ffb472]/10 via-[#f7f2ff]/30 to-white opacity-40"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#ffb472] via-[#f7f2ff] to-white opacity-40"></div>
         <motion.div 
-          animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
-          transition={{ duration: 20, repeat: Infinity }}
+          animate={{ 
+            scale: [1, 1.2, 1],
+            rotate: [0, 90, 0],
+            opacity: [0.1, 0.2, 0.1]
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
           className="absolute -top-20 -right-20 w-[600px] h-[600px] bg-saffron-light blur-[120px] rounded-full"
-        />
+        ></motion.div>
         <motion.div 
-          animate={{ y: [0, 50, 0], opacity: [0.1, 0.15, 0.1] }}
-          transition={{ duration: 15, repeat: Infinity }}
+          animate={{ 
+            y: [0, 50, 0],
+            opacity: [0.1, 0.15, 0.1]
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
           className="absolute bottom-20 -left-20 w-[500px] h-[500px] bg-lavender-light/30 blur-[100px] rounded-full"
-        />
+        ></motion.div>
       </div>
 
       <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20, duration: 0.8 }}
         className="w-full max-w-md relative z-10"
       >
-        {/* BRAND IDENTITY: The Clinical Logo Block */}
-        <div className="text-center mb-10">
-          <Link to="/" className="inline-flex items-center justify-center gap-3 mb-8">
-             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-white via-saffron-light to-saffron-deep shadow-lg ring-4 ring-white/60"></div>
-             <div className="text-left">
-                <div className="font-bold text-[14px] uppercase tracking-[0.2em] text-slate-900 leading-none mb-1">Metascale Health</div>
-                <div className="text-[10px] text-saffron-deep/80 font-black uppercase tracking-widest">Global Identity Gateway</div>
-             </div>
+        <div className="text-center mb-8">
+          {/* ORIGINAL LOGO RESTORATION */}
+          <Link to="/" className="inline-flex items-center justify-center gap-3 mb-8 group">
+            <motion.div 
+               whileHover={{ scale: 1.05 }}
+               className="flex items-center gap-3 cursor-pointer"
+            >
+               <motion.div 
+                 animate={{ 
+                   boxShadow: ["0px 0px 0px rgba(247,147,30,0)", "0px 0px 20px rgba(247,147,30,0.3)", "0px 0px 0px rgba(247,147,30,0)"]
+                 }}
+                 transition={{ duration: 2, repeat: Infinity }}
+                 className="w-10 h-10 rounded-full bg-gradient-to-br from-white via-saffron-light to-saffron-deep shadow-lg ring-2 ring-white/60 flex-shrink-0 relative overflow-hidden"
+               >
+                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent rotate-45 transform -translate-x-full animate-[shimmer_3s_infinite]"></div>
+               </motion.div>
+               <div className="text-left">
+                  <div className="font-bold text-[13px] uppercase tracking-[0.1em] text-slate-900 leading-none mb-1 font-mono">Metascale Health</div>
+                  <div className="text-[10px] text-saffron-deep/80 font-bold uppercase tracking-tight">Sign In Portal</div>
+               </div>
+            </motion.div>
           </Link>
 
-          <h1 className="text-4xl font-black text-slate-900 mb-2 tracking-tight">
-            {isDoctorMode ? 'Doctor Portal' : isAdminMode ? 'Admin Console' : 'Sign In'}
-          </h1>
-          <p className="text-slate-500 font-bold text-sm tracking-tight uppercase">
-            {isDoctorMode ? 'Specialist Authentication' : 'Access your health dashboard'}
-          </p>
+          <motion.h1 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-4xl font-black text-slate-900 mb-2 tracking-tight"
+          >
+            {isDoctorMode ? 'Doctor Portal' : 'Sign In'}
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-slate-500 font-medium tracking-tight"
+          >
+            {isDoctorMode && 'Secured gateway for healthcare professionals.'}
+          </motion.p>
         </div>
 
-        {/* IDENTITY INPUT FORM */}
-        <div className="backdrop-blur-3xl bg-white/40 p-10 rounded-[48px] shadow-[0_32px_80px_-16px_rgba(0,0,0,0.1)] border border-white/60">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="backdrop-blur-2xl bg-white/40 p-8 rounded-[40px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-white/60 ring-1 ring-black/5"
+        >
           <form onSubmit={handleSubmit} className="space-y-6">
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
               {error && (
                 <motion.div 
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  className="bg-red-50/80 border border-red-100 text-red-600 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="bg-red-50/80 backdrop-blur-sm border border-red-100 text-red-600 px-4 py-3 rounded-2xl text-sm flex items-start gap-2 overflow-hidden"
                 >
-                  <AlertCircle size={14} />
-                  <span>{error}</span>
+                  <AlertCircle size={18} className="mt-0.5 shrink-0" />
+                  <p className="font-bold uppercase tracking-tight">{error}</p>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* IDENTITY: EMAIL */}
-            <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Identifier</label>
-              <div className="relative">
-                <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+              className="space-y-2"
+            >
+              <label className="block text-[11px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Email Terminal</label>
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-saffron-deep transition-colors" size={18} />
                 <input 
                   type="email" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-14 pr-4 py-5 bg-white/60 rounded-[24px] ring-1 ring-black/5 focus:ring-2 focus:ring-saffron/40 outline-none font-bold text-slate-900" 
+                  className="w-full pl-12 pr-4 py-4 bg-white/60 border-0 rounded-2xl ring-1 ring-black/5 focus:ring-2 focus:ring-saffron/40 transition-all outline-none font-bold placeholder:text-slate-300" 
                   placeholder="name@clinical.com"
                   required
                 />
               </div>
-            </div>
+            </motion.div>
 
-            {/* PROTOCOL: PASSWORD */}
-            <div className="space-y-2">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Access Code</label>
-              <div className="relative">
-                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <motion.div 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+              className="space-y-2"
+            >
+              <div className="flex items-center justify-between ml-1">
+                <label className="block text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">Security Key</label>
+              </div>
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-saffron-deep transition-colors" size={18} />
                 <input 
                   type={showPassword ? "text" : "password"} 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-14 pr-14 py-5 bg-white/60 rounded-[24px] ring-1 ring-black/5 focus:ring-2 focus:ring-saffron/40 outline-none font-bold text-slate-900" 
+                  className="w-full pl-12 pr-12 py-4 bg-white/60 border-0 rounded-2xl ring-1 ring-black/5 focus:ring-2 focus:ring-saffron/40 transition-all outline-none font-bold placeholder:text-slate-300" 
                   placeholder="••••••••"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-saffron-deep transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-            </div>
+            </motion.div>
 
-            <button 
+            <motion.button 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, type: "spring" }}
+              whileHover={{ scale: 1.05, boxShadow: "0 20px 40px rgba(247,147,30,0.3)" }}
+              whileTap={{ scale: 0.95 }}
               type="submit" 
               disabled={loading}
-              className="w-full py-5 bg-slate-900 text-white rounded-[24px] text-xs font-black uppercase tracking-[0.3em] flex items-center justify-center gap-3"
+              className="w-full btn-primary py-4 text-sm font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 group"
             >
-              {loading ? <Loader2 className="animate-spin" size={20} /> : (
-                <>Authorize Session <ArrowRight size={18} /></>
-              )}
-            </button>
+              {loading ? <Loader2 className="animate-spin" /> : 'Sign In'}
+              {!loading && <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />}
+            </motion.button>
           </form>
 
-          <p className="mt-10 pt-8 border-t border-slate-100 text-center text-slate-400 text-[10px] font-bold uppercase tracking-widest">
-            New Practitioner? <Link to="/register" className="text-saffron-deep font-black underline underline-offset-4">Register</Link>
-          </p>
-        </div>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="mt-10 pt-6 border-t border-black/5 text-center"
+          >
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">New to Metascale? <Link to="/register" className="text-saffron-deep font-black hover:underline underline-offset-4">Sign Up</Link></p>
+          </motion.div>
+        </motion.div>
+        
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="mt-8 text-center"
+        >
+        </motion.div>
       </motion.div>
     </div>
   );
 };
 
 export default LoginPage;
-
-

@@ -1,30 +1,3 @@
-/**
- * METASCALE HEALTH: CLINICAL PATIENT REGISTRY (PatientList.jsx)
- * 
- * ─── ARCHITECTURAL ROLE ─────────────────────────────────────────────────────
- * This component serves as the 'Relational Hub' for healthcare providers. 
- * It manages the Clinical Registry—a central archive of all patients associated 
- * with the practitioner, providing a unified view of their longitudinal 
- * health journeys and metabolic screening frequencies.
- * 
- * ─── UNIFIED AUDIT VIEW ─────────────────────────────────────────────────────
- * Each patient in the registry is presented with a 'Diagnostic Index':
- *   - SCREENING COUNT: Cumulative audit of Liver/Diabetes assessments.
- *   - VECTOR FLAGS: Visual indicators for specific completed screening types 
- *     (Liver Activity vs. Metabolic Pulse).
- *   - DEMOGRAPHIC METADATA: Synchronized age/gender info for immediate clinical 
- *     context.
- * 
- * ─── SEARCH-DRIVEN TRIAGE ───────────────────────────────────────────────────
- * Implements a 'Zero-Lag' search engine that filters the registry in real-time. 
- * This allows clinicians to instantly locate specific diagnostic records 
- * amid high patient volumes, improving workflow throughput.
- * 
- * ─── DESIGN SYSTEM: CLINICAL OS (SAFFRON) ───────────────────────────────────
- * Leverages the 'Metascale Saffron' and 'Slate' system to ensure high-fidelity 
- * visual hierarchy and a premium medical software experience.
- */
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -33,6 +6,7 @@ import {
   Filter, 
   ChevronRight, 
   Mail, 
+  Phone, 
   Activity, 
   Stethoscope,
   Loader2,
@@ -42,141 +16,118 @@ import {
 import api from '../../services/api';
 
 const PatientList = () => {
-  // ─── STATE MANAGEMENT: Registry Buffers ───────────────────────────────────
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
 
   useEffect(() => {
+    const fetchPatients = async () => {
+      try {
+        const res = await api.get('/doctor/patients');
+        if (res.data.success) {
+          setPatients(res.data.data);
+        } else {
+          setError(res.data.message);
+        }
+      } catch (error) {
+        console.error('Error fetching patients', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchPatients();
   }, []);
 
-  /**
-   * REPOSITORY SYNCHRONIZATION (fetchPatients)
-   * Logic: Dispatches a request to the specialized doctor-patient mapping.
-   */
-  const fetchPatients = async () => {
-    try {
-      const res = await api.get('/doctor/patients');
-      if (res.data.success) {
-        setPatients(res.data.data);
-      } else {
-        setError(res.data.message);
-      }
-    } catch {
-      setError('Critical Fault: Failed to synchronize with patient registry.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * REAL-TIME TRIAGE LOGIC
-   * Logic: Filters the patient manifest based on the search vector (Name/Email).
-   */
   const filteredPatients = patients.filter(p => 
     p.full_name?.toLowerCase().includes(search.toLowerCase()) ||
     p.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) return <LoadingState />;
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" /></div>;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* COMMAND CENTER HEADER & SEARCH GATEWAY */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-4">
-              <div className="p-2 bg-saffron/10 text-saffron-deep rounded-2xl"><Users size={36} /></div>
-              Clinical Registry
+           <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight flex items-center gap-3">
+              <Users className="text-primary-600" /> Patient Registry
            </h1>
-           <p className="text-slate-500 font-medium italic mt-1">Unified repository of patient metabolic audit trails.</p>
+           <p className="text-slate-500 font-medium">Manage and review screening results for all your assigned patients.</p>
         </div>
-        
-        <div className="flex items-center gap-4">
-           <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-saffron-deep transition-colors" size={18} />
+        <div className="flex items-center gap-3">
+           <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input 
-                type="text" placeholder="Search Identity (Name/Email)..." 
-                value={search} onChange={(e) => setSearch(e.target.value)}
-                className="pl-12 pr-6 py-4 bg-white border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-saffron/5 w-full md:w-80 font-bold text-sm shadow-sm"
+                type="text" 
+                placeholder="Search by name/email..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-primary-500 w-full md:w-64"
               />
            </div>
-           <button className="p-4 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-saffron-deep transition-all shadow-sm"><Filter size={20} /></button>
+           <button className="btn-secondary px-4 py-2.5 flex items-center gap-2"><Filter size={18} /> Filters</button>
         </div>
       </div>
 
-      {error ? <ErrorDisplay error={error} /> : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {error ? (
+        <div className="card bg-red-50 border-red-100 flex items-center gap-4 text-red-700">
+           <AlertCircle /> <p className="font-bold">{error}</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
            {filteredPatients.map((patient) => (
-              <PatientRegistryCard key={patient.id} patient={patient} />
+              <div key={patient.id} className="card group hover:shadow-xl hover:border-primary-200 transition-all duration-300">
+                 <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                       <div className="w-14 h-14 bg-primary-100 text-primary-600 rounded-2xl flex items-center justify-center font-bold text-xl ring-4 ring-white group-hover:bg-primary-600 group-hover:text-white transition-all">
+                          {patient.full_name?.charAt(0)}
+                       </div>
+                       <div>
+                          <h3 className="font-bold text-slate-900 text-lg">{patient.full_name}</h3>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{patient.age}Y • {patient.gender}</p>
+                       </div>
+                    </div>
+                    <button className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"><MoreVertical size={20} /></button>
+                 </div>
+                 
+                 <div className="space-y-4 mb-8">
+                    <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                       <Mail size={16} className="text-slate-400" /> <span className="truncate">{patient.email}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                       <Activity size={16} className="text-slate-400" /> 
+                       <span>{patient.total_screenings || 0} Total Screenings</span>
+                    </div>
+                 </div>
+
+                 <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex gap-2">
+                       {patient.has_liver && <div className="text-saffron p-1 bg-saffron/10 rounded-lg" title="Liver Screening Available"><Activity size={16} /></div>}
+                       {patient.has_diabetes && <div className="text-saffron-deep p-1 bg-saffron-deep/10 rounded-lg" title="Diabetes Screening Available"><Stethoscope size={16} /></div>}
+                    </div>
+                    <Link 
+                      to={`/doctor/patients/${patient.id}`} 
+                      className="bg-slate-900 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-primary-600 flex items-center gap-2 transition-all shadow-lg active:scale-95"
+                    >
+                       Review History <ChevronRight size={14} />
+                    </Link>
+                 </div>
+              </div>
            ))}
-           
-           {filteredPatients.length === 0 && <EmptyRegistryState />}
+           {filteredPatients.length === 0 && (
+              <div className="col-span-full card py-20 flex flex-col items-center justify-center text-center space-y-4 border-dashed bg-slate-50/50">
+                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center text-slate-300 shadow-sm mx-auto">
+                    <Users size={40} />
+                 </div>
+                 <h3 className="text-xl font-bold text-slate-900">No Patients Found</h3>
+                 <p className="text-slate-500 max-w-xs font-medium">No results match your current search or filter criteria.</p>
+              </div>
+           )}
         </div>
       )}
     </div>
   );
 };
 
-/* --- SHARED FRAGMENTS & ATOMS --- */
-
-const PatientRegistryCard = ({ patient }) => (
-  <div className="bg-white rounded-[40px] p-8 hover:shadow-2xl hover:-translate-y-1 transition-all border border-slate-50 group">
-     <div className="flex items-start justify-between mb-8">
-        <div className="flex items-center gap-5">
-           <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-[24px] flex items-center justify-center font-black text-xl shadow-inner group-hover:bg-saffron group-hover:text-white transition-all">
-              {patient.full_name?.charAt(0)}
-           </div>
-           <div>
-              <h3 className="font-black text-slate-900 text-lg leading-tight">{patient.full_name}</h3>
-              <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">{patient.age}Y • {patient.gender}</p>
-           </div>
-        </div>
-        <button className="p-2 text-slate-300 hover:text-slate-400"><MoreVertical size={20} /></button>
-     </div>
-     
-     <div className="space-y-4 mb-10">
-        <div className="flex items-center gap-3 text-xs font-bold text-slate-500 uppercase tracking-tight truncate">
-           <Mail size={16} className="text-saffron" /> {patient.email}
-        </div>
-        <div className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-           <Activity size={16} className="text-saffron" /> {patient.total_screenings || 0} TOTAL AUDITS
-        </div>
-     </div>
-
-     <div className="pt-8 border-t border-slate-50 flex items-center justify-between">
-        <div className="flex gap-2">
-           {patient.has_liver && <div className="p-2 bg-saffron/10 text-saffron-deep rounded-xl" title="Liver Active"><Activity size={14} /></div>}
-           {patient.has_diabetes && <div className="p-2 bg-slate-900 text-saffron rounded-xl" title="Metabolic Active"><Stethoscope size={14} /></div>}
-        </div>
-        <Link 
-          to={`/doctor/patients/${patient.id}`} 
-          className="bg-slate-900 text-white px-6 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:bg-saffron transition-all shadow-xl active:scale-95 flex items-center gap-2"
-        >
-           Review History <ChevronRight size={14} />
-        </Link>
-     </div>
-  </div>
-);
-
-const LoadingState = () => <div className="flex justify-center py-40"><Loader2 className="animate-spin text-saffron" size={40} /></div>;
-
-const ErrorDisplay = ({ error }) => (
-  <div className="bg-red-50 border border-red-100 p-8 rounded-[40px] flex items-center gap-6 text-red-700">
-     <AlertCircle size={32} />
-     <p className="font-black uppercase tracking-widest text-xs">{error}</p>
-  </div>
-);
-
-const EmptyRegistryState = () => (
-   <div className="col-span-full bg-slate-50 border-dashed border-2 py-32 flex flex-col items-center justify-center text-center rounded-[60px]">
-      <Users size={48} className="text-slate-200 mb-8" />
-      <h3 className="text-2xl font-black text-slate-900 uppercase tracking-tight">Registry: Empty</h3>
-      <p className="text-slate-500 text-xs font-medium italic mt-4 max-w-xs uppercase tracking-widest leading-loose">No clinical matches found in the active patient manifest.</p>
-   </div>
-);
-
 export default PatientList;
-t;

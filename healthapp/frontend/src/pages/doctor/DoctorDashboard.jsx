@@ -1,32 +1,3 @@
-/**
- * METASCALE HEALTH: SPECIALIST COMMAND CENTER (DoctorDashboard.jsx)
- * 
- * ─── ARCHITECTURAL ROLE ─────────────────────────────────────────────────────
- * This component serves as the 'Clinical Oversight Nexus' for practitioners. 
- * It aggregates practice-wide telemetry, scheduled visit density, and 
- * pending diagnostic reviews into a unified, high-fidelity dashboard.
- * 
- * ─── PRACTICE TELEMETRY LOGIC ───────────────────────────────────────────────
- * The dashboard orchestrates a 'Dual-Node Sync' on mount:
- *   1. PRACTICE ANALYTICS: Queries the 'doctor/stats' endpoint to retrieve 
- *      longitudinal data (Patient Volume, Review Depth, Growth Indices).
- *   2. SESSION DENSITY: Fetches the full appointment manifest and filters 
- *      for 'today-specific' confirmed engagements to calculate daily load.
- * 
- * ─── CLINICAL REVIEW PIPELINE ───────────────────────────────────────────────
- *   - DIAGNOSTIC STREAM: Implements a high-precision table that visualizes 
- *     recent patient screenings (MASLD, Diabetes) with clear RBAC-driven 
- *     audit pathways.
- *   - PRIORITY STACK: Surfaces 'Urgent Review' tasks (Stats with Risk > Minimal) 
- *     to ensure immediate medical follow-up where required.
- *   - PERFORMANCE BENCHMARKS: Tracks 'Clinical Confidence' (Accuracy %) 
- *     and 'Analysis Latency' (Optimization ms) as practice KPIs.
- * 
- * ─── HIGH-FIDELITY DESIGN ───────────────────────────────────────────────────
- * Utilizes a 'Clinical Professional' palette (Slate/Ink/Saffron) with 
- * heavy blur shadowing and micro-interactions for a premium practitioner UX.
- */
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -46,8 +17,6 @@ import { useAuth } from '../../hooks/useAuth';
 
 const DoctorDashboard = () => {
   const { user } = useAuth();
-  
-  // PRACTICE STATE: Buffering for mission-critical practice metrics.
   const [stats, setStats] = useState({
     totalPatients: 0,
     pendingReviews: 0,
@@ -58,10 +27,6 @@ const DoctorDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    /**
-     * PRACTICE SYNC (fetchStats)
-     * Logic: Aggregates patient volume and computes today's clinical load.
-     */
     const fetchStats = async () => {
       try {
         const [statsRes, apptRes] = await Promise.all([
@@ -72,9 +37,12 @@ const DoctorDashboard = () => {
         const today = new Date().toISOString().split('T')[0];
         const todayAppts = apptRes.data.data.filter(a => a.appt_date === today && a.status === 'confirmed').length;
         
-        setStats({ ...statsRes.data.data, todayAppts });
+        setStats({
+          ...statsRes.data.data,
+          todayAppts
+        });
       } catch (err) {
-        console.error('[PRACTICE FAULT] Analytics Sync Failed:', err);
+        console.error('Error fetching doctor stats:', err);
       } finally {
         setLoading(false);
       }
@@ -82,143 +50,202 @@ const DoctorDashboard = () => {
     fetchStats();
   }, []);
 
-  /**
-   * ALERT DISPATCHER (handleSendNotifications)
-   * Simulation: Orchestrates notification routing for patients requiring follow-up.
-   */
   const handleSendNotifications = async () => {
     setNotifying(true);
+    // Simulate API call to notification service
     setTimeout(() => {
        setNotifying(false);
-       alert(`Clinical Alerts dispatched to ${stats.pendingReviews} patients.`);
+       alert(`Notifications sent clinical review requests to ${stats.pendingReviews} patients via platform alerts and SMS.`);
     }, 1500);
   };
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-saffron" /></div>;
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary-600" /></div>;
+  const growthIndex = stats.growthIndex || 0;
+  const accuracy = stats.accuracy || 95;
+  const optimization = stats.optimization || '25ms';
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* ─── STAGE 1: NEXUS HEADER ───────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Clinical Nexus</h1>
-           <p className="text-slate-500 font-medium">Greetings Dr. {user?.full_name?.split(' ').pop()}, practice integrity is optimal.</p>
+           <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">Clinical Overview</h1>
+           <p className="text-slate-500 font-medium">Welcome, Dr. {user?.full_name?.split(' ').pop()}. Practice summary for {new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}.</p>
         </div>
         <div className="flex items-center gap-3 bg-white border border-slate-200 rounded-2xl p-2 shadow-sm">
-           <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2 border-r border-slate-100">
-              <Calendar size={14} className="text-saffron-deep" /> {new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
+           <div className="px-4 py-2 text-sm font-bold text-slate-500 flex items-center gap-2 border-r border-slate-100">
+              <Calendar size={16} /> {new Date().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
            </div>
-           <div className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-green-600 flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> Live
+           <div className="px-4 py-2 text-sm font-bold text-green-600 flex items-center gap-2">
+              <CheckCircle2 size={16} /> Practice Active
            </div>
         </div>
       </div>
 
-      {/* ─── STAGE 2: ANALYTICS TELEMETRY ─────────────────────────────────── */}
+      {/* Analytics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-         <MetricCard label="Clinical Roster" value={stats.totalPatients} icon={<Users />} color="border-l-saffron" />
-         <MetricCard label="Review Depth" value={stats.pendingReviews} icon={<ClipboardList />} color="border-l-amber-500" />
-         <MetricCard label="Visit Density" value={stats.todayAppts} icon={<Clock />} color="border-l-saffron-deep" />
-         <MetricCard label="Retention" value="98%" icon={<TrendingUp />} color="border-l-slate-900" />
+          <div className="card border-l-4 border-l-saffron">
+            <div className="flex items-start justify-between mb-2">
+               <div className="p-2 bg-saffron/10 text-saffron-deep rounded-xl"><Users size={20} /></div>
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Managed</span>
+            </div>
+            <p className="text-3xl font-display font-bold text-slate-900 leading-none mb-1">{stats.totalPatients}</p>
+            <p className="text-xs text-slate-500 font-medium font-sans">Registered Patients</p>
+         </div>
+         <div className="card border-l-4 border-l-amber-500">
+            <div className="flex items-start justify-between mb-2">
+               <div className="p-2 bg-amber-50 text-amber-600 rounded-xl"><ClipboardList size={20} /></div>
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Review Depth</span>
+            </div>
+            <p className="text-3xl font-display font-bold text-slate-900 leading-none mb-1">{stats.pendingReviews}</p>
+            <p className="text-xs text-slate-500 font-medium font-sans">Pending Screenings</p>
+         </div>
+         <div className="card border-l-4 border-l-saffron-deep">
+            <div className="flex items-start justify-between mb-2">
+               <div className="p-2 bg-saffron-light/20 text-saffron-deep rounded-xl"><Clock size={20} /></div>
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Schedule Density</span>
+            </div>
+            <p className="text-3xl font-display font-bold text-slate-900 leading-none mb-1">{stats.todayAppts}</p>
+            <p className="text-xs text-slate-500 font-medium font-sans">Today's Confirmed Visits</p>
+         </div>
+         <div className="card border-l-4 border-l-ink">
+            <div className="flex items-start justify-between mb-2">
+               <div className="p-2 bg-slate-100 text-ink rounded-xl"><TrendingUp size={20} /></div>
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Growth Index</span>
+            </div>
+            <p className="text-3xl font-display font-bold text-slate-900 leading-none mb-1">{stats.totalPatients > 0 ? '+12%' : 'N/A'}</p>
+            <p className="text-xs text-slate-500 font-medium font-sans">{stats.totalPatients > 0 ? 'Monthly Patient Inflow' : 'Baseline'}</p>
+         </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
-         {/* ─── STAGE 3: DIAGNOSTIC STREAM ────────────────────────────────── */}
+         {/* Pending & Recent Screenings */}
          <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
-               <h2 className="text-xl font-bold text-slate-900 tracking-tight">Diagnostic Feed</h2>
-               <Link to="/doctor/patients" className="text-saffron-deep font-black text-[10px] uppercase tracking-widest hover:underline flex items-center gap-2">Full Archive <ArrowRight size={14} /></Link>
+               <h2 className="text-xl font-bold text-slate-900 tracking-tight">System Alerts & Recent Screenings</h2>
+               <Link to="/doctor/patients" className="text-primary-600 font-bold text-sm hover:underline flex items-center gap-1">Manage All <ArrowRight size={14} /></Link>
             </div>
 
-            <div className="bg-white rounded-[40px] border border-slate-100 overflow-hidden shadow-2xl">
+            <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-100">
                <div className="overflow-x-auto">
                   <table className="w-full text-left">
-                     <thead className="bg-slate-50/50 border-b border-slate-100">
+                     <thead className="bg-slate-50/50 border-b border-slate-200">
                         <tr>
-                           <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Patient</th>
-                           <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Vector</th>
-                           <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Risk Tier</th>
-                           <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
+                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Patient Identity</th>
+                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Module</th>
+                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Clinical Assessment</th>
+                           <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Review</th>
                         </tr>
                      </thead>
                      <tbody className="divide-y divide-slate-100">
-                        {stats.recentScreenings?.map((screen) => (
-                           <tr key={`${screen.type}-${screen.id}`} className="hover:bg-slate-50 transition-colors">
-                              <td className="px-8 py-5">
-                                 <p className="font-bold text-slate-900 text-sm">{screen.patient_name}</p>
-                                 <p className="text-[10px] text-slate-400 font-black uppercase">{screen.age}Y • {screen.gender}</p>
+                        {stats.recentScreenings && stats.recentScreenings.map((screen) => (
+                           <tr key={`${screen.type}-${screen.id}`} className="hover:bg-slate-50/50 transition-colors group">
+                              <td className="px-6 py-4">
+                                 <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 text-xs">{screen.patient_name?.charAt(0)}</div>
+                                    <div>
+                                       <p className="font-bold text-slate-900 text-sm">{screen.patient_name}</p>
+                                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{screen.age}Y • {screen.gender}</p>
+                                    </div>
+                                 </div>
                               </td>
-                              <td className="px-8 py-5">
-                                 <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{screen.type}</span>
+                              <td className="px-6 py-4">
+                                 <div className="flex items-center gap-2">
+                                    <div className="text-saffron-deep"><Activity size={16} /></div>
+                                    <span className="text-xs font-bold text-slate-600 capitalize">{screen.type}</span>
+                                 </div>
                               </td>
-                              <td className="px-8 py-5">
-                                 <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase ${
-                                    screen.risk_band === 'Minimal' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                              <td className="px-6 py-4">
+                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                    screen.risk_band === 'Minimal' ? 'bg-green-100 text-green-700' :
+                                    screen.risk_band === 'Elevated' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-red-100 text-red-700'
                                  }`}>
                                     {screen.risk_band}
                                  </span>
                               </td>
-                              <td className="px-8 py-5 text-right">
-                                 <Link to={`/doctor/patients/${screen.patient_id}`} className="p-2 text-saffron-deep hover:scale-110 transition-transform"><ArrowRight size={18} /></Link>
+                              <td className="px-6 py-4 text-right">
+                                 <Link to={`/doctor/patients/${screen.patient_id}`} className="p-2 hover:bg-primary-50 text-primary-600 rounded-lg transition-colors inline-block">
+                                    <ArrowRight size={18} />
+                                 </Link>
                               </td>
                            </tr>
                         ))}
+                        {(!stats.recentScreenings || stats.recentScreenings.length === 0) && (
+                           <tr>
+                              <td colSpan="4" className="px-6 py-10 text-center text-slate-400 font-medium">No recent screenings to display.</td>
+                           </tr>
+                        )}
                      </tbody>
                   </table>
                </div>
             </div>
          </div>
 
-         {/* ─── STAGE 4: CLINICAL PRIORITIES ──────────────────────────────── */}
+         {/* Right Sidebar: Quick Tasks */}
          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Medical Priority Stack</h2>
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight">Practice Focus</h2>
             
             {stats.pendingReviews > 0 ? (
-               <div className="bg-slate-900 text-white rounded-[32px] p-8 space-y-6 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-5"><AlertCircle size={100} /></div>
-                  <h3 className="font-bold text-lg text-saffron">Urgent Review Queue</h3>
-                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">{stats.pendingReviews} Reports require validation.</p>
-                  <button onClick={handleSendNotifications} disabled={notifying} className="w-full py-4 bg-saffron text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all">
-                     {notifying ? <Loader2 size={16} className="animate-spin" /> : 'Dispatch Alerts'}
+               <div className="bg-red-50 rounded-2xl p-6 border border-red-100 space-y-4">
+                  <div className="flex items-center gap-3 text-red-700">
+                     <AlertCircle size={24} />
+                     <h3 className="font-bold">Follow-ups Required</h3>
+                  </div>
+                  <p className="text-xs text-red-600 leading-relaxed font-bold uppercase tracking-tight">{stats.pendingReviews} Cases need urgent clinical review.</p>
+                  <button 
+                    onClick={handleSendNotifications}
+                    disabled={notifying}
+                    className="w-full py-2.5 bg-red-600 text-white rounded-xl text-xs font-bold hover:bg-red-700 transition-all shadow-lg active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                     {notifying ? <Loader2 size={14} className="animate-spin" /> : 'Send Review Requests'}
                   </button>
                </div>
             ) : (
-               <div className="bg-slate-50 rounded-[32px] p-10 border-dashed border-2 border-slate-200 text-center">
-                  <CheckCircle2 size={32} className="mx-auto text-slate-200 mb-2" />
-                  <p className="text-xs text-slate-500 font-medium">Protocol state: Synchronized.</p>
+               <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 border-dashed space-y-2 text-center">
+                  <CheckCircle2 size={32} className="mx-auto text-slate-300" />
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Practice Up-to-date</p>
+                  <p className="text-[10px] text-slate-400 font-medium">No pending follow-ups required at this moment.</p>
                </div>
             )}
 
-            <InsightCard label="Diagnostic Precision" value="95%" icon={<CheckCircle2 />} color="border-l-green-600" />
-            <InsightCard label="Sync Latency" value="25ms" icon={<Activity />} color="border-l-indigo-600" />
+            <div className="card border-l-4 border-l-blue-500">
+               <div className="flex items-center gap-3 text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">
+                  <TrendingUp size={14} /> Patient Growth
+               </div>
+               <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-slate-900">{growthIndex >= 0 ? `+${growthIndex}` : growthIndex}</span>
+                  <span className="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-lg mb-1">Index</span>
+               </div>
+            </div>
+            <div className="card border-l-4 border-l-green-600">
+               <div className="flex items-center gap-3 text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">
+                  <CheckCircle2 size={14} /> Clinical Confidence
+               </div>
+               <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-slate-900">{accuracy}%</span>
+                  <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-lg mb-1">Clinical</span>
+               </div>
+            </div>
+            <div className="card border-l-4 border-l-indigo-600">
+               <div className="flex items-center gap-3 text-slate-400 font-bold uppercase tracking-widest text-[10px] mb-2">
+                  <Activity size={14} /> Analysis Latency
+               </div>
+               <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-slate-900">{optimization}</span>
+                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg mb-1">Low-Latency</span>
+               </div>
+            </div>
+
+            <div className="bg-ink text-white rounded-3xl p-6 relative overflow-hidden group shadow-xl border border-white/10">
+               <div className="absolute -bottom-4 -right-4 text-white/5 transition-transform group-hover:scale-110"><TrendingUp size={100} /></div>
+               <h3 className="font-bold text-lg mb-2 relative z-10">Practice Insights</h3>
+               <p className="text-slate-400 text-sm mb-4 relative z-10 font-medium">View population-level insights for metabolic health trends.</p>
+               <Link to="/doctor/analytics" className="relative z-10 inline-flex items-center gap-2 text-saffron font-bold hover:translate-x-1 transition-transform">Explore Insights <ArrowRight size={16} /></Link>
+            </div>
          </div>
       </div>
     </div>
   );
 };
 
-/* --- SHARED SUB-COMPONENTS --- */
-
-const InsightCard = ({ label, value, icon, color }) => (
-  <div className={`card border-l-4 ${color} bg-white p-6 rounded-2xl shadow-sm flex items-center gap-4`}>
-    <div className="text-slate-300">{icon}</div>
-    <div>
-       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
-       <p className="text-xl font-bold text-slate-900">{value}</p>
-    </div>
-  </div>
-);
-
-const MetricCard = ({ label, value, icon, color }) => (
-  <div className={`card ${color} bg-white p-6 rounded-3xl border shadow-sm`}>
-    <div className="flex items-start justify-between mb-4">
-       <div className={`${color.replace('border-l-', 'text-')} p-2 bg-slate-50 rounded-xl`}>{icon}</div>
-    </div>
-    <p className="text-4xl font-black text-slate-900 tracking-tight mb-1">{value}</p>
-    <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{label}</p>
-  </div>
-);
-
 export default DoctorDashboard;
-
-
