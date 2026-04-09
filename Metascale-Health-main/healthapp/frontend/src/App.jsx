@@ -66,7 +66,7 @@ function App() {
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
             <Route path="/admin/dashboard" element={<AppLayout><AdminDashboard /></AppLayout>} />
             <Route path="/admin/doctors" element={<AppLayout><DoctorManagement /></AppLayout>} />
-            <Route path="/admin/analytics" element={<AdminDashboard /></AppLayout>} />
+            <Route path="/admin/analytics" element={<AppLayout><AdminDashboard /></AppLayout>} />
             <Route path="/admin/profile" element={<AppLayout><ProfilePage /></AppLayout>} />
           </Route>
 
