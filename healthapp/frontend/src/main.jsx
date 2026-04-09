@@ -1,48 +1,45 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import './index.css';
-
 /**
- * METASCALE BARE ROOT - VER 3
- * Logic: Absolute minimal mounting to resolve 'ReferenceError: t is not defined'.
- * This version uses named imports and explicit hydration logs.
+ * METASCALE HEALTH: CLINICAL OS ROOT (main.jsx)
+ * 
+ * ─── ARCHITECTURAL ROLE ─────────────────────────────────────────────────────
+ * The primary entry point for the Clinical OS. It initializes the React 19 
+ * environment, binds the 'Root' component (App), and injects the 'Metascale' 
+ * design system (index.css).
+ * 
+ * ─── RENDER STRATEGY ────────────────────────────────────────────────────────
+ * Implements a high-resilience mounting pattern using 'createRoot' from 
+ * react-dom/client. Standardized to prevent 'ReferenceError: t' during 
+ * production minification.
  */
 
-console.log('CLINICAL OS: BARE ROOT V3 STARTING');
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.jsx';
+import './index.css';
+
+console.log('CLINICAL OS: PRODUCTION BUNDLE INITIALIZING');
 
 try {
   const container = document.getElementById('root');
-  
-  if (!container) {
-    throw new Error('Root element #root not found in DOM.');
-  }
+  if (!container) throw new Error('Root container missing');
 
   const root = createRoot(container);
   
   root.render(
     <React.StrictMode>
-      <div style={{ padding: '60px', background: 'blue', color: 'white', minHeight: '100vh', fontFamily: 'sans-serif' }}>
-        <h1 style={{ fontSize: '3.5rem', fontWeight: '900', letterSpacing: '-0.02em', margin: '0 0 20px 0' }}>
-          METASCALE <span style={{ color: '#ffd3a1' }}>ROOT V3</span>
-        </h1>
-        <p style={{ fontSize: '1.2rem', opacity: 0.9 }}>
-          Timestamp: {new Date().toLocaleTimeString()}
-        </p>
-        <div style={{ marginTop: '40px', padding: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}>
-          <p><strong>Status:</strong> Evaluation Successful</p>
-          <p>If you see this BLUE box, the ReferenceError is <strong>RESOVLED</strong>.</p>
-        </div>
-      </div>
+      <App />
     </React.StrictMode>
   );
   
-  console.log('CLINICAL OS: RENDER COMPLETED');
+  console.log('CLINICAL OS: MOUNT SUCCESSFUL');
 } catch (error) {
-  console.error('CLINICAL OS: CRITICAL MOUNT FAILURE', error);
+  console.error('CLINICAL OS: RUNTIME FAILURE', error);
+  // FALLBACK UI: Ensures the user is never left with a blank white screen.
   document.body.innerHTML = `
-    <div style="padding: 40px; background: #991b1b; color: white; font-family: sans-serif;">
-      <h1>CRITICAL MOUNT FAILURE</h1>
-      <pre>${error.message}</pre>
+    <div style="padding: 40px; background: #141414; color: white; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+      <h1 style="font-size: 2rem; margin-bottom: 1rem; color: #f7931e;">Critical System Fault</h1>
+      <p style="opacity: 0.6; max-width: 400px; line-height: 1.6;">The Clinical OS encountered a runtime evaluation error. Please contact Metascale Support.</p>
+      <code style="margin-top: 2rem; background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px;">${error.message}</code>
     </div>
   `;
 }
