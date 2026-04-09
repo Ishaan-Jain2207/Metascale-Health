@@ -1,25 +1,48 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import './index.css';
 
-console.log('CLINICAL OS: MAIN BUNDLE EVALUATING');
+/**
+ * METASCALE BARE ROOT - VER 3
+ * Logic: Absolute minimal mounting to resolve 'ReferenceError: t is not defined'.
+ * This version uses named imports and explicit hydration logs.
+ */
+
+console.log('CLINICAL OS: BARE ROOT V3 STARTING');
 
 try {
-  const root = document.getElementById('root');
-  if (!root) {
-    console.error('CLINICAL OS: ROOT ELEMENT NOT FOUND');
-    document.body.innerHTML = '<h1 style="color:red">ROOT ELEMENT NOT FOUND</h1>';
-  } else {
-    ReactDOM.createRoot(root).render(
-      <div style={{ padding: '50px', background: 'red', color: 'white', minHeight: '100vh' }}>
-        <h1 style={{ fontSize: '3rem' }}>METASCALE BARE ROOT TEST</h1>
-        <p>Bundle Time: {new Date().toLocaleTimeString()}</p>
-        <p>If you see this red box, the Vite build and Main entry point are working.</p>
-        <p>This means the crash is INSIDE App.jsx or its imports.</p>
-      </div>
-    );
-    console.log('CLINICAL OS: MOUNT SUCCESSFUL');
+  const container = document.getElementById('root');
+  
+  if (!container) {
+    throw new Error('Root element #root not found in DOM.');
   }
-} catch (err) {
-  console.error('CLINICAL OS: MOUNT FAILURE', err);
-  document.body.innerHTML = `<h1 style="color:red">MOUNT FAILURE: ${err.message}</h1>`;
+
+  const root = createRoot(container);
+  
+  root.render(
+    <React.StrictMode>
+      <div style={{ padding: '60px', background: 'blue', color: 'white', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+        <h1 style={{ fontSize: '3.5rem', fontWeight: '900', letterSpacing: '-0.02em', margin: '0 0 20px 0' }}>
+          METASCALE <span style={{ color: '#ffd3a1' }}>ROOT V3</span>
+        </h1>
+        <p style={{ fontSize: '1.2rem', opacity: 0.9 }}>
+          Timestamp: {new Date().toLocaleTimeString()}
+        </p>
+        <div style={{ marginTop: '40px', padding: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}>
+          <p><strong>Status:</strong> Evaluation Successful</p>
+          <p>If you see this BLUE box, the ReferenceError is <strong>RESOVLED</strong>.</p>
+        </div>
+      </div>
+    </React.StrictMode>
+  );
+  
+  console.log('CLINICAL OS: RENDER COMPLETED');
+} catch (error) {
+  console.error('CLINICAL OS: CRITICAL MOUNT FAILURE', error);
+  document.body.innerHTML = `
+    <div style="padding: 40px; background: #991b1b; color: white; font-family: sans-serif;">
+      <h1>CRITICAL MOUNT FAILURE</h1>
+      <pre>${error.message}</pre>
+    </div>
+  `;
 }
