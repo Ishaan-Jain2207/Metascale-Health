@@ -15,9 +15,9 @@ import {
   HeartPulse 
 } from 'lucide-react';
 
-import useRipple from '../../hooks/useRipple';
-import useParallaxDirective from '../../hooks/useParallaxDirective';
-import AngularStatusWidget from '../../components/clinical/AngularStatusWidget';
+import useRipple from '../hooks/useRipple';
+import useParallaxDirective from '../hooks/useParallaxDirective';
+import AngularStatusWidget from '../components/clinical/AngularStatusWidget';
 
 const LandingPage = () => {
   const heroRef = useRef(null);
