@@ -148,7 +148,7 @@ const DiabetesScreening = () => {
                 <div className="space-y-8">
                    <FormField label="Physical Activity">
                       <select name="physicallyActive" onChange={handleChange} className="input-field">
-                         <option value="none">Sedentary</option><option value="lt30">Low (<30m)</option>
+                         <option value="none">Sedentary</option><option value="lt30">Low (&lt;30m)</option>
                          <option value="30-60">Moderate</option><option value="gt60">Active</option>
                       </select>
                    </FormField>
