@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@theme {
+/* @theme {
   --color-saffron: #f7931e;
   --color-saffron-deep: #e06823;
   --color-saffron-light: #ffd3a1;
@@ -15,21 +15,20 @@
   --radius-3xl: 22px;
   --radius-2xl: 16px;
   --radius-xl: 10px;
-}
+} */
 
 @layer base {
   body {
-    @apply font-sans text-ink min-h-screen;
-    background: 
-      radial-gradient(circle at top center, #ffd3a1 0, transparent 55%),
-      linear-gradient(180deg, #ffb472 0%, #f7f2ff 42%, #ffffff 100%);
+    font-family: sans-serif;
+    color: #141414;
+    min-height: 100-screen;
+    background: linear-gradient(180deg, #ffb472 0%, #ffffff 100%);
     background-attachment: fixed;
     background-color: #ffffff;
   }
   
   h1, h2, h3, h4 {
-    @apply font-display tracking-tight;
-    /* Removed explicit text-ink to allow inheritance on dark cards */
+    font-family: serif;
   }
 }
 
