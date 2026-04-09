@@ -101,6 +101,52 @@
     @apply -translate-y-0.5 bg-saffron/5 shadow-lg;
     box-shadow: 0 4px 12px rgba(247, 147, 30, 0.1);
   }
+
+  /* ─── BADGE: Saffron pill used on LandingPage ──────────────────────────── */
+  .saffron-badge {
+    @apply inline-flex items-center gap-2 px-5 py-2 rounded-full text-[11px] font-black uppercase tracking-widest;
+    background: rgba(247, 147, 30, 0.1);
+    color: var(--color-saffron-deep);
+    border: 1px solid rgba(247, 147, 30, 0.2);
+  }
+
+  /* ─── TYPOGRAPHIC HIGHLIGHT: italic "before" word on hero ──────────────── */
+  .before-disease-highlight {
+    color: var(--color-saffron-deep);
+    position: relative;
+  }
+
+  /* ─── INPUT FIELD: Used in all auth forms & screening pages ────────────── */
+  .input-field {
+    @apply w-full px-5 py-4 rounded-2xl border border-slate-200 bg-white text-slate-900 font-medium text-sm transition-all duration-200 outline-none;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  }
+
+  .input-field:focus {
+    border-color: var(--color-saffron);
+    box-shadow: 0 0 0 3px rgba(247, 147, 30, 0.12);
+  }
+
+  .input-field::placeholder {
+    color: #a0aec0;
+  }
+
+  /* ─── SIDEBAR LAYOUT (AppLayout) ───────────────────────────────────────── */
+  .sidebar-link {
+    @apply flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-sm transition-all duration-200;
+    color: rgba(15, 23, 42, 0.5);
+  }
+
+  .sidebar-link:hover {
+    background: rgba(247, 147, 30, 0.08);
+    color: var(--color-saffron-deep);
+  }
+
+  .sidebar-link.active {
+    background: var(--color-saffron);
+    color: white;
+    box-shadow: 0 4px 14px rgba(247, 147, 30, 0.35);
+  }
 }
 
 @layer utilities {

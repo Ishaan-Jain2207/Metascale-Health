@@ -105,9 +105,20 @@ class HealthService {
   }
 }
 
-// PERSISTENT SINGLETON: The application uses a single instance to maintain state parity.
-export const healthService = new HealthService();
+// LAZY SINGLETON: Deferred initialization prevents the module-level `new HealthService()`
+// from being minified to `new t()` where `t` is undefined — causing "ReferenceError: t is not defined".
+let _instance = null;
+const getInstance = () => {
+  if (!_instance) _instance = new HealthService();
+  return _instance;
+};
+
+export const healthService = {
+  get predictions$() { return getInstance().predictions$; },
+  get currentPredictions() { return getInstance().currentPredictions; },
+  runScreening: (...args) => getInstance().runScreening(...args),
+  fetchHistory: (...args) => getInstance().fetchHistory(...args),
+  updateState: (...args) => getInstance().updateState(...args),
+};
+
 export default healthService;
-
-
-
