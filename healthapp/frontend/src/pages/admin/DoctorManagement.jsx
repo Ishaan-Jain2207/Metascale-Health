@@ -96,8 +96,8 @@ const DoctorManagement = () => {
             <div key={doctor.id} className="card group hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
                <div className="flex items-start justify-between mb-8">
                   <div className="flex items-center gap-4">
-                     <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-bold text-2xl shadow-lg ring-4 ring-white group-hover:scale-105 transition-transform ${doctor.is_approved ? 'bg-primary-600 text-white' : 'bg-yellow-100 text-yellow-600'}`}>
-                        {doctor.full_name?.charAt(0)}
+                     <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-2xl shadow-sm border-2 border-inherit group-hover:scale-105 transition-transform ${doctor.is_approved ? 'bg-primary-50 text-primary-600 border-primary-200' : 'bg-yellow-50 text-yellow-600 border-yellow-200'}`}>
+                        {doctor.full_name?.charAt(0).toUpperCase()}
                      </div>
                      <div>
                         <h3 className="font-bold text-slate-900 text-lg leading-tight">{doctor.full_name}</h3>

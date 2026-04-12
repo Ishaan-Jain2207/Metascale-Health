@@ -149,16 +149,6 @@ const AdminDashboard = () => {
                </div>
             </div>
 
-            <div className="bg-slate-900 text-white rounded-3xl p-8 relative overflow-hidden shadow-2xl">
-               <div className="absolute top-0 right-0 p-4 opacity-10">
-                  <Calendar size={100} />
-               </div>
-               <h3 className="text-lg font-bold mb-4 relative z-10">Administrative Audit</h3>
-               <div className="space-y-4 relative z-10">
-                  <button className="w-full py-3 bg-white text-slate-900 rounded-xl font-bold hover:bg-primary-50 transition-all shadow-lg active:scale-95">Generate Global Report</button>
-                  <button className="w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition-all text-xs uppercase tracking-widest">Log Retention Review</button>
-               </div>
-            </div>
          </div>
       </div>
     </div>
