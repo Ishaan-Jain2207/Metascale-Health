@@ -23,6 +23,7 @@ const PatientAppointments = () => {
   const [error, setError] = useState('');
   
   const today = new Date().toISOString().split('T')[0];
+  const [newAppt, setNewAppt] = useState({
     doctor_id: '',
     appt_date: '',
     appt_time: '',
@@ -48,7 +49,7 @@ const PatientAppointments = () => {
       setLoading(false);
     }
   };
-
+  const handleBook = async (e) => {
     e.preventDefault();
     setError('');
 
