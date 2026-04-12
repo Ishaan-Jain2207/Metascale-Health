@@ -41,7 +41,6 @@ const AppLayout = ({ children }) => {
     admin: [
       { name: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
       { name: 'Doctors', path: '/admin/doctors', icon: Stethoscope },
-      { name: 'Analytics', path: '/admin/analytics', icon: BarChart3 },
     ]
   };
 
