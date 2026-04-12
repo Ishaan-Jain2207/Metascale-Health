@@ -169,10 +169,7 @@ const ProfilePage = () => {
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 pl-1">Account Settings</h3>
                 <div className="space-y-2">
                    {[
-                     { icon: <UserCircle size={18} />, label: 'Profile Details', active: true },
-                     { icon: <Phone size={18} />, label: 'Contact Info', active: false },
-                     { icon: <Lock size={18} />, label: 'Security & Password', active: false },
-                     { icon: <Settings size={18} />, label: 'Preferences', active: false }
+                     { icon: <UserCircle size={18} />, label: 'Profile Details', active: true }
                    ].map((item) => (
                      <button key={item.label} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition-all font-black text-[10px] uppercase tracking-widest ${item.active ? 'bg-slate-900 text-white shadow-xl' : 'text-slate-400 hover:bg-slate-50'}`}>
                         {item.icon}
@@ -270,55 +267,9 @@ const ProfilePage = () => {
                </div>
             </motion.section>
 
-            <motion.section variants={itemVariants} className="space-y-6">
-               <h3 className="text-2xl font-display font-black text-slate-900 uppercase tracking-tight flex items-center gap-4">
-                  Security Hardening
-                  <div className="h-px flex-1 bg-slate-100"></div>
-               </h3>
-               <div className="card !bg-slate-900 border border-white/5 p-10 rounded-[48px] shadow-3xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-saffron/5 rounded-full -mr-32 -mt-32 group-hover:scale-150 transition-transform"></div>
-                  <form onSubmit={handlePasswordChange} className="space-y-10 relative z-10">
-                     <div className="space-y-4 max-w-sm">
-                        <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Current Password Signature</label>
-                        <input 
-                          type="password" 
-                          value={passwordData.currentPassword}
-                          onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
-                          required
-                          className="w-full px-6 py-5 bg-white/5 border border-white/10 rounded-[24px] outline-none focus:ring-4 focus:ring-saffron/20 focus:border-saffron text-white transition-all"
-                        />
-                     </div>
-                     <div className="grid md:grid-cols-2 gap-8 border-t border-white/5 pt-10">
-                        <div className="space-y-4">
-                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">New Credential Matrix</label>
-                           <input 
-                             type="password" 
-                             value={passwordData.newPassword}
-                             onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                             required minLength={6}
-                             className="w-full px-6 py-5 bg-white/5 border border-white/10 rounded-[24px] outline-none focus:ring-4 focus:ring-saffron/20 focus:border-saffron text-white transition-all"
-                           />
-                        </div>
-                        <div className="space-y-4">
-                           <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-1">Confirm Credential Matrix</label>
-                           <input 
-                             type="password" 
-                             value={passwordData.confirmPassword}
-                             onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                             required
-                             className="w-full px-6 py-5 bg-white/5 border border-white/10 rounded-[24px] outline-none focus:ring-4 focus:ring-saffron/20 focus:border-saffron text-white transition-all"
-                           />
-                        </div>
-                     </div>
-                     <div className="flex justify-end pt-4">
-                        <button type="submit" disabled={loading} className="group bg-white text-slate-900 px-12 py-5 rounded-[24px] font-black uppercase tracking-[0.2em] shadow-3xl hover:bg-saffron hover:text-white transition-all active:scale-95 disabled:bg-slate-700 flex items-center gap-4">
-                           {loading ? <Loader2 className="animate-spin" /> : <ShieldCheck size={20} className="group-hover:scale-110 mb-0.5" />}
-                           Update Security Matrix
-                        </button>
-                     </div>
-                  </form>
-               </div>
-            </motion.section>
+             <motion.section variants={itemVariants} className="space-y-6">
+                {/* Security section removed for streamlining */}
+             </motion.section>
          </div>
       </div>
     </motion.div>

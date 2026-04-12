@@ -236,12 +236,7 @@ const DoctorDashboard = () => {
                </div>
             </div>
 
-            <div className="bg-ink text-white rounded-3xl p-6 relative overflow-hidden group shadow-xl border border-white/10">
-               <div className="absolute -bottom-4 -right-4 text-white/5 transition-transform group-hover:scale-110"><TrendingUp size={100} /></div>
-               <h3 className="font-bold text-lg mb-2 relative z-10">Practice Insights</h3>
-               <p className="text-slate-400 text-sm mb-4 relative z-10 font-medium">View population-level insights for metabolic health trends.</p>
-               <Link to="/doctor/analytics" className="relative z-10 inline-flex items-center gap-2 text-saffron font-bold hover:translate-x-1 transition-transform">Explore Insights <ArrowRight size={16} /></Link>
-            </div>
+            {/* Practice Insights card removed */}
          </div>
       </div>
     </div>
