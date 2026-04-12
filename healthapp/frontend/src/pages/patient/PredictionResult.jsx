@@ -108,12 +108,6 @@ const PredictionResult = () => {
           <ArrowLeft size={18} /> Return to Dashboard
         </Link>
         <div className="flex items-center gap-3">
-          <button onClick={handleShare} className="btn-secondary flex items-center gap-2 px-4 py-2 text-sm">
-             <Share2 size={16} /> Share
-          </button>
-          <button onClick={handlePrint} className="btn-secondary flex items-center gap-2 px-4 py-2 text-sm !border-slate-300">
-             <Printer size={16} /> Print Report
-          </button>
           <button onClick={handlePrint} className="btn-primary flex items-center gap-2 px-4 py-2 text-xs !bg-saffron !border-saffron-deep hover:!bg-saffron-deep shadow-md">
              <Download size={16} /> Download PDF
           </button>
@@ -130,10 +124,6 @@ const PredictionResult = () => {
                   </div>
                   <h1 className="text-4xl font-display font-bold">Metascale Health Report</h1>
                   <p className="text-slate-400 font-medium">Screening Type: <span className="text-white capitalize">{type} Disease Risk</span> • {new Date().toLocaleDateString()}</p>
-               </div>
-               <div className="bg-white/5 rounded-2xl p-6 border border-white/10 text-center md:min-w-[180px]">
-                  <p className="text-xs text-slate-400 font-bold uppercase mb-1">Assessment Status</p>
-                  <p className="text-4xl font-display font-bold text-saffron">Verified</p>
                </div>
             </div>
          </div>
@@ -161,13 +151,37 @@ const PredictionResult = () => {
                </div>
             </div>
 
+            {/* Features/Parameters Display */}
+            {result.features && Object.keys(result.features).length > 0 && (
+               <div className="space-y-6 pt-6 border-t border-slate-100">
+                  <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                     <Activity className="text-saffron" size={24} /> Clinical Parameters Submitted
+                  </h3>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                     {Object.entries(result.features).map(([key, value]) => (
+                        <div key={key} className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-center">
+                           <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest truncate" title={key.replace(/_/g, ' ')}>
+                              {key.replace(/_/g, ' ')}
+                           </p>
+                           <p className="text-lg font-bold text-slate-900">{String(value)}</p>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+            )}
+
             {/* Recommendations */}
             <div className="space-y-6">
                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                   <CheckCircle2 className="text-saffron" /> Recommendations & Next Steps
                </h3>
                <div className="grid md:grid-cols-2 gap-4">
-                  {result.recommendations && result.recommendations.map((rec, i) => (
+                  {(result.recommendations?.length > 0 ? result.recommendations : [
+                     "Schedule a formal consultation with a specialized clinician to review these preliminary insights.",
+                     "Maintain a consistent biometric log (blood pressure, fasting glucose, weight) prior to your appointment.",
+                     "Consider foundational nutritional guidance to stabilize metabolic volatility.",
+                     "Ensure you perform at least 30 to 45 minutes of moderate aerobic activity to support cardiovascular parameters."
+                  ]).map((rec, i) => (
                     <div key={i} className="flex items-start gap-4 p-5 rounded-2xl border border-slate-100 hover:border-primary-200 hover:bg-primary-50/30 transition-all group">
                        <div className="shrink-0 w-8 h-8 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-sm">
                           {i + 1}
@@ -176,47 +190,6 @@ const PredictionResult = () => {
                     </div>
                   ))}
                </div>
-            </div>
-
-            <div className="space-y-6 pt-6 border-t border-slate-100">
-               <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                     <Activity size={20} className="text-saffron-deep" /> Clinical Assessment Review
-                  </h3>
-                  {!assessmentInsights && !loadingAssessment && (
-                    <button 
-                      onClick={handleGenerateInsights}
-                      className="text-xs font-bold font-sans uppercase tracking-widest text-primary-600 bg-primary-50 px-4 py-2.5 rounded-xl hover:bg-primary-100 transition-all shadow-sm active:scale-95"
-                    >
-                       Generate Detailed Review
-                    </button>
-                  )}
-               </div>
-
-               {loadingAssessment ? (
-                 <div className="bg-slate-50 rounded-2xl p-8 border border-slate-100 animate-pulse flex flex-col items-center justify-center space-y-4">
-                    <Loader2 className="animate-spin text-saffron" size={32} />
-                    <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Generating Assessment Summary...</p>
-                 </div>
-               ) : assessmentError ? (
-                 <div className="p-6 bg-red-50 rounded-2xl border border-red-100 text-red-600 text-sm font-medium flex items-center gap-3">
-                    <AlertTriangle size={18} /> {assessmentError}
-                 </div>
-               ) : assessmentInsights ? (
-                 <div className="prose prose-slate max-w-none bg-slate-900 text-slate-100 p-8 rounded-3xl border border-slate-800 shadow-xl font-medium leading-relaxed animate-in fade-in zoom-in-95 duration-500">
-                    <div className="flex items-center gap-2 text-saffron text-xs font-black uppercase tracking-widest mb-6">
-                       <CheckCircle2 size={14} /> Report Ready
-                    </div>
-                    <pre className="whitespace-pre-wrap font-sans text-slate-200">
-                       {assessmentInsights}
-                    </pre>
-                 </div>
-               ) : (
-                 <div className="bg-slate-50 rounded-2xl p-10 border border-slate-100 border-dashed text-center">
-                    <p className="text-slate-500 font-medium mb-1">Detailed analysis is available for this screening.</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Calculates clinical observations based on your specific biomarkers.</p>
-                 </div>
-               )}
             </div>
 
             {/* Disclaimer */}
