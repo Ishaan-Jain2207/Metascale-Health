@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Users, 
   Search, 
@@ -20,6 +20,7 @@ const PatientList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPatients = async () => {
@@ -106,12 +107,12 @@ const PatientList = () => {
                        {Boolean(patient.has_liver) && <div className="text-saffron p-1 bg-saffron/10 rounded-lg" title="Liver Screening Available"><Activity size={16} /></div>}
                        {Boolean(patient.has_diabetes) && <div className="text-saffron-deep p-1 bg-saffron-deep/10 rounded-lg" title="Diabetes Screening Available"><Stethoscope size={16} /></div>}
                     </div>
-                    <Link 
-                      to={`/doctor/patients/${patient.id}`} 
+                    <button 
+                      onClick={() => navigate(`/doctor/patients/${patient.id}`)} 
                       className="bg-slate-900 text-white px-5 py-2 rounded-xl text-xs font-bold hover:bg-primary-600 flex items-center gap-2 transition-all shadow-lg active:scale-95"
                     >
                        Review History <ChevronRight size={14} />
-                    </Link>
+                    </button>
                  </div>
               </div>
            ))}

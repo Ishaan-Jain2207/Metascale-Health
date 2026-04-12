@@ -148,6 +148,7 @@ const HistoryPage = () => {
                           <td className="px-6 py-6 text-right">
                              <Link 
                                to={`/patient/history/detail/${item.type}/${item.id}`}
+                               state={{ result: { riskBand: item.risk_band, interpretation: item.interpretation }, type: item.type }}
                                className="inline-flex items-center gap-2 text-primary-600 font-bold hover:text-primary-700 group-hover:translate-x-1 transition-all"
                              >
                                 Full Report <ChevronRight size={16} />
@@ -208,11 +209,7 @@ const HistoryPage = () => {
                         </div>
                      </div>
                   </div>
-                  <div className="shrink-0">
-                     <button className="btn-secondary flex items-center gap-2">
-                        <Download size={18} /> Export List
-                     </button>
-                  </div>
+                  {/* Export button removed as requested */}
                </div>
             </div>
         </div>
