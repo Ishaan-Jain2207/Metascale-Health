@@ -79,19 +79,19 @@ const HistoryPage = () => {
            <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
               <button 
                 onClick={() => setFilter('all')}
-                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filter === 'all' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`flex-1 min-w-[70px] px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filter === 'all' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-50'}`}
               >
                 All
               </button>
               <button 
                 onClick={() => setFilter('liver')}
-                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filter === 'liver' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`flex-1 min-w-[70px] px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filter === 'liver' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-50'}`}
               >
                 Liver
               </button>
               <button 
                 onClick={() => setFilter('diabetes')}
-                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filter === 'diabetes' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700'}`}
+                className={`flex-1 min-w-[70px] px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filter === 'diabetes' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-50'}`}
               >
                 Diabetes
               </button>
@@ -106,8 +106,8 @@ const HistoryPage = () => {
         </div>
       ) : filteredHistory.length > 0 ? (
         <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-100">
-           <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+           <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
+              <table className="w-full text-left border-collapse min-w-[800px]">
                  <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-200">
                        <th className="px-6 py-5 text-xs font-bold text-slate-400 uppercase tracking-widest">Type & Date</th>

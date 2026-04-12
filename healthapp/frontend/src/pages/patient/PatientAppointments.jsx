@@ -20,8 +20,9 @@ const PatientAppointments = () => {
   const [loading, setLoading] = useState(true);
   const [showBooking, setShowBooking] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [error, setError] = useState('');
   
-  const [newAppt, setNewAppt] = useState({
+  const today = new Date().toISOString().split('T')[0];
     doctor_id: '',
     appt_date: '',
     appt_time: '',
@@ -48,8 +49,15 @@ const PatientAppointments = () => {
     }
   };
 
-  const handleBook = async (e) => {
     e.preventDefault();
+    setError('');
+
+    // 1. Time Scope Validation (8:00 AM - 9:00 PM)
+    const hour = parseInt(newAppt.appt_time.split(':')[0]);
+    if (hour < 8 || hour >= 21) {
+      return setError('Clinical Hours: Consultations must be scheduled between 08:00 AM and 09:00 PM.');
+    }
+
     setBookingLoading(true);
     try {
       const res = await api.post('/appointments/book', newAppt);
@@ -58,7 +66,8 @@ const PatientAppointments = () => {
         fetchData();
         setNewAppt({ doctor_id: '', appt_date: '', appt_time: '', reason: '', type: 'in-person' });
       }
-    } catch {
+    } catch (err) {
+      setError(err.response?.data?.message || 'Booking request failed. Please check clinical availability.');
       console.error('Booking failed');
     } finally {
       setBookingLoading(false);
@@ -108,6 +117,7 @@ const PatientAppointments = () => {
                     <label className="text-sm font-bold text-slate-700">DATE</label>
                     <input 
                       type="date" 
+                      min={today}
                       value={newAppt.appt_date}
                       onChange={(e) => setNewAppt({...newAppt, appt_date: e.target.value})}
                       required
@@ -118,6 +128,8 @@ const PatientAppointments = () => {
                     <label className="text-sm font-bold text-slate-700">TIME</label>
                     <input 
                       type="time" 
+                      min="08:00"
+                      max="21:00"
                       value={newAppt.appt_time}
                       onChange={(e) => setNewAppt({...newAppt, appt_time: e.target.value})}
                       required
@@ -155,6 +167,12 @@ const PatientAppointments = () => {
                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
                  />
               </div>
+              {error && (
+                 <div className="md:col-span-2 p-3 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-600 text-sm font-bold animate-in shake duration-300">
+                    <AlertCircle size={18} />
+                    {error}
+                 </div>
+              )}
               <div className="md:col-span-2 pt-4">
                  <button 
                    type="submit" 
