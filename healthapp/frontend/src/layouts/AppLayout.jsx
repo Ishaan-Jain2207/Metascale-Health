@@ -32,7 +32,6 @@ const AppLayout = ({ children }) => {
       { name: 'Screening', path: '/patient/screening', icon: ClipboardList },
       { name: 'History', path: '/patient/history', icon: History },
       { name: 'Appointments', path: '/patient/appointments', icon: CalendarCheck },
-      { name: 'Profile', path: '/patient/profile', icon: UserCircle },
     ],
     doctor: [
       { name: 'Dashboard', path: '/doctor/dashboard', icon: LayoutDashboard },

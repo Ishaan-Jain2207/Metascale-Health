@@ -173,48 +173,50 @@ const HistoryPage = () => {
       )}
 
       {/* Analytics Card */}
-      <div className="grid md:grid-cols-3 gap-6">
-          <div className="card bg-primary-600 text-white flex flex-col justify-between min-h-[200px]">
-             <div className="flex items-start justify-between">
-                <div className="p-2 bg-white/10 rounded-lg"><Activity size={24} /></div>
-                <div className="text-xs font-bold uppercase opacity-60">Status</div>
-             </div>
-             <div>
-                <p className="text-4xl font-display font-bold mb-1">Health Sync</p>
-                <p className="text-sm text-primary-100 font-medium">All clinical parameters are current.</p>
-             </div>
-          </div>
-          <div className="card md:col-span-2">
-             <h3 className="font-bold text-slate-900 mb-4">Screening Distribution</h3>
-             <div className="flex items-center gap-8">
-                <div className="flex-1 space-y-4">
-                   <div className="space-y-1">
-                      <div className="flex justify-between text-xs font-bold uppercase text-slate-400">
-                         <span>Liver Screening</span>
-                         <span>{history.filter(h => h.type === 'liver').length} Assessments</span>
-                      </div>
-                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                         <div className="h-full bg-saffron" style={{ width: `${(history.filter(h=>h.type==='liver').length / history.length) * 100}%` }}></div>
-                      </div>
-                   </div>
-                   <div className="space-y-1">
-                      <div className="flex justify-between text-xs font-bold uppercase text-slate-400">
-                         <span>Diabetes Evaluation</span>
-                         <span>{history.filter(h => h.type === 'diabetes').length} Assessments</span>
-                      </div>
-                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                         <div className="h-full bg-saffron-deep" style={{ width: `${(history.filter(h=>h.type==='diabetes').length / history.length) * 100}%` }}></div>
-                      </div>
-                   </div>
-                </div>
-                <div className="shrink-0">
-                   <button className="btn-secondary flex items-center gap-2">
-                      <Download size={18} /> Export List
-                   </button>
-                </div>
-             </div>
-          </div>
-      </div>
+      {history.length > 0 && (
+        <div className="grid md:grid-cols-3 gap-6">
+            <div className="card bg-primary-600 text-white flex flex-col justify-between min-h-[200px]">
+               <div className="flex items-start justify-between">
+                  <div className="p-2 bg-white/10 rounded-lg"><Activity size={24} /></div>
+                  <div className="text-xs font-bold uppercase opacity-60">Status</div>
+               </div>
+               <div>
+                  <p className="text-4xl font-display font-bold mb-1">Health Sync</p>
+                  <p className="text-sm text-primary-100 font-medium">All clinical parameters are current.</p>
+               </div>
+            </div>
+            <div className="card md:col-span-2">
+               <h3 className="font-bold text-slate-900 mb-4">Screening Distribution</h3>
+               <div className="flex items-center gap-8">
+                  <div className="flex-1 space-y-4">
+                     <div className="space-y-1">
+                        <div className="flex justify-between text-xs font-bold uppercase text-slate-400">
+                           <span>Liver Screening</span>
+                           <span>{history.filter(h => h.type === 'liver').length} Assessments</span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                           <div className="h-full bg-saffron" style={{ width: `${(history.filter(h=>h.type==='liver').length / history.length) * 100}%` }}></div>
+                        </div>
+                     </div>
+                     <div className="space-y-1">
+                        <div className="flex justify-between text-xs font-bold uppercase text-slate-400">
+                           <span>Diabetes Evaluation</span>
+                           <span>{history.filter(h => h.type === 'diabetes').length} Assessments</span>
+                        </div>
+                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                           <div className="h-full bg-saffron-deep" style={{ width: `${(history.filter(h=>h.type==='diabetes').length / history.length) * 100}%` }}></div>
+                        </div>
+                     </div>
+                  </div>
+                  <div className="shrink-0">
+                     <button className="btn-secondary flex items-center gap-2">
+                        <Download size={18} /> Export List
+                     </button>
+                  </div>
+               </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 };
