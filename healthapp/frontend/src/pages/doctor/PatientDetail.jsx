@@ -26,6 +26,7 @@ const PatientDetail = () => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reviewNote, setReviewNote] = useState('');
+  const [reviewFlag, setReviewFlag] = useState('stable');
   const [reviewLoading, setReviewLoading] = useState(false);
 
   useEffect(() => {
@@ -34,14 +35,20 @@ const PatientDetail = () => {
 
   const fetchPatientData = useCallback(async () => {
     try {
-      const [patientRes, historyRes] = await Promise.all([
-        api.get(`/doctor/patients/${id}`),
-        api.get(`/predict/history/${id}`)
-      ]);
-      setPatient(patientRes.data.data);
-      setHistory(historyRes.data.data);
-    } catch {
-      console.error('Error fetching patient data');
+      const res = await api.get(`/doctor/patients/${id}`);
+      const { profile, history: rawHistory } = res.data.data;
+      
+      setPatient(profile);
+      
+      // Merge and categorize screenings
+      const merged = [
+        ...(rawHistory.liver || []).map(s => ({ ...s, type: 'liver' })),
+        ...(rawHistory.diabetes || []).map(s => ({ ...s, type: 'diabetes' }))
+      ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      
+      setHistory(merged);
+    } catch (err) {
+      console.error('Error fetching patient data:', err);
     } finally {
       setLoading(false);
     }
@@ -55,9 +62,13 @@ const PatientDetail = () => {
     if (!reviewNote.trim()) return;
     setReviewLoading(true);
     try {
-      await api.post(`/doctor/review/${type}/${screeningId}`, { doctor_notes: reviewNote });
+      await api.post(`/doctor/review/${type}/${screeningId}`, { 
+        doctor_comment: reviewNote,
+        doctor_flag: reviewFlag 
+      });
       fetchPatientData();
       setReviewNote('');
+      setReviewFlag('stable');
     } catch (err) {
       console.error('Error reviewing screening:', err);
     } finally {
@@ -186,29 +197,53 @@ const PatientDetail = () => {
                            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 flex gap-4">
                               <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-primary-600 shadow-sm border border-slate-200 shrink-0"><CheckCircle2 /></div>
                               <div className="space-y-1">
-                                 <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Clinical Physician's Review</p>
-                                 <p className="text-slate-700 font-medium leading-relaxed italic">"{screening.doctor_notes}"</p>
+                                 <div className="flex items-center gap-2 mb-1">
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Clinical Physician's Review</p>
+                                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
+                                       screening.doctor_flag === 'critical' ? 'bg-red-500 text-white' :
+                                       screening.doctor_flag === 'watch' ? 'bg-amber-500 text-white' :
+                                       'bg-slate-200 text-slate-600'
+                                    }`}>
+                                       {screening.doctor_flag || 'STABLE'}
+                                    </span>
+                                 </div>
+                                 <p className="text-slate-700 font-medium leading-relaxed italic">"{screening.doctor_comment}"</p>
                               </div>
                            </div>
                         ) : (
                            <div className="space-y-4 pt-4 border-t border-slate-100">
-                              <label className="text-xs font-bold text-primary-600 uppercase tracking-widest">Clinical Consultation Notes</label>
-                              <div className="flex gap-4">
-                                 <textarea 
-                                   value={reviewNote}
-                                   onChange={(e) => setReviewNote(e.target.value)}
-                                   placeholder="Enter detailed medical assessment or recommendations for this patient..."
-                                   className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary-600 h-24 font-medium transition-all"
-                                 />
-                                 <button 
-                                   onClick={() => handleReview(screening.type, screening.id)}
-                                   disabled={reviewLoading || !reviewNote.trim()}
-                                   className="btn-primary w-16 h-24 flex flex-col items-center justify-center gap-2"
-                                 >
-                                    {reviewLoading ? <Loader2 size={24} className="animate-spin" /> : <ArrowLeft className="rotate-180" size={24} />}
-                                    <span className="text-[10px] font-black uppercase">Post</span>
-                                 </button>
-                              </div>
+                               <div className="flex flex-col gap-4">
+                                  <div className="flex gap-4">
+                                     <div className="flex-1 space-y-2">
+                                        <textarea 
+                                          value={reviewNote}
+                                          onChange={(e) => setReviewNote(e.target.value)}
+                                          placeholder="Enter detailed medical assessment or recommendations for this patient..."
+                                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-primary-600 h-24 font-medium transition-all"
+                                        />
+                                     </div>
+                                     <div className="w-32 flex flex-col gap-2">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 pl-1">Clinical Flag</label>
+                                        <select 
+                                          value={reviewFlag}
+                                          onChange={(e) => setReviewFlag(e.target.value)}
+                                          className="w-full px-2 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none"
+                                        >
+                                           <option value="stable">Stable</option>
+                                           <option value="watch">Watch</option>
+                                           <option value="critical">Critical</option>
+                                        </select>
+                                        <button 
+                                          onClick={() => handleReview(screening.type, screening.id)}
+                                          disabled={reviewLoading || !reviewNote.trim()}
+                                          className="btn-primary flex-1 flex flex-col items-center justify-center gap-1 py-2"
+                                        >
+                                           {reviewLoading ? <Loader2 size={18} className="animate-spin" /> : <ArrowLeft className="rotate-180" size={18} />}
+                                           <span className="text-[9px] font-black uppercase">Post</span>
+                                        </button>
+                                     </div>
+                                  </div>
+                               </div>
                            </div>
                         )}
                      </div>

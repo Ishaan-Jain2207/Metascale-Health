@@ -31,7 +31,11 @@ const { sendSuccess, sendError } = require('../utils/apiResponse');
 exports.getAllPatients = async (req, res, next) => {
   try {
     const { search } = req.query;
-    let query = `SELECT id, full_name, email, age, gender, phone, created_at 
+    let query = `SELECT id, full_name, email, age, gender, phone, created_at,
+                  (SELECT COUNT(*) FROM liver_screenings WHERE user_id = users.id) + 
+                  (SELECT COUNT(*) FROM diabetes_screenings WHERE user_id = users.id) as total_screenings,
+                  (SELECT COUNT(*) > 0 FROM liver_screenings WHERE user_id = users.id) as has_liver,
+                  (SELECT COUNT(*) > 0 FROM diabetes_screenings WHERE user_id = users.id) as has_diabetes
                  FROM users WHERE role = 'patient'`;
     let params = [];
 
@@ -78,15 +82,15 @@ exports.getPatientDetail = async (req, res, next) => {
 
     // 2. LIVER TIMELINE HYDRATION
     const [liverRows] = await pool.query(
-      `SELECT id, prediction, confidence, risk_band, created_at 
-       FROM liver_screenings WHERE user_id = ? ORDER BY created_at DESC LIMIT 5`,
+      `SELECT id, prediction, confidence, risk_band, created_at, interpretation, is_reviewed, doctor_comment, doctor_flag
+       FROM liver_screenings WHERE user_id = ? ORDER BY created_at DESC LIMIT 10`,
       [id]
     );
 
     // 3. METABOLIC TIMELINE HYDRATION
     const [diabetesRows] = await pool.query(
-      `SELECT id, prediction, confidence, risk_band, created_at 
-       FROM diabetes_screenings WHERE user_id = ? ORDER BY created_at DESC LIMIT 5`,
+      `SELECT id, prediction, confidence, risk_band, created_at, interpretation, is_reviewed, doctor_comment, doctor_flag
+       FROM diabetes_screenings WHERE user_id = ? ORDER BY created_at DESC LIMIT 10`,
       [id]
     );
 
@@ -114,7 +118,8 @@ exports.getPatientDetail = async (req, res, next) => {
 exports.reviewScreening = async (req, res, next) => {
   try {
     const { id, type } = req.params;
-    const { doctor_comment, doctor_flag } = req.body;
+    const { doctor_comment, doctor_notes, doctor_flag } = req.body;
+    const finalComment = doctor_comment || doctor_notes;
     const table = type === 'liver' ? 'liver_screenings' : 'diabetes_screenings';
 
     // ATOMIC MUTATION
@@ -125,7 +130,7 @@ exports.reviewScreening = async (req, res, next) => {
         doctor_flag = ?, 
         is_reviewed = 1 
        WHERE id = ?`,
-      [req.user.id, doctor_comment, doctor_flag, id]
+      [req.user.id, finalComment, doctor_flag || 'stable', id]
     );
 
     return sendSuccess(res, {}, 'Medical audit synchronized. Patient notified.');
