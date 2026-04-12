@@ -36,8 +36,14 @@ exports.getAllPatients = async (req, res, next) => {
                   (SELECT COUNT(*) FROM diabetes_screenings WHERE user_id = users.id) as total_screenings,
                   (SELECT COUNT(*) > 0 FROM liver_screenings WHERE user_id = users.id) as has_liver,
                   (SELECT COUNT(*) > 0 FROM diabetes_screenings WHERE user_id = users.id) as has_diabetes
-                 FROM users WHERE role = 'patient'`;
-    let params = [];
+                 FROM users WHERE role = 'patient' AND id IN (
+                   SELECT patient_id FROM appointments WHERE doctor_id = ?
+                   UNION
+                   SELECT user_id FROM liver_screenings WHERE doctor_id = ?
+                   UNION
+                   SELECT user_id FROM diabetes_screenings WHERE doctor_id = ?
+                 )`;
+    let params = [req.user.id, req.user.id, req.user.id];
 
     // DYNAMIC FILTERING
     if (search) {
@@ -79,6 +85,20 @@ exports.getPatientDetail = async (req, res, next) => {
     );
 
     if (!userRows.length) return sendError(res, 'Access Denied: Universal Clinical Record (UCR) not found.', 404);
+
+    // 1.5 SECURITY ESCALATION: Prevent unauthorized horizontal access
+    const [authGuard] = await pool.query(
+      `SELECT 1 FROM appointments WHERE patient_id = ? AND doctor_id = ?
+       UNION
+       SELECT 1 FROM liver_screenings WHERE user_id = ? AND doctor_id = ?
+       UNION
+       SELECT 1 FROM diabetes_screenings WHERE user_id = ? AND doctor_id = ?`,
+       [id, req.user.id, id, req.user.id, id, req.user.id]
+    );
+
+    if (authGuard.length === 0) {
+      return sendError(res, 'Authorization Violation: Patient is not part of your active practice registry.', 403);
+    }
 
     // 2. LIVER TIMELINE HYDRATION
     const [liverRows] = await pool.query(
