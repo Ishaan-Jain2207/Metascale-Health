@@ -45,6 +45,12 @@ const startServer = async () => {
     // SQL Oracle (MySQL) is healthy. This ensures data consistency from T-0.
     await testConnection();
 
+    // 1b. CLINICAL SCHEMA SYNCHRONIZATION
+    // Automatically patch missing columns (common when deploying to Railway 
+    // from an older schema version).
+    const syncSchema = require('./utils/migrate');
+    await syncSchema();
+
     // 2. NETWORK INTERFACE ACTIVATION (Binding to 0.0.0.0)
     // We listen on '0.0.0.0' instead of just 'localhost' to allow the 
     // server to be reachable across a local area network (LAN).
