@@ -106,7 +106,7 @@ const AngularAuditTool = () => {
       <div className="p-8 bg-slate-900 border-b border-white/5 flex items-center justify-between">
         <h3 className="font-black text-white flex items-center gap-4 text-sm uppercase tracking-widest">
            <div className="p-2 bg-saffron/10 text-saffron rounded-xl"><Activity size={20} /></div>
-           Legcay Metabolic Audit
+           Legacy Diabetes Screening
         </h3>
         <span className="px-3 py-1 bg-white/5 text-slate-400 rounded-lg text-[9px] font-black uppercase tracking-[0.2em]">Clinical Bridge v1.8</span>
       </div>

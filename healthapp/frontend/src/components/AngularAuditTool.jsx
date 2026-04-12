@@ -62,7 +62,7 @@ const AngularAuditTool = () => {
     <div className="card overflow-hidden border-l-4 border-l-primary-600 shadow-xl shadow-slate-100" ref={containerRef}>
       <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
         <h3 className="font-bold text-slate-900 flex items-center gap-2">
-          <Activity size={18} className="text-primary-600" /> Legacy Metabolic Audit
+          <Activity size={18} className="text-primary-600" /> Legacy Diabetes Screening
         </h3>
         <span className="px-2 py-0.5 bg-slate-200 text-slate-500 rounded text-[9px] font-black uppercase tracking-widest">AngularJS 1.8</span>
       </div>

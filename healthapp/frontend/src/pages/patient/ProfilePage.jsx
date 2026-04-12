@@ -136,8 +136,12 @@ const ProfilePage = () => {
                   <h1 className="text-4xl md:text-6xl font-display font-bold tracking-tight text-white">{user?.full_name}</h1>
                   <p className="text-white/40 font-medium text-lg mt-2 flex items-center justify-center md:justify-start gap-4 uppercase tracking-widest text-xs">
                      <Mail size={16} className="text-saffron" /> {user?.email}
-                     <span className="w-1.5 h-1.5 rounded-full bg-white/10"></span>
-                     <Calendar size={16} className="text-saffron" /> Joined {new Date(user?.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                     {user?.created_at && !isNaN(new Date(user.created_at).getTime()) && (
+                       <>
+                         <span className="w-1.5 h-1.5 rounded-full bg-white/10"></span>
+                         <Calendar size={16} className="text-saffron" /> Joined {new Date(user.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                       </>
+                     )}
                   </p>
                </div>
             </div>
