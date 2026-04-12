@@ -72,7 +72,6 @@ exports.registerUser = async (req, res, next) => {
     const hash = await bcrypt.hash(cleanPassword, salt);
 
     // 5. ATOMIC REPOSITORY COMMIT
-    // We insert all potentially relevant fields. MySQL's COALESCE/NULL handles the gaps.
     const [result] = await pool.query(
       `INSERT INTO users (
         full_name, email, password_hash, role, age, gender, phone, 
@@ -81,10 +80,20 @@ exports.registerUser = async (req, res, next) => {
       )
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        cleanName, cleanEmail, hash, assignedRole, age || null, gender || null, phone?.trim() || '', 
-        specialization || '', hospital || '', license_number || '', 
-        medical_council || '', Number(years_of_experience) || 0, qualification || '',
-        assignedRole === 'doctor' ? 1 : 0 // Doctors require admin review (initialized as 1 for POC)
+        cleanName, 
+        cleanEmail, 
+        hash, 
+        assignedRole, 
+        age ? Number(age) : null, 
+        gender || null, 
+        phone?.trim() || '', 
+        specialization || '', 
+        hospital || '', 
+        license_number || '', 
+        medical_council || '', 
+        Number(years_of_experience) || 0, 
+        qualification || '',
+        assignedRole === 'doctor' ? 1 : 1 // Set to 1 by default for all users to enable instant dashboard access in POC
       ]
     );
 
@@ -101,6 +110,7 @@ exports.registerUser = async (req, res, next) => {
       201
     );
   } catch (err) {
+    console.error('CRITICAL REGISTRATION FAILURE:', err);
     next(err);
   }
 };

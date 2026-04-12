@@ -150,12 +150,8 @@ const LandingPage = () => {
                    Start free screening <ArrowRight className="ml-2" size={24} />
                 </Link>
                 
-                {/* Angular Service indicator — shows recent activity from stream */}
-                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Radar size={12} className="text-saffron animate-ping" /> 1K+ screens today
-                </div>
               </div>
-           </motion.div>
+            </motion.div>
 
         </div>
 
@@ -195,7 +191,7 @@ const LandingPage = () => {
                 accent: 'bg-saffron'
               },
               { 
-                title: 'Metabolic Screening', 
+                title: 'Diabetes Risk Assessment', 
                 desc: 'Estimates diabetes risk using dietary patterns, genetic history, and metabolic indicators.', 
                 icon: Stethoscope,
                 accent: 'bg-green-600'
