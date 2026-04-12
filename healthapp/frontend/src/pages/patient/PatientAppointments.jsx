@@ -150,8 +150,8 @@ const PatientAppointments = () => {
                     </button>
                     <button 
                       type="button"
-                      onClick={() => setNewAppt({...newAppt, type: 'virtual'})}
-                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${newAppt.type === 'virtual' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                      onClick={() => setNewAppt({...newAppt, type: 'video'})}
+                      className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${newAppt.type === 'video' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                       Virtual
                     </button>

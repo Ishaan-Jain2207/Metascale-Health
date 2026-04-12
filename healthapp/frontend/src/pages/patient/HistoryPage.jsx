@@ -76,22 +76,22 @@ const HistoryPage = () => {
                 className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none w-full md:w-64 shadow-sm"
               />
            </div>
-           <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+           <div className="flex items-center bg-slate-100 rounded-xl p-1">
               <button 
                 onClick={() => setFilter('all')}
-                className={`flex-1 min-w-[70px] px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filter === 'all' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-50'}`}
+                className={`flex-1 min-w-[70px] px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filter === 'all' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 All
               </button>
               <button 
                 onClick={() => setFilter('liver')}
-                className={`flex-1 min-w-[70px] px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filter === 'liver' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-50'}`}
+                className={`flex-1 min-w-[70px] px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filter === 'liver' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 Liver
               </button>
               <button 
                 onClick={() => setFilter('diabetes')}
-                className={`flex-1 min-w-[70px] px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filter === 'diabetes' ? 'bg-primary-600 text-white shadow-md' : 'text-slate-700 hover:bg-slate-50'}`}
+                className={`flex-1 min-w-[70px] px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${filter === 'diabetes' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
                 Diabetes
               </button>

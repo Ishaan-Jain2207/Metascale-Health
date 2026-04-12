@@ -80,7 +80,7 @@ const PatientList = () => {
               <div key={patient.id} className="card group hover:shadow-xl hover:border-primary-200 transition-all duration-300">
                  <div className="flex items-start justify-between mb-6">
                     <div className="flex items-center gap-4">
-                       <div className="w-14 h-14 bg-primary-100 text-primary-600 rounded-2xl flex items-center justify-center font-bold text-xl ring-4 ring-white group-hover:bg-primary-600 group-hover:text-white transition-all">
+                       <div className="w-14 h-14 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center font-bold text-xl ring-4 ring-primary-50 group-hover:bg-primary-600 group-hover:text-white transition-all">
                           {patient.full_name?.charAt(0)}
                        </div>
                        <div>
@@ -103,8 +103,8 @@ const PatientList = () => {
 
                  <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
                     <div className="flex gap-2">
-                       {patient.has_liver && <div className="text-saffron p-1 bg-saffron/10 rounded-lg" title="Liver Screening Available"><Activity size={16} /></div>}
-                       {patient.has_diabetes && <div className="text-saffron-deep p-1 bg-saffron-deep/10 rounded-lg" title="Diabetes Screening Available"><Stethoscope size={16} /></div>}
+                       {Boolean(patient.has_liver) && <div className="text-saffron p-1 bg-saffron/10 rounded-lg" title="Liver Screening Available"><Activity size={16} /></div>}
+                       {Boolean(patient.has_diabetes) && <div className="text-saffron-deep p-1 bg-saffron-deep/10 rounded-lg" title="Diabetes Screening Available"><Stethoscope size={16} /></div>}
                     </div>
                     <Link 
                       to={`/doctor/patients/${patient.id}`} 
