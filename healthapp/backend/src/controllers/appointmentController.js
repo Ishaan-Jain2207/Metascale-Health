@@ -39,8 +39,8 @@ exports.bookAppointment = async (req, res, next) => {
     // ─── STAGE 1: CLINICAL TIME VALIDATION ────────────────────────────────────
     // Extraction: Splitting HH:MM to perform granular integer comparison.
     const [hours, minutes] = appt_time.split(':').map(Number);
-    if (hours < 8 || (hours >= 22 && minutes > 0) || hours > 22) {
-      return sendError(res, 'Temporal Violation: Clinical hours are restricted to 08:00 - 22:00.', 400);
+    if (hours < 8 || hours > 21 || (hours === 21 && minutes > 0)) {
+      return sendError(res, 'Temporal Violation: Clinical hours are restricted to 08:00 - 21:00.', 400);
     }
 
     // ─── STAGE 2: TEMPORAL HORIZON VALIDATION ─────────────────────────────────
@@ -48,11 +48,11 @@ exports.bookAppointment = async (req, res, next) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Ground zero for date comparison.
     
-    const yearEnd = new Date(today.getFullYear(), 11, 31);
-    yearEnd.setHours(23, 59, 59, 999);
+    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    monthEnd.setHours(23, 59, 59, 999);
 
-    if (requestedDate < today || requestedDate > yearEnd) {
-      return sendError(res, 'Protocol Deviation: Appointments must be within the current calendar year.', 400);
+    if (requestedDate < today || requestedDate > monthEnd) {
+      return sendError(res, 'Protocol Deviation: Appointments must be strictly within the current month.', 400);
     }
 
     // ─── STAGE 3: RESOURCE COLLISION CHECK ────────────────────────────────────

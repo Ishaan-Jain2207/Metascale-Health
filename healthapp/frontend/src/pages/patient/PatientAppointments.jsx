@@ -22,7 +22,9 @@ const PatientAppointments = () => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const today = new Date().toISOString().split('T')[0];
+  const todayDate = new Date();
+  const today = todayDate.toISOString().split('T')[0];
+  const endOfMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0, 12).toISOString().split('T')[0];
   const [newAppt, setNewAppt] = useState({
     doctor_id: '',
     appt_date: '',
@@ -54,8 +56,8 @@ const PatientAppointments = () => {
     setError('');
 
     // 1. Time Scope Validation (8:00 AM - 9:00 PM)
-    const hour = parseInt(newAppt.appt_time.split(':')[0]);
-    if (hour < 8 || hour >= 21) {
+    const [hours, minutes] = newAppt.appt_time.split(':').map(Number);
+    if (hours < 8 || hours > 21 || (hours === 21 && minutes > 0)) {
       return setError('Clinical Hours: Consultations must be scheduled between 08:00 AM and 09:00 PM.');
     }
 
@@ -119,6 +121,7 @@ const PatientAppointments = () => {
                     <input 
                       type="date" 
                       min={today}
+                      max={endOfMonth}
                       value={newAppt.appt_date}
                       onChange={(e) => setNewAppt({...newAppt, appt_date: e.target.value})}
                       required
