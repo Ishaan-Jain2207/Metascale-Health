@@ -157,7 +157,7 @@ const DoctorAppointments = () => {
                         <div className="flex gap-2">
                            <button 
                              onClick={() => updateStatus(appt.id, 'completed')}
-                             className="p-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl shadow-lg shadow-primary-100 flex items-center justify-center"
+                             className="p-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg shadow-green-100 flex items-center justify-center"
                              title="Mark as Completed"
                            >
                               <Check size={20} />
@@ -184,23 +184,7 @@ const DoctorAppointments = () => {
 
          {/* Sidebar: Past Records Insight */}
          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-slate-900">Patient Insights</h2>
-            <div className="bg-ink text-white rounded-3xl p-8 relative overflow-hidden shadow-2xl border border-white/10">
-               <div className="absolute top-0 right-0 p-4 opacity-5">
-                  <MessageSquare size={80} />
-               </div>
-               <h3 className="text-lg font-bold mb-4 relative z-10 text-saffron">Clinical Correlation Index</h3>
-               <div className="space-y-4 relative z-10">
-                  <div className="flex justify-between text-xs font-bold uppercase text-slate-400">
-                     <span>Observation Alignment</span>
-                     <span>92%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                     <div className="h-full bg-saffron w-[92%] rounded-full shadow-[0_0_12px_rgba(247,147,30,0.4)]"></div>
-                  </div>
-                  <p className="text-xs text-slate-400 leading-relaxed font-bold uppercase tracking-tight pt-4">Your clinical notes match automated screening indicators in 9 out of 10 cases this month.</p>
-               </div>
-            </div>
+            {/* Patient Insights card removed */}
 
             <div className="card space-y-4">
                <h3 className="font-bold text-slate-900 flex items-center gap-2"><History size={18} className="text-slate-400" /> Completed Visits</h3>
