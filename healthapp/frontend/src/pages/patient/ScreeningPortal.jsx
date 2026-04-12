@@ -14,6 +14,7 @@ import {
 const ScreeningPortal = () => {
   return (
     <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="text-center space-y-4">
         <h1 className="text-5xl font-display font-bold text-slate-900 tracking-tight">Metascale Health Portal</h1>
         <p className="text-slate-500 max-w-2xl mx-auto text-lg font-medium leading-relaxed">
           Select a specialized diagnostic module to initiate a clinical risk assessment powered by metascale health logic.
