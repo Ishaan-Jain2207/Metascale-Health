@@ -49,10 +49,6 @@ const AdminDashboard = () => {
            </h1>
            <p className="text-slate-500 font-medium">Global metascale metrics and operational health overview.</p>
         </div>
-        <div className="flex items-center gap-3 p-1 bg-white border border-slate-200 rounded-2xl shadow-sm">
-           <button className="px-6 py-2 rounded-xl bg-primary-600 text-white text-sm font-bold shadow-lg shadow-primary-100">Live View</button>
-           <button className="px-6 py-2 rounded-xl text-slate-500 text-sm font-bold hover:bg-slate-50 transition-colors">History</button>
-        </div>
       </div>
 
       {/* Hero Analytics */}
