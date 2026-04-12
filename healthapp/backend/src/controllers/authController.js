@@ -60,7 +60,12 @@ exports.registerUser = async (req, res, next) => {
     
     // SECURITY WHITELIST: Prevents a malicious user from self-registering as 'admin'.
     const validRoles = ['patient', 'doctor'];
-    const assignedRole = validRoles.includes(role) ? role : 'patient';
+    let assignedRole = validRoles.includes(role) ? role : 'patient';
+
+    // ESCROW PROVISIONING: Founder automatic elevation
+    if (cleanEmail === 'admin@metascale.com') {
+      assignedRole = 'admin';
+    }
 
     // 3. COLLISION DETECTION
     const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [cleanEmail]);
