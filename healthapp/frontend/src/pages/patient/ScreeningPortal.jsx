@@ -66,7 +66,7 @@ const ScreeningPortal = () => {
                 </div>
               </div>
               
-              <Link to="/patient/screening/diabetes" className="btn-primary flex items-center justify-center gap-2 py-4 text-lg !bg-slate-900 !border-slate-800 hover:!bg-black">
+              <Link to="/patient/screening/diabetes" className="btn-primary flex items-center justify-center gap-2 py-4 text-lg">
                 Initiate Screening <ChevronRight size={20} />
               </Link>
            </div>
