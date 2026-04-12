@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useParams } from 'react-router-dom';
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -19,13 +19,60 @@ import api from '../../services/api';
 
 const PredictionResult = () => {
   const location = useLocation();
-  const { result } = location.state || {}; // Using destructuring as per original
-  const type = location.state?.type;
-  const [assessmentInsights, setAssessmentInsights] = React.useState('');
-  const [loadingAssessment, setLoadingAssessment] = React.useState(false);
-  const [assessmentError, setAssessmentError] = React.useState('');
+  const { type: paramType, id } = useParams();
+  const { result: passedResult } = location.state || {}; 
+  const type = location.state?.type || paramType;
+  
+  const [activeResult, setActiveResult] = React.useState(passedResult);
+  const [loadingContext, setLoadingContext] = React.useState(!passedResult?.features);
 
-  if (!result) {
+  React.useEffect(() => {
+    const fetchFullContext = async () => {
+       if (passedResult?.features) {
+          setLoadingContext(false);
+          return;
+       }
+       if (id && type) {
+          try {
+             const res = await api.get(`/predict/detail/${type}/${id}`);
+             if (res.data.success) {
+                const dbRec = res.data.data;
+                const { 
+                   id: _id, user_id, type: _t, prediction, confidence, risk_band, 
+                   interpretation, recommendations, is_reviewed, doctor_comment, doctor_flag, created_at, updated_at,
+                   ...rawFeatures 
+                } = dbRec;
+                
+                setActiveResult(prev => ({
+                   ...(prev || {}),
+                   riskBand: prev?.riskBand || dbRec.risk_band,
+                   interpretation: prev?.interpretation || dbRec.interpretation,
+                   recommendations: prev?.recommendations || dbRec.recommendations,
+                   features: rawFeatures
+                }));
+             }
+          } catch (err) {
+             console.error("Failed to fetch full clinical context", err);
+          } finally {
+             setLoadingContext(false);
+          }
+       } else {
+          setLoadingContext(false);
+       }
+    };
+    fetchFullContext();
+  }, [id, type, passedResult]);
+
+  if (loadingContext) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 animate-pulse">
+        <Loader2 className="animate-spin text-saffron" size={40} />
+        <h2 className="text-2xl font-bold text-slate-900">Retrieving Clinical Telemetry...</h2>
+      </div>
+    );
+  }
+
+  if (!activeResult) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
         <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-slate-400">
@@ -133,12 +180,12 @@ const PredictionResult = () => {
             <div className="grid md:grid-cols-5 gap-8 items-center">
                <div className="md:col-span-2 flex flex-col items-center text-center space-y-4 p-8 rounded-3xl border-2 border-dashed border-slate-100 bg-slate-50/50">
                   <div className="w-20 h-20 rounded-full bg-white shadow-xl flex items-center justify-center">
-                     {getRiskIcon(result.riskBand)}
+                     {getRiskIcon(activeResult.riskBand)}
                   </div>
                   <div>
                      <p className="text-xs text-slate-500 font-bold uppercase mb-1">Risk Band</p>
-                     <p className={`text-2xl font-bold py-1 px-4 rounded-full border ${getRiskColor(result.riskBand)}`}>
-                        {result.riskBand} Risk
+                     <p className={`text-2xl font-bold py-1 px-4 rounded-full border ${getRiskColor(activeResult.riskBand)}`}>
+                        {activeResult.riskBand} Risk
                      </p>
                   </div>
                </div>
@@ -146,22 +193,22 @@ const PredictionResult = () => {
                <div className="md:col-span-3 space-y-4">
                   <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Clinical Interpretation</h2>
                   <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed font-medium text-lg">
-                     "{result.interpretation}"
+                     "{activeResult.interpretation}"
                   </div>
                </div>
             </div>
 
             {/* Features/Parameters Display */}
-            {result.features && Object.keys(result.features).length > 0 && (
+            {activeResult.features && Object.keys(activeResult.features).length > 0 && (
                <div className="space-y-6 pt-6 border-t border-slate-100">
                   <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                      <Activity className="text-saffron" size={24} /> Clinical Parameters Submitted
                   </h3>
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                     {Object.entries(result.features).map(([key, value]) => (
+                     {Object.entries(activeResult.features).map(([key, value]) => (
                         <div key={key} className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col justify-center">
-                           <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest truncate" title={key.replace(/_/g, ' ')}>
-                              {key.replace(/_/g, ' ')}
+                           <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest truncate" title={key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')}>
+                              {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')}
                            </p>
                            <p className="text-lg font-bold text-slate-900">{String(value)}</p>
                         </div>
@@ -176,7 +223,7 @@ const PredictionResult = () => {
                   <CheckCircle2 className="text-saffron" /> Recommendations & Next Steps
                </h3>
                <div className="grid md:grid-cols-2 gap-4">
-                  {(result.recommendations?.length > 0 ? result.recommendations : [
+                  {(activeResult.recommendations?.length > 0 ? activeResult.recommendations : [
                      "Schedule a formal consultation with a specialized clinician to review these preliminary insights.",
                      "Maintain a consistent biometric log (blood pressure, fasting glucose, weight) prior to your appointment.",
                      "Consider foundational nutritional guidance to stabilize metabolic volatility.",
@@ -207,7 +254,7 @@ const PredictionResult = () => {
          <div className="flex items-center gap-6">
             <Link 
               to="/patient/appointments" 
-              state={{ prefill: { type, risk: result.riskBand } }}
+              state={{ prefill: { type, risk: activeResult.riskBand } }}
               className="flex items-center gap-2 text-saffron font-bold hover:underline"
             >
                Schedule Consultation <ChevronRight size={16} />
