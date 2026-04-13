@@ -43,7 +43,8 @@ const HistoryPage = () => {
   };
 
   const filteredHistory = history.filter(item => {
-    const matchesFilter = filter === 'all' || item.type === filter;
+    // Case-insensitive filtering to ensure robustness against data variations
+    const matchesFilter = filter === 'all' || item.type?.toLowerCase() === filter.toLowerCase();
     const matchesSearch = item.risk_band.toLowerCase().includes(search.toLowerCase()) || 
                          item.type.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
