@@ -106,13 +106,12 @@ if __name__ == "__main__":
         input_data = json.loads(sys.argv[2])
         
         if service_type == 'liver':
-            print(json.dumps(predict_liver(input_data)))
+            sys.stdout.write(json.dumps(predict_liver(input_data)))
         elif service_type == 'diabetes':
-            print(json.dumps(predict_diabetes(input_data)))
+            sys.stdout.write(json.dumps(predict_diabetes(input_data)))
         else:
-            print(json.dumps({"status": "error", "message": "Unknown service type"}))
+            sys.stdout.write(json.dumps({"status": "error", "message": "Unknown service type"}))
             
     except Exception as e:
-        # Standardize error output so Node.js can catch it
-        print(json.dumps({"status": "error", "message": str(e)}))
+        sys.stdout.write(json.dumps({"status": "error", "message": str(e)}))
         sys.exit(1)

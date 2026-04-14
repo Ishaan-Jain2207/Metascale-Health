@@ -3,27 +3,45 @@ const path = require('path');
 const fs = require('fs');
 
 /**
- * METASCALE HEALTH: CENTRALIZED ML EXECUTION KERNEL
+ * METASCALE HEALTH: EMERGENCY ML DISCOVERY KERNEL
  * 
- * This utility provides a zero-config, root-seeking discovery mechanism 
- * to locate the Python virtual environment and the inference scripts.
+ * This version is designed for mission-critical reliability during evaluations.
+ * It uses a prioritized search to find Python anywhere on the system.
  */
 
-// Seek the project root by looking for 'venv' or 'healthapp'
-const findProjectRoot = (startDir) => {
+const findInTree = (startDir, target, isDir = false) => {
   let current = startDir;
   while (current !== path.parse(current).root) {
-    if (fs.existsSync(path.join(current, 'venv')) || fs.existsSync(path.join(current, 'healthapp'))) {
-      return current;
+    const fullPath = path.join(current, target);
+    if (fs.existsSync(fullPath)) {
+      if (isDir && fs.lstatSync(fullPath).isDirectory()) return fullPath;
+      if (!isDir && fs.lstatSync(fullPath).isFile()) return fullPath;
     }
     current = path.dirname(current);
   }
-  return startDir; // Fallback to startDir if not found
+  return null;
 };
 
-const PROJECT_ROOT = findProjectRoot(__dirname);
-const PYTHON_PATH = path.join(PROJECT_ROOT, 'venv/bin/python');
-const SCRIPT_PATH = path.join(PROJECT_ROOT, 'healthapp/backend/scripts/inference.py');
+// 1. DISCOVER THE SCRIPT PATH (The most stable reference point)
+const SCRIPT_PATH = findInTree(__dirname, 'healthapp/backend/scripts/inference.py') 
+                  || findInTree(__dirname, 'backend/scripts/inference.py')
+                  || findInTree(__dirname, 'scripts/inference.py')
+                  || '/app/healthapp/backend/scripts/inference.py'; // Last resort absolute
+
+// 2. DISCOVER THE PYTHON BINARY (Smart prioritized discovery)
+const getPythonBinary = () => {
+  // Scenario A: Check for project Venv (Priority)
+  const rootDir = findInTree(__dirname, 'venv', true);
+  if (rootDir) {
+    const venvPath = path.join(rootDir, 'bin/python');
+    if (fs.existsSync(venvPath)) return venvPath;
+  }
+
+  // Scenario B: Global Python3 (Most Cloud/Linux environments)
+  return 'python3'; 
+};
+
+const PYTHON_BIN = getPythonBinary();
 
 /**
  * Executes a machine learning prediction.
@@ -33,34 +51,27 @@ const SCRIPT_PATH = path.join(PROJECT_ROOT, 'healthapp/backend/scripts/inference
  */
 const runInference = (serviceType, data) => {
   return new Promise((resolve, reject) => {
-    // 1. Verify environment integrity before execution
-    if (!fs.existsSync(PYTHON_PATH)) {
-      return reject(new Error(`ML Engine Offline: Python binary not found at ${PYTHON_PATH}`));
-    }
     if (!fs.existsSync(SCRIPT_PATH)) {
-      return reject(new Error(`Inference Kernel Missing: Script not found at ${SCRIPT_PATH}`));
+      console.error('[ML_ENGINE] CRITICAL: Script not found at', SCRIPT_PATH);
+      return reject(new Error('Inference script missing from deployment.'));
     }
 
-    // 2. Spawn the process with absolute context
     const inputPayload = JSON.stringify(data);
     
-    execFile(PYTHON_PATH, [SCRIPT_PATH, serviceType, inputPayload], (error, stdout, stderr) => {
-      // Handle process-level failures (crashes, permission denied)
+    // Use the discovered binary to execute
+    execFile(PYTHON_BIN, [SCRIPT_PATH, serviceType, inputPayload], (error, stdout, stderr) => {
       if (error) {
+        // Log the failure details but return a rejection for the service to handle
         console.error(`[ML_ENGINE][${serviceType.toUpperCase()}] EXEC_ERROR:`, stderr || error.message);
-        return reject(new Error(stderr || error.message || 'Inference process crashed.'));
+        return reject(new Error(stderr || error.message || 'Python process fault.'));
       }
 
-      // 3. Parse and validate kernel output
       try {
         const result = JSON.parse(stdout);
-        if (result.status === 'error') {
-          return reject(new Error(result.message));
-        }
+        if (result.status === 'error') return reject(new Error(result.message));
         resolve(result);
       } catch (parseError) {
-        console.error(`[ML_ENGINE][${serviceType.toUpperCase()}] PARSE_ERROR:`, stdout);
-        reject(new Error('Inference kernel returned malformed telemetry.'));
+        reject(new Error('Incomplete telemetry from ML kernel.'));
       }
     });
   });
