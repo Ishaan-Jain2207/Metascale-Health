@@ -95,6 +95,7 @@ const PredictionResult = () => {
       case 'Elevated': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
       case 'Severe': return 'bg-orange-100 text-orange-700 border-orange-200';
       case 'Critical': return 'bg-red-100 text-red-700 border-red-200';
+      case 'Service Offline': return 'bg-slate-100 text-slate-500 border-slate-200 opacity-80';
       default: return 'bg-slate-100 text-slate-700 border-slate-200';
     }
   };
@@ -102,6 +103,7 @@ const PredictionResult = () => {
   const getRiskIcon = (band) => {
     if (band === 'Minimal') return <CheckCircle2 className="text-green-600" size={32} />;
     if (band === 'Elevated') return <AlertTriangle className="text-yellow-600" size={32} />;
+    if (band === 'Service Offline') return <Activity className="text-slate-400 animate-pulse" size={32} />;
     return <XCircle className="text-red-600" size={32} />;
   };
 

@@ -21,51 +21,10 @@
  * actionable medical recommendations based on specific physiological outliers.
  */
 
-/**
- * INTERNAL: CLINICAL INFERENCE COMPUTATION (_runInference)
- * 
- * Logic:
- *   - Baseline: Starts at a 'Calibrated Low' score of 30.
- *   - Physiological Triage: Iteratively increments the score based on 
- *     biomarker thresholds provided by standard clinical guidelines (e.g., AASLD).
- *   - Normalization: The final sum is clamped between 0 and 100 to 
- *     facilitate confidence-level calculation.
- */
-const { execFile } = require('child_process');
-const path = require('path');
-
-/**
- * INTERNAL: CLINICAL INFERENCE COMPUTATION (_runInference)
- * 
- * Logic: Spawns the Python inference engine to perform Random Forest analysis
- * using the trained .pkl models from the project notebooks.
- */
-const _runInference = (features) => {
-  return new Promise((resolve, reject) => {
-    const pythonPath = path.join(__dirname, '../../../../venv/bin/python');
-    const scriptPath = path.join(__dirname, '../../scripts/inference.py');
-
-    execFile(pythonPath, [scriptPath, 'liver', JSON.stringify(features)], (error, stdout, stderr) => {
-      if (error) {
-        console.error('[ML ENGINE ERROR]:', stderr);
-        return reject(new Error(stderr || 'Inference engine failure'));
-      }
-      try {
-        const result = JSON.parse(stdout);
-        if (result.status === 'error') {
-          return reject(new Error(result.message));
-        }
-        resolve(result);
-      } catch (e) {
-        reject(new Error('Invalid output from inference engine (BOM or partial JSON)'));
-      }
-    });
-  });
-};
+const { runInference } = require('../utils/mlEngine');
 
 /**
  * INTERNAL: RISK STRATIFICATION MAPPING
- * Bridges the gap between numerical probability and clinical risk bands.
  */
 const _toRiskLabel = (prob) => {
   const score = prob * 100;
@@ -76,8 +35,7 @@ const _toRiskLabel = (prob) => {
 };
 
 /**
- * INTERNAL: DASHBOARD SEMANTICS (_toRiskBand)
- * Maps the risk profile to the UI-standardized semantic tiers.
+ * INTERNAL: DASHBOARD SEMANTICS
  */
 const _toRiskBand = (prob) => {
   const score = prob * 100;
@@ -88,36 +46,31 @@ const _toRiskBand = (prob) => {
 };
 
 /**
- * INTERNAL: NARRATIVE INTERPRETATIONMAP
- * Pre-calibrated clinical summaries for the patient portal.
+ * INTERNAL: NARRATIVE INTERPRETATION
  */
 const _interpretation = (prob, label) => {
   const map = {
-    Low: 'Liver indicators are within physiological range. Maintain regular hydration.',
+    Low:      'Liver indicators are within physiological range. Maintain regular hydration.',
     Moderate: 'Mild elevation observed. Monitoring biometrics via quarterly check-ups is advised.',
-    High: 'Significant enzymatic elevation detected. Specialist evaluation is required.',
+    High:     'Significant enzymatic elevation detected. Specialist evaluation is required.',
     'Very High': 'High probability of hepatic stress. Seek immediate medical diagnostic review.',
   };
   return map[label] || 'Specialist consultation necessary.';
 };
 
 /**
- * INTERNAL: INTERVENTION ENGINE (_recommendations)
+ * INTERNAL: INTERVENTION ENGINE
  */
 const _recommendations = (features, label) => {
   const recs = [];
-
   if (['High', 'Very High'].includes(label)) {
     recs.push('Consult a Hepatologist for a comprehensive FibroScan.');
     recs.push('Immediate panel verification (LFT, PT/INR) required.');
   }
-
-  // Lifestyle advice still valid based on raw features
-  if (features.alcoholPattern === 'regular' || features.alcoholPattern === 'heavy') {
+  if (['regular', 'heavy'].includes(String(features.alcoholPattern).toLowerCase())) {
     recs.push('Abstain from alcohol to reduce metabolic strain on hepatocytes.');
   }
-  if (features.albumin < 3.5) recs.push('Review nutritional protein markers with a clinical dietician.');
-
+  if (parseFloat(features.albumin) < 3.5) recs.push('Review nutritional protein markers with a clinical dietician.');
   recs.push('Avoid non-prescription hepatotoxic substances.');
   return recs;
 };
@@ -126,40 +79,52 @@ const _recommendations = (features, label) => {
  * PUBLIC EXPORT: CLINICAL PREDICTION ORCHESTRATOR (predict)
  * 
  * Logic:
- *   - Orchestrates the call to the Python ML kernel.
- *   - Wraps the ML output into the application's reporting schema.
+ *   - Pure ML Pipeline: Strictly uses trained Random Forest kernel via mlEngine utility.
  */
 const predict = async (features) => {
   try {
-    const mlResult = await _runInference(features);
+    // 1. Sanitize features for ML compatibility
+    const sanitized = {
+      age: parseFloat(features.age || 0),
+      gender: String(features.gender || 'male').toLowerCase(),
+      totalBilirubin: parseFloat(features.totalBilirubin || 0),
+      directBilirubin: parseFloat(features.directBilirubin || 0),
+      alkalinePhosphotase: parseFloat(features.alkalinePhosphotase || 0),
+      alamineAminotransferase: parseFloat(features.alamineAminotransferase || 0),
+      aspartateAminotransferase: parseFloat(features.aspartateAminotransferase || 0),
+      totalProteins: parseFloat(features.totalProteins || 0),
+      albumin: parseFloat(features.albumin || 0),
+      albuminGlobulinRatio: parseFloat(features.albuminGlobulinRatio || 0)
+    };
+
+    // 2. Execute Primary ML Inference via centralized engine
+    const mlResult = await runInference('liver', sanitized);
     const prob = mlResult.probability;
     const label = _toRiskLabel(prob);
     const score = Math.round(prob * 100);
 
     return {
-      prediction: label,
-      confidence: parseFloat(prob.toFixed(4)),
-      riskBand: _toRiskBand(prob),
-      riskScore: score,
-      interpretation: _interpretation(prob, label),
+      prediction:      label,
+      confidence:      parseFloat(prob.toFixed(4)),
+      riskBand:        _toRiskBand(prob),
+      riskScore:       score,
+      interpretation:  _interpretation(prob, label),
       recommendations: _recommendations(features, label),
-      ml_prediction: mlResult.prediction // "Disease" or "No Disease"
+      ml_prediction:   mlResult.prediction,
+      features:        sanitized
     };
   } catch (err) {
-    console.error('[LIVER SERVICE] ML Integration Fault:', err);
-    // Graceful error reporting for the engine state
+    console.error('[LIVER SERVICE] ML Core Error:', err.message);
+    // Graceful error state for UI stability
     return {
       prediction: 'Inference Failure',
       confidence: 0,
       riskBand: 'Service Offline',
       riskScore: 0,
-      interpretation: `ML Engine Critical Fault: ${err.message}. Please verify the Python environment and required packages (pandas, joblib, scikit-learn).`,
-      recommendations: ['Check system connection.', 'Retry clinical screening.']
+      interpretation: `ML Engine Critical Fault: ${err.message}. Please verify the Python environment and required packages.`,
+      recommendations: ['Check system connection.', 'Ensure virtual environment is configured correctly.']
     };
   }
 };
 
 module.exports = { predict };
-
-
-
