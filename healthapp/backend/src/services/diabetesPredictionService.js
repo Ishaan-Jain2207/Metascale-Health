@@ -43,11 +43,11 @@ const _runInference = (features) => {
   return new Promise((resolve, reject) => {
     const pythonPath = path.join(__dirname, '../../../../venv/bin/python');
     const scriptPath = path.join(__dirname, '../../scripts/inference.py');
-    
+
     execFile(pythonPath, [scriptPath, 'diabetes', JSON.stringify(features)], (error, stdout, stderr) => {
       if (error) {
         console.error('[ML ENGINE ERROR]:', stderr);
-        return reject(new Error('Inference engine failure'));
+        return reject(new Error(stderr || 'Inference engine failure'));
       }
       try {
         const result = JSON.parse(stdout);
@@ -56,7 +56,7 @@ const _runInference = (features) => {
         }
         resolve(result);
       } catch (e) {
-        reject(new Error('Invalid output from inference engine'));
+        reject(new Error('Invalid output from inference engine (BOM or partial JSON)'));
       }
     });
   });
@@ -92,9 +92,9 @@ const _toRiskBand = (prob) => {
  */
 const _interpretation = (label) => {
   const map = {
-    Low:         'Metabolic indicators suggest low immediate risk. Maintain your current active profile.',
-    Moderate:    'Modifiable risk factors detected. Focus on incremental dietary and activity adjustments.',
-    High:        'Risk vectors are elevated. A clinical blood glucose (Fasting/HbA1c) audit is recommended.',
+    Low: 'Metabolic indicators suggest low immediate risk. Maintain your current active profile.',
+    Moderate: 'Modifiable risk factors detected. Focus on incremental dietary and activity adjustments.',
+    High: 'Risk vectors are elevated. A clinical blood glucose (Fasting/HbA1c) audit is recommended.',
     'Very High': 'Profile suggests high metabolic stress. Immediate specialist consultation for T2D screening is required.',
   };
   return map[label];
@@ -105,7 +105,7 @@ const _interpretation = (label) => {
  */
 const _recommendations = (features, label) => {
   const recs = [];
-  
+
   if (['High', 'Very High'].includes(label)) {
     recs.push('Consult an Endocrinologist for an HbA1c diagnostic benchmark.');
     recs.push('Initiate a daily fasting blood glucose tracking log.');
@@ -119,7 +119,7 @@ const _recommendations = (features, label) => {
     recs.push('Restrict processed carbohydrate and refined sugar intake.');
   }
   if (features.stress === 'always') recs.push('Explore cortisol-management techniques (Mindfulness, Yoga).');
-  
+
   return recs;
 };
 
@@ -138,24 +138,24 @@ const predict = async (features) => {
     const score = Math.round(prob * 100);
 
     return {
-      prediction:      label,
-      confidence:      parseFloat(prob.toFixed(4)),
-      riskBand:        _toRiskBand(prob),
-      riskScore:       score,
-      interpretation:  _interpretation(label),
+      prediction: label,
+      confidence: parseFloat(prob.toFixed(4)),
+      riskBand: _toRiskBand(prob),
+      riskScore: score,
+      interpretation: _interpretation(label),
       recommendations: _recommendations(features, label),
-      ml_prediction:   mlResult.prediction // "Diabetic" or "Not Diabetic"
+      ml_prediction: mlResult.prediction // "Diabetic" or "Not Diabetic"
     };
   } catch (err) {
     console.error('[DIABETES SERVICE] ML Integration Fault:', err);
-    // Graceful fallback to a neutral state if ML fails
+    // Graceful error reporting for the engine state
     return {
-      prediction: 'Review Required',
+      prediction: 'Inference Failure',
       confidence: 0,
-      riskBand: 'Unknown',
+      riskBand: 'Service Offline',
       riskScore: 0,
-      interpretation: 'Metabolic engine offline. Please consult a clinician.',
-      recommendations: ['Check system connection.', 'Manual benchmark required.']
+      interpretation: `Metabolic Engine Critical Fault: ${err.message}. Please verify the Python environment and required packages (pandas, joblib, scikit-learn).`,
+      recommendations: ['Check system connection.', 'Retry clinical screening.']
     };
   }
 };

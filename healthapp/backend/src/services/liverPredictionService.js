@@ -44,11 +44,11 @@ const _runInference = (features) => {
   return new Promise((resolve, reject) => {
     const pythonPath = path.join(__dirname, '../../../../venv/bin/python');
     const scriptPath = path.join(__dirname, '../../scripts/inference.py');
-    
+
     execFile(pythonPath, [scriptPath, 'liver', JSON.stringify(features)], (error, stdout, stderr) => {
       if (error) {
         console.error('[ML ENGINE ERROR]:', stderr);
-        return reject(new Error('Inference engine failure'));
+        return reject(new Error(stderr || 'Inference engine failure'));
       }
       try {
         const result = JSON.parse(stdout);
@@ -57,7 +57,7 @@ const _runInference = (features) => {
         }
         resolve(result);
       } catch (e) {
-        reject(new Error('Invalid output from inference engine'));
+        reject(new Error('Invalid output from inference engine (BOM or partial JSON)'));
       }
     });
   });
@@ -93,9 +93,9 @@ const _toRiskBand = (prob) => {
  */
 const _interpretation = (prob, label) => {
   const map = {
-    Low:      'Liver indicators are within physiological range. Maintain regular hydration.',
+    Low: 'Liver indicators are within physiological range. Maintain regular hydration.',
     Moderate: 'Mild elevation observed. Monitoring biometrics via quarterly check-ups is advised.',
-    High:     'Significant enzymatic elevation detected. Specialist evaluation is required.',
+    High: 'Significant enzymatic elevation detected. Specialist evaluation is required.',
     'Very High': 'High probability of hepatic stress. Seek immediate medical diagnostic review.',
   };
   return map[label] || 'Specialist consultation necessary.';
@@ -106,7 +106,7 @@ const _interpretation = (prob, label) => {
  */
 const _recommendations = (features, label) => {
   const recs = [];
-  
+
   if (['High', 'Very High'].includes(label)) {
     recs.push('Consult a Hepatologist for a comprehensive FibroScan.');
     recs.push('Immediate panel verification (LFT, PT/INR) required.');
@@ -117,7 +117,7 @@ const _recommendations = (features, label) => {
     recs.push('Abstain from alcohol to reduce metabolic strain on hepatocytes.');
   }
   if (features.albumin < 3.5) recs.push('Review nutritional protein markers with a clinical dietician.');
-  
+
   recs.push('Avoid non-prescription hepatotoxic substances.');
   return recs;
 };
@@ -137,24 +137,24 @@ const predict = async (features) => {
     const score = Math.round(prob * 100);
 
     return {
-      prediction:      label,
-      confidence:      parseFloat(prob.toFixed(4)),
-      riskBand:        _toRiskBand(prob),
-      riskScore:       score,
-      interpretation:  _interpretation(prob, label),
+      prediction: label,
+      confidence: parseFloat(prob.toFixed(4)),
+      riskBand: _toRiskBand(prob),
+      riskScore: score,
+      interpretation: _interpretation(prob, label),
       recommendations: _recommendations(features, label),
-      ml_prediction:   mlResult.prediction // "Disease" or "No Disease"
+      ml_prediction: mlResult.prediction // "Disease" or "No Disease"
     };
   } catch (err) {
     console.error('[LIVER SERVICE] ML Integration Fault:', err);
-    // Graceful fallback to a neutral state if ML fails
+    // Graceful error reporting for the engine state
     return {
-      prediction: 'Review Required',
+      prediction: 'Inference Failure',
       confidence: 0,
-      riskBand: 'Unknown',
+      riskBand: 'Service Offline',
       riskScore: 0,
-      interpretation: 'The diagnostic engine is currently unavailable. Specialist review is required.',
-      recommendations: ['Contact facility support.', 'Manual review recommended.']
+      interpretation: `ML Engine Critical Fault: ${err.message}. Please verify the Python environment and required packages (pandas, joblib, scikit-learn).`,
+      recommendations: ['Check system connection.', 'Retry clinical screening.']
     };
   }
 };
