@@ -30,54 +30,44 @@
  *   - Normalization: Scores are clamped to 100 to provide a probabilistic 
  *     confidence tier.
  */
+const { execFile } = require('child_process');
+const path = require('path');
+
+/**
+ * INTERNAL: METABOLIC INFERENCE COMPUTATION (_runInference)
+ * 
+ * Logic: Spawns the Python inference engine to perform Random Forest analysis
+ * using the trained .pkl models from the project notebooks.
+ */
 const _runInference = (features) => {
-  let score = 20; // Initial metabolic baseline.
-
-  const {
-    familyDiabetes, highBP, physicallyActive, bmi,
-    smoking, alcohol, sleepHours, soundSleep,
-    regularMedicine, junkFood, stress, bpLevel,
-    pregnancies, prediabetes, urinationFreq,
-    ageGroup, gender,
-  } = features;
-
-  // 1. HEREDITARY & CLINICAL HISTORY (Core Vectors)
-  if (familyDiabetes)  score += 15;
-  if (prediabetes)     score += 18;
-  if (highBP)          score += 10;
-
-  // 2. BIOMETRIC VOLUME (BMI Banding)
-  if (bmi >= 25 && bmi < 30) score += 8;
-  if (bmi >= 30 && bmi < 35) score += 14;
-  if (bmi >= 35)             score += 20;
-
-  // 3. LIFESTYLE VECTORS (Activity & Diet)
-  if (physicallyActive === 'none')    score += 10;
-  if (physicallyActive === 'lt30')    score += 5;
-  if (junkFood === 'often')           score += 6;
-  if (junkFood === 'veryOften')       score += 10;
-
-  // 4. METABOLIC DISRUPTORS (Sleep & Stress)
-  if (sleepHours < 6)     score += 7;
-  if (stress === 'veryOften')  score += 9;
-  if (stress === 'always')     score += 14;
-
-  // 5. SECONDARY PHYSIOLOGICAL SYMPTOMS
-  if (bpLevel === 'high') score += 10;
-  if (urinationFreq === 'quiteOften') score += 8;
-
-  // 6. LIFE-STAGE SENSITIVITY (Age-group weighting)
-  if (ageGroup === '50-59')       score += 10;
-  if (ageGroup === '60 or above') score += 15;
-
-  return Math.min(Math.max(Math.round(score), 0), 100);
+  return new Promise((resolve, reject) => {
+    const pythonPath = path.join(__dirname, '../../../../venv/bin/python');
+    const scriptPath = path.join(__dirname, '../../scripts/inference.py');
+    
+    execFile(pythonPath, [scriptPath, 'diabetes', JSON.stringify(features)], (error, stdout, stderr) => {
+      if (error) {
+        console.error('[ML ENGINE ERROR]:', stderr);
+        return reject(new Error('Inference engine failure'));
+      }
+      try {
+        const result = JSON.parse(stdout);
+        if (result.status === 'error') {
+          return reject(new Error(result.message));
+        }
+        resolve(result);
+      } catch (e) {
+        reject(new Error('Invalid output from inference engine'));
+      }
+    });
+  });
 };
 
 /**
  * INTERNAL: TIER CLASSIFICATION
- * Maps the risk score to clinical labels used in reporting.
+ * Maps the risk probability to clinical labels used in reporting.
  */
-const _toRiskLabel = (score) => {
+const _toRiskLabel = (prob) => {
+  const score = prob * 100;
   if (score < 25) return 'Low';
   if (score < 50) return 'Moderate';
   if (score < 75) return 'High';
@@ -88,7 +78,8 @@ const _toRiskLabel = (score) => {
  * INTERNAL: UI SEMANTIC BANDS (_toRiskBand)
  * Standardizes the risk visual language for the Patient Dashboard.
  */
-const _toRiskBand = (score) => {
+const _toRiskBand = (prob) => {
+  const score = prob * 100;
   if (score < 25) return 'Minimal';
   if (score < 50) return 'Elevated';
   if (score < 75) return 'Severe';
@@ -97,7 +88,7 @@ const _toRiskBand = (score) => {
 
 /**
  * INTERNAL: NARRATIVE INTERPRETATION
- * Provides a text-based summary of the metabolic state.
+ * Provides a text-based summary of the metabolic state based on probability.
  */
 const _interpretation = (label) => {
   const map = {
@@ -111,10 +102,6 @@ const _interpretation = (label) => {
 
 /**
  * INTERNAL: LIFESTYLE INTERVENTION ENGINE (_recommendations)
- * 
- * Logic:
- *   - Clinical Urgency: Suggests bloodwork for High/Very High bands.
- *   - Modifiable Behaviors: Targeting specific outliers in BMI, Diet, and Sleep.
  */
 const _recommendations = (features, label) => {
   const recs = [];
@@ -140,23 +127,40 @@ const _recommendations = (features, label) => {
  * PUBLIC EXPORT: DIABETES PREDICTION ORCHESTRATOR (predict)
  * 
  * Logic:
- *   - Aggregates the internal scoring, labeling, and intervention logic.
+ *   - Orchestrates the call to the Python ML kernel.
  *   - Returns a structured diagnostic payload for the backend control flow.
  */
-const predict = (features) => {
-  const score = _runInference(features);
-  const label = _toRiskLabel(score);
+const predict = async (features) => {
+  try {
+    const mlResult = await _runInference(features);
+    const prob = mlResult.probability;
+    const label = _toRiskLabel(prob);
+    const score = Math.round(prob * 100);
 
-  return {
-    prediction:      label,
-    confidence:      parseFloat((score / 100).toFixed(4)),
-    riskBand:        _toRiskBand(score),
-    riskScore:       score,
-    interpretation:  _interpretation(label),
-    recommendations: _recommendations(features, label),
-  };
+    return {
+      prediction:      label,
+      confidence:      parseFloat(prob.toFixed(4)),
+      riskBand:        _toRiskBand(prob),
+      riskScore:       score,
+      interpretation:  _interpretation(label),
+      recommendations: _recommendations(features, label),
+      ml_prediction:   mlResult.prediction // "Diabetic" or "Not Diabetic"
+    };
+  } catch (err) {
+    console.error('[DIABETES SERVICE] ML Integration Fault:', err);
+    // Graceful fallback to a neutral state if ML fails
+    return {
+      prediction: 'Review Required',
+      confidence: 0,
+      riskBand: 'Unknown',
+      riskScore: 0,
+      interpretation: 'Metabolic engine offline. Please consult a clinician.',
+      recommendations: ['Check system connection.', 'Manual benchmark required.']
+    };
+  }
 };
 
 module.exports = { predict };
+
 
 

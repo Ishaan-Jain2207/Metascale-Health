@@ -31,57 +31,44 @@
  *   - Normalization: The final sum is clamped between 0 and 100 to 
  *     facilitate confidence-level calculation.
  */
+const { execFile } = require('child_process');
+const path = require('path');
+
+/**
+ * INTERNAL: CLINICAL INFERENCE COMPUTATION (_runInference)
+ * 
+ * Logic: Spawns the Python inference engine to perform Random Forest analysis
+ * using the trained .pkl models from the project notebooks.
+ */
 const _runInference = (features) => {
-  let score = 30; // Calibrated clinical baseline.
-
-  const {
-    totalBilirubin, directBilirubin,
-    alkalinePhosphotase, alamineAminotransferase, aspartateAminotransferase,
-    totalProteins, albumin, albuminGlobulinRatio,
-    alcoholPattern, priorLiverDiagnosis, liverTestResult,
-    age, gender,
-  } = features;
-
-  // 1. BIOMARKER AUDIT: BILIRUBIN (Excretory Function)
-  if (totalBilirubin > 1.2)  score += 8;
-  if (totalBilirubin > 3.0)  score += 10;
-  if (directBilirubin > 0.4) score += 5;
-  if (directBilirubin > 1.0) score += 8;
-
-  // 2. BIOMARKER AUDIT: ENZYMES (Cellular Integrity)
-  if (alkalinePhosphotase > 120)  score += 7;
-  if (alkalinePhosphotase > 300)  score += 8;
-  if (alamineAminotransferase > 40)  score += 6;
-  if (alamineAminotransferase > 120) score += 8;
-  if (aspartateAminotransferase > 40)  score += 6;
-  if (aspartateAminotransferase > 120) score += 8;
-
-  // 3. BIOMARKER AUDIT: PROTEINS (Synthesis Capacity)
-  if (totalProteins < 6.0)        score += 5;
-  if (albumin < 3.5)              score += 8;
-  if (albuminGlobulinRatio < 1.0) score += 6;
-
-  // 4. LIFESTYLE MULTIPLIERS
-  if (alcoholPattern === 'regular') score += 10;
-  if (alcoholPattern === 'heavy')   score += 18;
-
-  // 5. HISTORICAL RISK VECTOR
-  if (priorLiverDiagnosis)              score += 15;
-  if (liverTestResult === 'mildAbnormal')   score += 8;
-  if (liverTestResult === 'clearAbnormal')  score += 18;
-
-  // 6. DEMOGRAPHIC SENSITIVITY
-  if (age > 50) score += 5;
-  if (gender === 'male') score += 3;
-
-  return Math.min(Math.max(Math.round(score), 0), 100);
+  return new Promise((resolve, reject) => {
+    const pythonPath = path.join(__dirname, '../../../../venv/bin/python');
+    const scriptPath = path.join(__dirname, '../../scripts/inference.py');
+    
+    execFile(pythonPath, [scriptPath, 'liver', JSON.stringify(features)], (error, stdout, stderr) => {
+      if (error) {
+        console.error('[ML ENGINE ERROR]:', stderr);
+        return reject(new Error('Inference engine failure'));
+      }
+      try {
+        const result = JSON.parse(stdout);
+        if (result.status === 'error') {
+          return reject(new Error(result.message));
+        }
+        resolve(result);
+      } catch (e) {
+        reject(new Error('Invalid output from inference engine'));
+      }
+    });
+  });
 };
 
 /**
  * INTERNAL: RISK STRATIFICATION MAPPING
- * Bridges the gap between numerical scores and clinical risk bands.
+ * Bridges the gap between numerical probability and clinical risk bands.
  */
-const _toRiskLabel = (score) => {
+const _toRiskLabel = (prob) => {
+  const score = prob * 100;
   if (score < 25) return 'Low';
   if (score < 50) return 'Moderate';
   if (score < 75) return 'High';
@@ -92,7 +79,8 @@ const _toRiskLabel = (score) => {
  * INTERNAL: DASHBOARD SEMANTICS (_toRiskBand)
  * Maps the risk profile to the UI-standardized semantic tiers.
  */
-const _toRiskBand = (score) => {
+const _toRiskBand = (prob) => {
+  const score = prob * 100;
   if (score < 25) return 'Minimal';
   if (score < 50) return 'Elevated';
   if (score < 75) return 'Severe';
@@ -103,7 +91,7 @@ const _toRiskBand = (score) => {
  * INTERNAL: NARRATIVE INTERPRETATIONMAP
  * Pre-calibrated clinical summaries for the patient portal.
  */
-const _interpretation = (score, label) => {
+const _interpretation = (prob, label) => {
   const map = {
     Low:      'Liver indicators are within physiological range. Maintain regular hydration.',
     Moderate: 'Mild elevation observed. Monitoring biometrics via quarterly check-ups is advised.',
@@ -115,11 +103,6 @@ const _interpretation = (score, label) => {
 
 /**
  * INTERNAL: INTERVENTION ENGINE (_recommendations)
- * 
- * Logic:
- *   - Urgency Tiering: Provides baseline directives for High-Risk bands.
- *   - Specificity: Injects directives based on individual biomarkers 
- *     (e.g., Albumin -> Dietary Protein).
  */
 const _recommendations = (features, label) => {
   const recs = [];
@@ -129,6 +112,7 @@ const _recommendations = (features, label) => {
     recs.push('Immediate panel verification (LFT, PT/INR) required.');
   }
 
+  // Lifestyle advice still valid based on raw features
   if (features.alcoholPattern === 'regular' || features.alcoholPattern === 'heavy') {
     recs.push('Abstain from alcohol to reduce metabolic strain on hepatocytes.');
   }
@@ -142,23 +126,40 @@ const _recommendations = (features, label) => {
  * PUBLIC EXPORT: CLINICAL PREDICTION ORCHESTRATOR (predict)
  * 
  * Logic:
- *   - Orchestrates the full internal pipeline from inference to recommendation.
- *   - Wraps the finalized profile into a structured schema for the persistence layer.
+ *   - Orchestrates the call to the Python ML kernel.
+ *   - Wraps the ML output into the application's reporting schema.
  */
-const predict = (features) => {
-  const score = _runInference(features);
-  const label = _toRiskLabel(score);
+const predict = async (features) => {
+  try {
+    const mlResult = await _runInference(features);
+    const prob = mlResult.probability;
+    const label = _toRiskLabel(prob);
+    const score = Math.round(prob * 100);
 
-  return {
-    prediction:      label,
-    confidence:      parseFloat((score / 100).toFixed(4)),
-    riskBand:        _toRiskBand(score),
-    riskScore:       score,
-    interpretation:  _interpretation(score, label),
-    recommendations: _recommendations(features, label),
-  };
+    return {
+      prediction:      label,
+      confidence:      parseFloat(prob.toFixed(4)),
+      riskBand:        _toRiskBand(prob),
+      riskScore:       score,
+      interpretation:  _interpretation(prob, label),
+      recommendations: _recommendations(features, label),
+      ml_prediction:   mlResult.prediction // "Disease" or "No Disease"
+    };
+  } catch (err) {
+    console.error('[LIVER SERVICE] ML Integration Fault:', err);
+    // Graceful fallback to a neutral state if ML fails
+    return {
+      prediction: 'Review Required',
+      confidence: 0,
+      riskBand: 'Unknown',
+      riskScore: 0,
+      interpretation: 'The diagnostic engine is currently unavailable. Specialist review is required.',
+      recommendations: ['Contact facility support.', 'Manual review recommended.']
+    };
+  }
 };
 
 module.exports = { predict };
+
 
 
