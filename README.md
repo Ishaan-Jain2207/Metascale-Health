@@ -39,7 +39,6 @@ The project is built using a modern technical setup to ensure security and accur
 
 * `healthapp/frontend`: The React-based user interface.
 * `healthapp/backend`: The main API that connects the interface to the database.
-* `API/backend`: The Python service dedicated to running predictive health models.
 * `notebooks/`: Research and logic used to build the predictive models.
 
 ---
