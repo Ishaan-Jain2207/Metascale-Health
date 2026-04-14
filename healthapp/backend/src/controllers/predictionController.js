@@ -72,7 +72,7 @@ exports.submitLiver = async (req, res, next) => {
 
     // 3. SPECIALIZED INFERENCE
     // Orchestrates the Liver ML engine to calculate risk coefficients.
-    const result = liverSvc.predict(features);
+    const result = await liverSvc.predict(features);
 
     // 4. ATOMIC CLINICAL COMMIT
     // Persistence mapping to the 'liver_screenings' repository.
@@ -147,7 +147,7 @@ exports.submitDiabetes = async (req, res, next) => {
     };
 
     // 3. SPECIALIZED INFERENCE
-    const result = diabetesSvc.predict(features);
+    const result = await diabetesSvc.predict(features);
 
     // ─── REPOSITORY COMMIT ────────────────────────────────────────────────
     const [dbResult] = await pool.query(
