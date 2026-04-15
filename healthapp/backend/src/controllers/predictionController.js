@@ -221,11 +221,13 @@ exports.getHistory = async (req, res, next) => {
       );
     }
 
-    // 2. TEMPORAL SORTING
+    // 2. TEMPORAL SORTING & SANITIZATION
     const combined = [...liverRows, ...diabetesRows]
       .map((r) => ({
         ...r,
-        recommendations: typeof r.recommendations === 'string' ? JSON.parse(r.recommendations) : r.recommendations,
+        risk_band: r.risk_band || 'Unknown',
+        confidence: r.confidence || 0,
+        recommendations: typeof r.recommendations === 'string' ? JSON.parse(r.recommendations) : (r.recommendations || []),
       }))
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 

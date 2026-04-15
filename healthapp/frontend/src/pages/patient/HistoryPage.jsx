@@ -43,10 +43,15 @@ const HistoryPage = () => {
   };
 
   const filteredHistory = history.filter(item => {
-    // Case-insensitive filtering to ensure robustness against data variations
-    const matchesFilter = filter === 'all' || item.type?.toLowerCase() === filter.toLowerCase();
-    const matchesSearch = item.risk_band.toLowerCase().includes(search.toLowerCase()) || 
-                         item.type.toLowerCase().includes(search.toLowerCase());
+    if (!item) return false;
+    // Case-insensitive filtering with guaranteed null-safety
+    const itemType = (item.type || 'unknown').toLowerCase();
+    const itemRisk = (item.risk_band || 'unknown').toLowerCase();
+    const searchLower = search.toLowerCase();
+    
+    const matchesFilter = filter === 'all' || itemType === filter.toLowerCase();
+    const matchesSearch = itemRisk.includes(searchLower) || itemType.includes(searchLower);
+    
     return matchesFilter && matchesSearch;
   });
 
@@ -128,23 +133,24 @@ const HistoryPage = () => {
                                 <div>
                                    <p className="font-bold text-slate-900 capitalize">{item.type} Screening</p>
                                    <div className="flex items-center gap-1.5 text-xs text-slate-400 font-bold">
-                                      <Calendar size={12} /> {new Date(item.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                      <Calendar size={12} /> {item.created_at ? new Date(item.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A'}
                                    </div>
                                 </div>
                              </div>
                           </td>
                           <td className="px-6 py-6">
-                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                                item.risk_band === 'Minimal' ? 'bg-green-100 text-green-700' :
-                                item.risk_band === 'Elevated' ? 'bg-yellow-100 text-yellow-700' :
-                                item.risk_band === 'Severe' ? 'bg-orange-100 text-orange-700' :
-                                'bg-red-100 text-red-700'
-                             }`}>
-                                {item.risk_band} Risk
-                             </span>
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+                                 item.risk_band === 'Minimal' ? 'bg-green-100 text-green-700' :
+                                 item.risk_band === 'Elevated' ? 'bg-yellow-100 text-yellow-700' :
+                                 item.risk_band === 'Severe' ? 'bg-orange-100 text-orange-700' :
+                                 item.risk_band === 'Critical' ? 'bg-red-100 text-red-700' :
+                                 'bg-slate-100 text-slate-500 border border-slate-200'
+                              }`}>
+                                 {item.risk_band || 'Unknown'} Risk
+                              </span>
                           </td>
                           <td className="px-6 py-6 font-display font-bold text-slate-600">
-                             {(item.confidence * 100).toFixed(1)}% <span className="text-xs text-slate-400 font-sans uppercase">Confidence</span>
+                             {item.confidence ? (item.confidence * 100).toFixed(1) : '0.0'}% <span className="text-xs text-slate-400 font-sans uppercase">Confidence</span>
                           </td>
                           <td className="px-6 py-6 text-right">
                              <Link 
